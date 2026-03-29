@@ -2,7 +2,8 @@
 for-all_tutorials
 <!-- breadcrumbs:end -->
 
-# for-all_tutorials
+
+# For All Tutorials
 
 Comparable full-stack tutorials across nine framework and language stacks.
 
