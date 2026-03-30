@@ -1,8 +1,0 @@
-<!-- breadcrumbs:start -->
-[for-all_tutorials](../../../../README.md) / [tutorials](../../../README.md) / [level-3](../../README.md) / [file-upload-vault](../README.md) / ruby-rails-hotwire
-<!-- breadcrumbs:end -->
-
-
-# File Upload Vault
-
-Level 3 implementation using Ruby / Rails + Hotwire.

@@ -1,0 +1,7 @@
+<!-- breadcrumbs:start -->
+[for-all_tutorials](../../../../README.md) / [frameworks](../../../README.md) / [full-stack](../../README.md) / [ruby-rails-hotwire](../README.md) / scripts
+<!-- breadcrumbs:end -->
+
+# Scripts
+
+Support scripts for generating, building, and maintaining Ruby / Rails + Hotwire full-stack projects.
