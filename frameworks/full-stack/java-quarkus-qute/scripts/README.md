@@ -1,5 +1,5 @@
 <!-- breadcrumbs:start -->
-[for-all_tutorials](../../../../README.md) / [frameworks](../../../README.md) / [full-stack](../../README.md) / [java-quarkus-qute](../README.md) / scripts
+[for-all_tutorials](../../../../README.md) / [Frameworks](../../../README.md) / [Full-Stack](../../README.md) / [Java / Quarkus (Native) + Qute](../README.md) / Scripts
 <!-- breadcrumbs:end -->
 
 # Scripts

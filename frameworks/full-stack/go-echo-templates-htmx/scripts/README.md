@@ -1,5 +1,5 @@
 <!-- breadcrumbs:start -->
-[for-all_tutorials](../../../../README.md) / [frameworks](../../../README.md) / [full-stack](../../README.md) / [go-echo-templates-htmx](../README.md) / scripts
+[for-all_tutorials](../../../../README.md) / [Frameworks](../../../README.md) / [Full-Stack](../../README.md) / [Go / Echo + Templates + HTMX](../README.md) / Scripts
 <!-- breadcrumbs:end -->
 
 # Scripts

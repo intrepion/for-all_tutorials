@@ -1,5 +1,5 @@
 <!-- breadcrumbs:start -->
-[for-all_tutorials](../../../../README.md) / [frameworks](../../../README.md) / [full-stack](../../README.md) / [elixir-phoenix-liveview](../README.md) / starter
+[for-all_tutorials](../../../../README.md) / [Frameworks](../../../README.md) / [Full-Stack](../../README.md) / [Elixir / Phoenix + LiveView](../README.md) / Starter
 <!-- breadcrumbs:end -->
 
 # Starter

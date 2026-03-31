@@ -1,5 +1,5 @@
 <!-- breadcrumbs:start -->
-[for-all_tutorials](../README.md) / specs
+[for-all_tutorials](../README.md) / Specs
 <!-- breadcrumbs:end -->
 
 # Specs
@@ -8,8 +8,12 @@ Canonical app contracts that keep every framework tutorial comparable.
 
 ## Contents
 
-- [Level 1](level-1/README.md)
-- [Level 2](level-2/README.md)
-- [Level 3](level-3/README.md)
-- [Level 4](level-4/README.md)
-- [Level 5](level-5/README.md)
+- [Level 001: Foundations](level-001-foundations/README.md)
+- [Level 002: CRUD And Routing](level-002-crud-and-routing/README.md)
+- [Level 003: State And Views](level-003-state-and-views/README.md)
+- [Level 004: Users And Auth](level-004-users-and-auth/README.md)
+- [Level 005: Uploads And Media](level-005-uploads-and-media/README.md)
+- [Level 006: Business Workflows](level-006-business-workflows/README.md)
+- [Level 007: Collaboration](level-007-collaboration/README.md)
+- [Level 008: Realtime And Commerce](level-008-realtime-and-commerce/README.md)
+- [Level 009: Systems](level-009-systems/README.md)

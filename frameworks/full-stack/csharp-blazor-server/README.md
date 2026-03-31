@@ -1,5 +1,5 @@
 <!-- breadcrumbs:start -->
-[for-all_tutorials](../../../README.md) / [frameworks](../../README.md) / [full-stack](../README.md) / csharp-blazor-server
+[for-all_tutorials](../../../README.md) / [Frameworks](../../README.md) / [Full-Stack](../README.md) / C# / Blazor Server
 <!-- breadcrumbs:end -->
 
 # C# / Blazor Server

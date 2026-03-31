@@ -1,5 +1,5 @@
 <!-- breadcrumbs:start -->
-[for-all_tutorials](../../../README.md) / [frameworks](../../README.md) / [full-stack](../README.md) / php-laravel-octane-livewire
+[for-all_tutorials](../../../README.md) / [Frameworks](../../README.md) / [Full-Stack](../README.md) / PHP / Laravel (Octane) + Livewire
 <!-- breadcrumbs:end -->
 
 # PHP / Laravel (Octane) + Livewire

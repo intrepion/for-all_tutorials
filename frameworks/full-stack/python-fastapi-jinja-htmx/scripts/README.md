@@ -1,5 +1,5 @@
 <!-- breadcrumbs:start -->
-[for-all_tutorials](../../../../README.md) / [frameworks](../../../README.md) / [full-stack](../../README.md) / [python-fastapi-jinja-htmx](../README.md) / scripts
+[for-all_tutorials](../../../../README.md) / [Frameworks](../../../README.md) / [Full-Stack](../../README.md) / [Python / FastAPI + Jinja2 + HTMX](../README.md) / Scripts
 <!-- breadcrumbs:end -->
 
 # Scripts

@@ -1,5 +1,5 @@
 <!-- breadcrumbs:start -->
-[for-all_tutorials](../../../../README.md) / [frameworks](../../../README.md) / [full-stack](../../README.md) / [typescript-sveltekit-bun](../README.md) / starter
+[for-all_tutorials](../../../../README.md) / [Frameworks](../../../README.md) / [Full-Stack](../../README.md) / [TypeScript / SvelteKit + Bun](../README.md) / Starter
 <!-- breadcrumbs:end -->
 
 # Starter

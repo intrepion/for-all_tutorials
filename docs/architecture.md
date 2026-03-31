@@ -1,26 +1,52 @@
 <!-- breadcrumbs:start -->
-[for-all_tutorials](../README.md) / [docs](README.md) / architecture.md
+[for-all_tutorials](../README.md) / [Docs](README.md) / architecture.md
 <!-- breadcrumbs:end -->
 
 # Repository Architecture
 
-Structure, naming conventions, and workflow guidance for organizing comparable tutorials across platforms and frameworks.
+Structure, naming conventions, and workflow guidance for organizing comparable tutorials as a long-form curriculum across platforms and frameworks.
 
 ## Recommendation
 
-Use a hybrid structure with an explicit platform layer:
+Use a hybrid structure with both a curriculum layer and a platform layer:
 
 - Keep canonical app definitions in `specs/`.
 - Group tutorial folders by `level -> project -> platform -> framework`.
 - Group reusable framework setup by `platform -> framework`.
-- Keep benchmark and security expectations inside each spec until truly reusable cross-tutorial assets appear.
+- Use zero-padded level slugs such as `level-001-foundations`.
+- Keep benchmark and security expectations inside each spec until there are real shared assets to justify a separate cross-tutorial layer.
 
 That gives you the best of both worlds:
 
 - Project-first organization still makes cross-framework comparison easy.
-- The new platform layer keeps the repo ready for non-full-stack stacks.
-- Framework-specific starter code stays reusable instead of being copied into every app.
-- Benchmark and security rules stay attached to each tutorial contract instead of being split into an empty cross-tutorial layer too early.
+- Curriculum-first levels make the repo read like a learning path instead of a dump of app ideas.
+- The platform layer keeps the repo ready for non-full-stack stacks.
+- Framework-specific starter code stays reusable instead of being copied into every tutorial folder.
+
+## Why Curriculum Levels Matter
+
+This repo is no longer organized like a simple benchmark queue. It behaves more like a course catalog.
+
+That means a level should represent teaching sequence and prerequisite order, not just rough app size. More levels with fewer projects per level create:
+
+- smaller jumps in complexity
+- clearer prerequisites
+- room to insert future tutorials between existing ones
+- stable alphabetical ordering as the catalog grows past 100 levels
+
+That is why the recommended level folders use three digits from the start, such as `level-001`, `level-002`, and `level-103`.
+
+## Current Curriculum Map
+
+- `level-001-foundations`: Guestbook / Comment Wall, Todo List, Poll / Voting App, Text Sharing
+- `level-002-crud-and-routing`: Habit Tracker, Bookmark Manager / Read-Later App, URL Shortener, Personal Link-in-Bio + Analytics
+- `level-003-state-and-views`: Trivia App, Leaderboard App, Weather Dashboard, Notification Center
+- `level-004-users-and-auth`: Auth + Profile Portal, Expense Tracker, Markdown Blog Engine, Survey Builder
+- `level-005-uploads-and-media`: Image Gallery with Uploads, File Upload Vault, Image Upload & Processing Service
+- `level-006-business-workflows`: Inventory Tracker, Wiki / Knowledge Base, Support Ticket System, Admin Dashboard
+- `level-007-collaboration`: Forum / Discussion Board, Issue Tracker, Calendar / Appointment Scheduler, Kanban Board / Project Board
+- `level-008-realtime-and-commerce`: Chat / Messaging App, Mini E-Commerce App
+- `level-009-systems`: API Gateway / Auth Proxy, Collaborative Docs, Log Ingestor
 
 ## Why The Platform Layer Matters
 
@@ -51,17 +77,17 @@ for-all_tutorials/
     architecture.md
 
   specs/
-    level-1/
+    level-001-foundations/
       guestbook-comment-wall/
       todo-list/
-    level-2/
-    level-3/
-    level-4/
-    level-5/
+    level-002-crud-and-routing/
+    level-003-state-and-views/
+    ...
+    level-009-systems/
 
   tutorials/
-    level-1/
-      guestbook-comment-wall/
+    level-001-foundations/
+      todo-list/
         full-stack/
           rust-leptos-ssr/
           elixir-phoenix-liveview/
@@ -72,12 +98,10 @@ for-all_tutorials/
           typescript-sveltekit-bun/
           python-fastapi-jinja-htmx/
           go-echo-templates-htmx/
-      todo-list/
-        full-stack/
-    level-2/
-    level-3/
-    level-4/
-    level-5/
+    level-002-crud-and-routing/
+    level-003-state-and-views/
+    ...
+    level-009-systems/
 
   frameworks/
     full-stack/
@@ -111,8 +135,8 @@ frameworks/<platform>/<framework-id>/
 Current example:
 
 ```text
-tutorials/level-1/guestbook-comment-wall/full-stack/rust-leptos-ssr/
-frameworks/full-stack/rust-leptos-ssr/
+tutorials/level-001-foundations/todo-list/full-stack/elixir-phoenix-liveview/
+frameworks/full-stack/elixir-phoenix-liveview/
 ```
 
 ## How To Think About Each Folder
@@ -133,16 +157,17 @@ Each project spec should define:
 - security checklist
 
 If two tutorial builds behave differently, the spec is where you resolve it.
-Benchmark and security expectations should also live here unless multiple tutorials truly reuse the same supporting assets.
 
 ### `tutorials/`
 
-This is where the real comparable tutorials live.
+This is where the comparable tutorial writing lives.
 
-The project folder now groups by platform before framework so you can later compare:
+The project folder groups by platform before framework so you can later compare:
 
 - the same project tutorial across frameworks within one platform
 - the same project tutorial across different platform categories
+
+The level folder above that project tells readers where the tutorial fits in the curriculum.
 
 ### `frameworks/`
 
@@ -154,7 +179,7 @@ The platform folder sits above the framework folder so future framework families
 
 Use stable slugs so the matrix stays sortable and scriptable:
 
-- levels: `level-1`, `level-2`, `level-3`, `level-4`, `level-5`
+- levels: `level-001-foundations`, `level-002-crud-and-routing`, `level-003-state-and-views`
 - projects: `guestbook-comment-wall`, `todo-list`, `poll-voting-app`
 - platforms: `full-stack`, later `back-end`, `front-end`, `mobile`, and others
 - frameworks: `rust-leptos-ssr`, `elixir-phoenix-liveview`, `ruby-rails-hotwire`
@@ -163,21 +188,21 @@ Avoid display names in folder paths.
 
 ## Suggested Authoring Workflow
 
-1. Add or refine the app contract in `specs/level-x/<project>/`.
-2. Choose or add the platform group in `tutorials/level-x/<project>/<platform>/`.
+1. Add or refine the app contract in `specs/<level>/<project>/`.
+2. Choose or add the platform group in `tutorials/<level>/<project>/<platform>/`.
 3. Reuse or improve the framework starter in `frameworks/<platform>/<framework-id>/`.
-4. Write the comparable tutorial in `tutorials/level-x/<project>/<platform>/<framework-id>/`.
+4. Write the comparable tutorial in `tutorials/<level>/<project>/<platform>/<framework-id>/`.
+5. If a tutorial's teaching scope changes, move it to the level that best matches its prerequisites.
 
 ## Real-World Example
 
-For `Guestbook / Comment Wall`, the comparison question today is:
+For `Todo List`, the curriculum question is not just "is this easy?" It is "is this the right first durable full-stack exercise after the absolute basics?"
 
-"How do the full-stack frameworks teach the same tiny SSR CRUD app with the same validation and the same benchmark contract?"
-
-That is why the current tutorial folders live under:
+That is why it now lives under:
 
 ```text
-tutorials/level-1/guestbook-comment-wall/full-stack/
+specs/level-001-foundations/todo-list/
+tutorials/level-001-foundations/todo-list/full-stack/
 ```
 
-Later, if you add a `back-end` or `mobile` version of the same project, it can live beside `full-stack` instead of forcing another top-level reorganization.
+It teaches forms, validation, CRUD, filtering, and persistence with low cognitive overhead, which makes it a much better foundation-level tutorial than something like `Chat / Messaging App` or `API Gateway / Auth Proxy`.

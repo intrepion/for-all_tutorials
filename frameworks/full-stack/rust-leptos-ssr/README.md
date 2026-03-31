@@ -1,5 +1,5 @@
 <!-- breadcrumbs:start -->
-[for-all_tutorials](../../../README.md) / [frameworks](../../README.md) / [full-stack](../README.md) / rust-leptos-ssr
+[for-all_tutorials](../../../README.md) / [Frameworks](../../README.md) / [Full-Stack](../README.md) / Rust / Leptos SSR
 <!-- breadcrumbs:end -->
 
 # Rust / Leptos SSR
