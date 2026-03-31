@@ -8,20 +8,19 @@ Structure, naming conventions, and workflow guidance for organizing comparable t
 
 ## Recommendation
 
-Use a hybrid structure with both a curriculum layer and a platform layer:
+Use a curriculum structure with an embedded platform layer inside each project:
 
 - Keep canonical app definitions in `specs/`.
 - Group tutorial folders by `level -> project -> platform -> framework`.
-- Group reusable framework setup by `platform -> framework`.
 - Use zero-padded level slugs such as `level-001-foundations`.
-- Keep benchmark and security expectations inside each spec until there are real shared assets to justify a separate cross-tutorial layer.
+- Keep benchmark and security expectations inside each spec until there are real shared assets that deserve their own home.
 
 That gives you the best of both worlds:
 
 - Project-first organization still makes cross-framework comparison easy.
 - Curriculum-first levels make the repo read like a learning path instead of a dump of app ideas.
 - The platform layer keeps the repo ready for non-full-stack stacks.
-- Framework-specific starter code stays reusable instead of being copied into every tutorial folder.
+- The top level stays lean while the repo is still primarily a documentation catalog.
 
 ## Why Curriculum Levels Matter
 
@@ -48,7 +47,7 @@ That is why the recommended level folders use three digits from the start, such 
 - `level-008-realtime-and-commerce`: Chat / Messaging App, Mini E-Commerce App
 - `level-009-systems`: API Gateway / Auth Proxy, Collaborative Docs, Log Ingestor
 
-## Why The Platform Layer Matters
+## Why The Platform Layer Still Matters
 
 Today, every tutorial in the repo is full-stack.
 
@@ -67,7 +66,7 @@ Later, you want room for categories such as:
 - `linux`
 - `desktop`
 
-If the repo skips that layer now, you would have to reorganize the whole tree later. Adding it early keeps the structure stable.
+If the repo skips that layer inside `tutorials/` now, you would have to reorganize the whole tree later. Keeping it in the tutorial path makes the structure stable without needing a separate top-level `frameworks/` folder yet.
 
 ## Recommended Tree
 
@@ -102,23 +101,9 @@ for-all_tutorials/
     level-003-state-and-views/
     ...
     level-009-systems/
-
-  frameworks/
-    full-stack/
-      rust-leptos-ssr/
-        starter/
-        scripts/
-      elixir-phoenix-liveview/
-      ruby-rails-hotwire/
-      java-quarkus-qute/
-      csharp-blazor-server/
-      php-laravel-octane-livewire/
-      typescript-sveltekit-bun/
-      python-fastapi-jinja-htmx/
-      go-echo-templates-htmx/
 ```
 
-## Path Shapes
+## Path Shape
 
 Recommended tutorial path:
 
@@ -126,24 +111,17 @@ Recommended tutorial path:
 tutorials/<level>/<project>/<platform>/<framework-id>/
 ```
 
-Recommended reusable framework path:
-
-```text
-frameworks/<platform>/<framework-id>/
-```
-
 Current example:
 
 ```text
 tutorials/level-001-foundations/todo-list/full-stack/elixir-phoenix-liveview/
-frameworks/full-stack/elixir-phoenix-liveview/
 ```
 
 ## How To Think About Each Folder
 
 ### `specs/`
 
-This is still the source of truth for parity.
+This is the source of truth for parity.
 
 Each project spec should define:
 
@@ -162,18 +140,12 @@ If two tutorial builds behave differently, the spec is where you resolve it.
 
 This is where the comparable tutorial writing lives.
 
-The project folder groups by platform before framework so you can later compare:
+The project folder groups by platform before framework so you can compare:
 
 - the same project tutorial across frameworks within one platform
 - the same project tutorial across different platform categories
 
 The level folder above that project tells readers where the tutorial fits in the curriculum.
-
-### `frameworks/`
-
-This is the reusable support layer for future tutorial writing.
-
-The platform folder sits above the framework folder so future framework families can live beside each other without another repo rewrite.
 
 ## Naming Conventions
 
@@ -190,9 +162,9 @@ Avoid display names in folder paths.
 
 1. Add or refine the app contract in `specs/<level>/<project>/`.
 2. Choose or add the platform group in `tutorials/<level>/<project>/<platform>/`.
-3. Reuse or improve the framework starter in `frameworks/<platform>/<framework-id>/`.
-4. Write the comparable tutorial in `tutorials/<level>/<project>/<platform>/<framework-id>/`.
-5. If a tutorial's teaching scope changes, move it to the level that best matches its prerequisites.
+3. Write or refine the stack-specific tutorial in `tutorials/<level>/<project>/<platform>/<framework-id>/`.
+4. If a tutorial's teaching scope changes, move it to the level that best matches its prerequisites.
+5. If real cross-project framework guidance appears later, introduce a dedicated `frameworks/` folder only when it contains genuinely reusable material.
 
 ## Real-World Example
 
