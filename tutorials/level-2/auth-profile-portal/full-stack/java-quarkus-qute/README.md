@@ -4,4 +4,4 @@
 
 # Auth + Profile Portal
 
-Level 2 full-stack implementation using Java / Quarkus (Native) + Qute.
+Level 2 full-stack tutorial using Java / Quarkus (Native) + Qute.

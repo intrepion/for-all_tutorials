@@ -4,4 +4,4 @@
 
 # API Gateway / Auth Proxy
 
-Level 5 full-stack implementation using Rust / Leptos SSR.
+Level 5 full-stack tutorial using Rust / Leptos SSR.

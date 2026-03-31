@@ -4,4 +4,4 @@
 
 # Chat / Messaging App
 
-Level 4 full-stack implementation using C# / Blazor Server.
+Level 4 full-stack tutorial using C# / Blazor Server.

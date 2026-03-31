@@ -4,4 +4,4 @@
 
 # API Gateway / Auth Proxy
 
-Level 5 full-stack implementation using Java / Quarkus (Native) + Qute.
+Level 5 full-stack tutorial using Java / Quarkus (Native) + Qute.

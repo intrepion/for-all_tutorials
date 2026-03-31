@@ -4,4 +4,4 @@
 
 # Kanban Board / Project Board
 
-Level 4 full-stack implementation using Java / Quarkus (Native) + Qute.
+Level 4 full-stack tutorial using Java / Quarkus (Native) + Qute.

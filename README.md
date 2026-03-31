@@ -9,7 +9,7 @@ Comparable full-stack tutorials today, with room to grow into other platform cat
 The repo is organized as a comparison matrix instead of a pure framework dump:
 
 - `specs/` defines the canonical requirements for each tutorial app.
-- `tutorials/` contains the runnable implementations, grouped by level, project, platform, and framework.
+- `tutorials/` contains the runnable app tutorials, grouped by level, project, platform, and framework.
 - `frameworks/` holds reusable framework starters and conventions, grouped by platform.
 - `shared/` keeps cross-framework benchmark, security, fixture, and parity assets.
 - `docs/` explains the architecture and growth path.

@@ -4,4 +4,4 @@
 
 # Todo List
 
-Level 1 full-stack implementation using Elixir / Phoenix + LiveView.
+Level 1 full-stack tutorial using Elixir / Phoenix + LiveView.

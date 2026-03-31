@@ -4,4 +4,4 @@
 
 # Expense Tracker
 
-Level 2 full-stack implementation using Go / Echo + Templates + HTMX.
+Level 2 full-stack tutorial using Go / Echo + Templates + HTMX.

@@ -4,4 +4,4 @@
 
 # Image Upload & Processing Service
 
-Level 4 full-stack implementation using Rust / Leptos SSR.
+Level 4 full-stack tutorial using Rust / Leptos SSR.

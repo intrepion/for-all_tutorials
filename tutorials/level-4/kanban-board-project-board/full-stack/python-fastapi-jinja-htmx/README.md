@@ -4,4 +4,4 @@
 
 # Kanban Board / Project Board
 
-Level 4 full-stack implementation using Python / FastAPI + Jinja2 + HTMX.
+Level 4 full-stack tutorial using Python / FastAPI + Jinja2 + HTMX.

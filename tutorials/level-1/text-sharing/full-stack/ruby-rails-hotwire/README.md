@@ -4,4 +4,4 @@
 
 # Text Sharing
 
-Level 1 full-stack implementation using Ruby / Rails + Hotwire.
+Level 1 full-stack tutorial using Ruby / Rails + Hotwire.

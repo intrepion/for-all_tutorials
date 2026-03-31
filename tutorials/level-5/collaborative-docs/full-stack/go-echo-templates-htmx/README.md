@@ -4,4 +4,4 @@
 
 # Collaborative Docs
 
-Level 5 full-stack implementation using Go / Echo + Templates + HTMX.
+Level 5 full-stack tutorial using Go / Echo + Templates + HTMX.

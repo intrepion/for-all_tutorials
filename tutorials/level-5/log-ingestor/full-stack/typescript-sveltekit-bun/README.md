@@ -4,4 +4,4 @@
 
 # Log Ingestor
 
-Level 5 full-stack implementation using TypeScript / SvelteKit + Bun.
+Level 5 full-stack tutorial using TypeScript / SvelteKit + Bun.

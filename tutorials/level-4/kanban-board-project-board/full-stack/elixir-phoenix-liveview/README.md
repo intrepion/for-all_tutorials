@@ -4,4 +4,4 @@
 
 # Kanban Board / Project Board
 
-Level 4 full-stack implementation using Elixir / Phoenix + LiveView.
+Level 4 full-stack tutorial using Elixir / Phoenix + LiveView.

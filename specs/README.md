@@ -4,7 +4,7 @@
 
 # Specs
 
-Canonical app contracts that keep every framework implementation comparable.
+Canonical app contracts that keep every framework tutorial comparable.
 
 ## Contents
 

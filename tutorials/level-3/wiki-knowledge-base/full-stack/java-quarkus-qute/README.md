@@ -4,4 +4,4 @@
 
 # Wiki / Knowledge Base
 
-Level 3 full-stack implementation using Java / Quarkus (Native) + Qute.
+Level 3 full-stack tutorial using Java / Quarkus (Native) + Qute.

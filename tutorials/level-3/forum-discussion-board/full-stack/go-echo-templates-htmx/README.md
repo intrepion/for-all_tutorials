@@ -4,4 +4,4 @@
 
 # Forum / Discussion Board
 
-Level 3 full-stack implementation using Go / Echo + Templates + HTMX.
+Level 3 full-stack tutorial using Go / Echo + Templates + HTMX.

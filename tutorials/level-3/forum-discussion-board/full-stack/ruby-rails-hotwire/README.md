@@ -4,4 +4,4 @@
 
 # Forum / Discussion Board
 
-Level 3 full-stack implementation using Ruby / Rails + Hotwire.
+Level 3 full-stack tutorial using Ruby / Rails + Hotwire.

@@ -4,4 +4,4 @@
 
 # Image Upload & Processing Service
 
-Level 4 full-stack implementation using Ruby / Rails + Hotwire.
+Level 4 full-stack tutorial using Ruby / Rails + Hotwire.

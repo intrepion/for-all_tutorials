@@ -4,4 +4,4 @@
 
 # Text Sharing
 
-Level 1 full-stack implementation using Rust / Leptos SSR.
+Level 1 full-stack tutorial using Rust / Leptos SSR.

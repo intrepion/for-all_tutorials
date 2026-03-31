@@ -4,4 +4,4 @@
 
 # Leaderboard App
 
-Level 2 full-stack implementation using Python / FastAPI + Jinja2 + HTMX.
+Level 2 full-stack tutorial using Python / FastAPI + Jinja2 + HTMX.

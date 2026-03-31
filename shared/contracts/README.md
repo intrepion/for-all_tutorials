@@ -4,4 +4,4 @@
 
 # Contracts
 
-Common parity contracts and comparison helpers used across tutorial implementations.
+Common parity contracts and comparison helpers used across tutorials.

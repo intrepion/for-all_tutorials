@@ -4,7 +4,7 @@
 
 # Level 2
 
-Runnable implementations of small to medium apps that add state, scoring, auth, aggregation, uploads, dashboards, and API integration.
+Runnable tutorials for small to medium apps that add state, scoring, auth, aggregation, uploads, dashboards, and API integration.
 
 ## Contents
 

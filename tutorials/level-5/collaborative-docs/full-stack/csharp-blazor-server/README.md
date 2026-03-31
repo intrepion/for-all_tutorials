@@ -4,4 +4,4 @@
 
 # Collaborative Docs
 
-Level 5 full-stack implementation using C# / Blazor Server.
+Level 5 full-stack tutorial using C# / Blazor Server.

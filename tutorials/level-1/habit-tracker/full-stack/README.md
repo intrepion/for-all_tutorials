@@ -4,7 +4,7 @@
 
 # Full-Stack
 
-Full-stack implementations of this Level 1 comparable tutorial app.
+Full-stack tutorials for this Level 1 comparable tutorial app.
 
 ## Contents
 

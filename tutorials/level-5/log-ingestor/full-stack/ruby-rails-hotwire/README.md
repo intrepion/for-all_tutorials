@@ -4,4 +4,4 @@
 
 # Log Ingestor
 
-Level 5 full-stack implementation using Ruby / Rails + Hotwire.
+Level 5 full-stack tutorial using Ruby / Rails + Hotwire.

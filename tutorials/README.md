@@ -4,7 +4,7 @@
 
 # Tutorials
 
-Runnable implementations organized by level, project, platform, and framework.
+Runnable app tutorials organized by level, project, platform, and framework.
 
 ## Contents
 

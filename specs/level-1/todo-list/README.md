@@ -71,7 +71,7 @@ Required logical fields:
 
 | Field | Type | Required | Notes |
 | --- | --- | --- | --- |
-| `id` | unique identifier | yes | Server-generated. Exact type is implementation-defined. |
+| `id` | unique identifier | yes | Server-generated. Exact type is tutorial-specific. |
 | `title` | string | yes | Human-readable todo text. |
 | `completed` | boolean | yes | `false` by default. |
 | `created_at` | timestamp | yes | Used for stable ordering. |
@@ -140,7 +140,7 @@ The app is considered spec-complete when all of the following are true:
 
 This app should later be benchmarked in a repeatable, framework-neutral way.
 
-Each implementation must eventually support:
+Each tutorial build must eventually support:
 
 - a repeatable seed or reset mechanism for local benchmarking
 - a stable dataset shape for benchmark runs
@@ -166,7 +166,7 @@ The seed or reset mechanism may be implemented in a framework-specific way, but 
 
 ## Security Checklist
 
-Every implementation should pass this baseline checklist:
+Every tutorial should pass this baseline checklist:
 
 - escape todo titles in rendered HTML to prevent XSS
 - validate all create and edit input on the server
@@ -182,7 +182,7 @@ To keep comparisons fair:
 
 - styling is not part of the spec
 - custom JavaScript is optional, not required
-- websocket-based or reactive implementations are allowed
-- traditional form-post implementations are allowed
+- websocket-based or reactive tutorial builds are allowed
+- traditional form-post tutorial builds are allowed
 - the visible behavior, validation, routes, and persistence guarantees must remain equivalent
 - extra features are allowed only if they are clearly documented and disabled in the canonical comparison mode

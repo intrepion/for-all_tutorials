@@ -4,4 +4,4 @@
 
 # Survey Builder
 
-Level 2 full-stack implementation using Ruby / Rails + Hotwire.
+Level 2 full-stack tutorial using Ruby / Rails + Hotwire.

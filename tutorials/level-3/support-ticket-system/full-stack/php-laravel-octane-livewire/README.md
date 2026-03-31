@@ -4,4 +4,4 @@
 
 # Support Ticket System
 
-Level 3 full-stack implementation using PHP / Laravel (Octane) + Livewire.
+Level 3 full-stack tutorial using PHP / Laravel (Octane) + Livewire.

@@ -4,4 +4,4 @@
 
 # Auth + Profile Portal
 
-Level 2 full-stack implementation using Elixir / Phoenix + LiveView.
+Level 2 full-stack tutorial using Elixir / Phoenix + LiveView.

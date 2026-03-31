@@ -4,4 +4,4 @@
 
 # Mini E-Commerce App
 
-Level 4 full-stack implementation using PHP / Laravel (Octane) + Livewire.
+Level 4 full-stack tutorial using PHP / Laravel (Octane) + Livewire.

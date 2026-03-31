@@ -4,4 +4,4 @@
 
 # Guestbook / Comment Wall
 
-Level 1 full-stack implementation using C# / Blazor Server.
+Level 1 full-stack tutorial using C# / Blazor Server.

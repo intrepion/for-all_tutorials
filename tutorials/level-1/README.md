@@ -4,7 +4,7 @@
 
 # Level 1
 
-Runnable implementations of very small starter apps focused on forms, CRUD, routing, and simple validation.
+Runnable tutorials for very small starter apps focused on forms, CRUD, routing, and simple validation.
 
 ## Contents
 

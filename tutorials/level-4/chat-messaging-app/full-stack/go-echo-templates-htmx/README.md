@@ -4,4 +4,4 @@
 
 # Chat / Messaging App
 
-Level 4 full-stack implementation using Go / Echo + Templates + HTMX.
+Level 4 full-stack tutorial using Go / Echo + Templates + HTMX.

@@ -4,4 +4,4 @@
 
 # Personal Link-in-Bio + Analytics
 
-Level 1 full-stack implementation using TypeScript / SvelteKit + Bun.
+Level 1 full-stack tutorial using TypeScript / SvelteKit + Bun.

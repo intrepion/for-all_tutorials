@@ -4,4 +4,4 @@
 
 # Markdown Blog Engine
 
-Level 2 full-stack implementation using C# / Blazor Server.
+Level 2 full-stack tutorial using C# / Blazor Server.

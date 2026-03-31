@@ -4,7 +4,7 @@
 
 # Level 3
 
-Runnable implementations of medium business-style apps that stress permissions, relational data, moderation, filtering, reporting, and realistic workflows.
+Runnable tutorials for medium business-style apps that stress permissions, relational data, moderation, filtering, reporting, and realistic workflows.
 
 ## Contents
 

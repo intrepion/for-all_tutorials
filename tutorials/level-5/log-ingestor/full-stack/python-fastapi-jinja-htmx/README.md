@@ -4,4 +4,4 @@
 
 # Log Ingestor
 
-Level 5 full-stack implementation using Python / FastAPI + Jinja2 + HTMX.
+Level 5 full-stack tutorial using Python / FastAPI + Jinja2 + HTMX.

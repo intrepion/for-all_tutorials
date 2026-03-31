@@ -4,4 +4,4 @@
 
 # Poll / Voting App
 
-Level 1 full-stack implementation using Go / Echo + Templates + HTMX.
+Level 1 full-stack tutorial using Go / Echo + Templates + HTMX.

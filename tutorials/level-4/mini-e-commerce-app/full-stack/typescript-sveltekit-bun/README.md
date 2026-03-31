@@ -4,4 +4,4 @@
 
 # Mini E-Commerce App
 
-Level 4 full-stack implementation using TypeScript / SvelteKit + Bun.
+Level 4 full-stack tutorial using TypeScript / SvelteKit + Bun.

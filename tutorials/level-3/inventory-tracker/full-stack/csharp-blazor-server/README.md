@@ -4,4 +4,4 @@
 
 # Inventory Tracker
 
-Level 3 full-stack implementation using C# / Blazor Server.
+Level 3 full-stack tutorial using C# / Blazor Server.

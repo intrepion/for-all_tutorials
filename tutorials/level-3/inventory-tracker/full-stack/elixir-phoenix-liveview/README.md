@@ -4,4 +4,4 @@
 
 # Inventory Tracker
 
-Level 3 full-stack implementation using Elixir / Phoenix + LiveView.
+Level 3 full-stack tutorial using Elixir / Phoenix + LiveView.

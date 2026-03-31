@@ -4,4 +4,4 @@
 
 # Leaderboard App
 
-Level 2 full-stack implementation using TypeScript / SvelteKit + Bun.
+Level 2 full-stack tutorial using TypeScript / SvelteKit + Bun.

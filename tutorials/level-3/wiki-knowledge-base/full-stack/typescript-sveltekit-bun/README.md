@@ -4,4 +4,4 @@
 
 # Wiki / Knowledge Base
 
-Level 3 full-stack implementation using TypeScript / SvelteKit + Bun.
+Level 3 full-stack tutorial using TypeScript / SvelteKit + Bun.

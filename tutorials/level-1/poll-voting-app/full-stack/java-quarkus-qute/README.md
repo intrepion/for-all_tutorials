@@ -4,4 +4,4 @@
 
 # Poll / Voting App
 
-Level 1 full-stack implementation using Java / Quarkus (Native) + Qute.
+Level 1 full-stack tutorial using Java / Quarkus (Native) + Qute.

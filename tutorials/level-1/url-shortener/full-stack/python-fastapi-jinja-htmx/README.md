@@ -4,4 +4,4 @@
 
 # URL Shortener
 
-Level 1 full-stack implementation using Python / FastAPI + Jinja2 + HTMX.
+Level 1 full-stack tutorial using Python / FastAPI + Jinja2 + HTMX.

@@ -4,4 +4,4 @@
 
 # Collaborative Docs
 
-Level 5 full-stack implementation using Elixir / Phoenix + LiveView.
+Level 5 full-stack tutorial using Elixir / Phoenix + LiveView.
