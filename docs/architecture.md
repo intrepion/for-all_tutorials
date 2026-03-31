@@ -92,7 +92,7 @@ for-all_tutorials/
           elixir-phoenix-liveview/
           ruby-rails-hotwire/
           java-quarkus-qute/
-          csharp-blazor-server/
+          csharp-blazor-web-app-server/
           php-laravel-octane-livewire/
           typescript-sveltekit-bun/
           python-fastapi-jinja-htmx/

@@ -8,7 +8,7 @@ Full-stack tutorials for this Level 004: Users And Auth comparable tutorial app.
 
 ## Contents
 
-- [C# / Blazor Server](csharp-blazor-server/README.md)
+- [C# / Blazor Web App (Server)](csharp-blazor-web-app-server/README.md)
 - [Elixir / Phoenix + LiveView](elixir-phoenix-liveview/README.md)
 - [Go / Echo + Templates + HTMX](go-echo-templates-htmx/README.md)
 - [Java / Quarkus (Native) + Qute](java-quarkus-qute/README.md)
