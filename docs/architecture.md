@@ -1,4 +1,10 @@
+<!-- breadcrumbs:start -->
+[for-all_tutorials](../README.md) / [docs](README.md) / architecture.md
+<!-- breadcrumbs:end -->
+
 # Repository Architecture
+
+Structure, naming conventions, and workflow guidance for organizing comparable tutorials across platforms and frameworks.
 
 ## Recommendation
 

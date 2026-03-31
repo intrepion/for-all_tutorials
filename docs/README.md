@@ -5,3 +5,7 @@
 # Docs
 
 Repository documentation for structure, workflow, and comparison rules.
+
+## Contents
+
+- [Repository Architecture](architecture.md)
