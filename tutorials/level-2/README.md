@@ -4,7 +4,7 @@
 
 # Level 2
 
-Runnable tutorials for small to medium apps that add state, scoring, auth, aggregation, uploads, dashboards, and API integration.
+Tutorial folders for small to medium apps that add state, scoring, auth, aggregation, uploads, dashboards, and API integration.
 
 ## Contents
 

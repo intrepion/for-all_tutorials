@@ -4,7 +4,7 @@
 
 # Level 5
 
-Runnable tutorials for advanced architecture-heavy apps that explore concurrency, auth delegation, distributed workflows, realtime syncing, and ingestion pipelines.
+Tutorial folders for advanced architecture-heavy apps that explore concurrency, auth delegation, distributed workflows, realtime syncing, and ingestion pipelines.
 
 ## Contents
 

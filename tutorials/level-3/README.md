@@ -4,7 +4,7 @@
 
 # Level 3
 
-Runnable tutorials for medium business-style apps that stress permissions, relational data, moderation, filtering, reporting, and realistic workflows.
+Tutorial folders for medium business-style apps that stress permissions, relational data, moderation, filtering, reporting, and realistic workflows.
 
 ## Contents
 

@@ -4,7 +4,7 @@
 
 # Level 1
 
-Runnable tutorials for very small starter apps focused on forms, CRUD, routing, and simple validation.
+Tutorial folders for very small starter apps focused on forms, CRUD, routing, and simple validation.
 
 ## Contents
 

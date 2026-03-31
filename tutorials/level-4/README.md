@@ -4,7 +4,7 @@
 
 # Level 4
 
-Runnable tutorials for medium to advanced full-stack apps that introduce ordering, carts and checkout, realtime features, and background processing.
+Tutorial folders for medium to advanced full-stack apps that introduce ordering, carts and checkout, realtime features, and background processing.
 
 ## Contents
 

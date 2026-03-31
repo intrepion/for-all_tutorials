@@ -4,7 +4,7 @@
 
 # Tutorials
 
-Runnable app tutorials organized by level, project, platform, and framework.
+Tutorial folders organized by level, project, platform, and framework.
 
 ## Contents
 
