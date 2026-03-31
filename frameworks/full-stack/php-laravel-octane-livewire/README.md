@@ -5,3 +5,8 @@
 # PHP / Laravel (Octane) + Livewire
 
 Reusable starter, conventions, and support scripts for the PHP / Laravel (Octane) + Livewire full-stack framework.
+
+## Contents
+
+- [Scripts](scripts/README.md)
+- [Starter](starter/README.md)

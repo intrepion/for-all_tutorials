@@ -5,3 +5,8 @@
 # Go / Echo + Templates + HTMX
 
 Reusable starter, conventions, and support scripts for the Go / Echo + Templates + HTMX full-stack framework.
+
+## Contents
+
+- [Scripts](scripts/README.md)
+- [Starter](starter/README.md)

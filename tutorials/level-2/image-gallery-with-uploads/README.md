@@ -5,3 +5,7 @@
 # Image Gallery with Uploads
 
 Platform categories for this Level 2 comparable tutorial app.
+
+## Contents
+
+- [Full-Stack](full-stack/README.md)

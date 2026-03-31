@@ -5,3 +5,8 @@
 # Elixir / Phoenix + LiveView
 
 Reusable starter, conventions, and support scripts for the Elixir / Phoenix + LiveView full-stack framework.
+
+## Contents
+
+- [Scripts](scripts/README.md)
+- [Starter](starter/README.md)

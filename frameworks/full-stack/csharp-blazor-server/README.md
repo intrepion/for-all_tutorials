@@ -5,3 +5,8 @@
 # C# / Blazor Server
 
 Reusable starter, conventions, and support scripts for the C# / Blazor Server full-stack framework.
+
+## Contents
+
+- [Scripts](scripts/README.md)
+- [Starter](starter/README.md)

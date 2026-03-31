@@ -5,3 +5,7 @@
 # Log Ingestor
 
 Platform categories for this Level 5 comparable tutorial app.
+
+## Contents
+
+- [Full-Stack](full-stack/README.md)

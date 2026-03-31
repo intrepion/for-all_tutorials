@@ -5,3 +5,8 @@
 # Python / FastAPI + Jinja2 + HTMX
 
 Reusable starter, conventions, and support scripts for the Python / FastAPI + Jinja2 + HTMX full-stack framework.
+
+## Contents
+
+- [Scripts](scripts/README.md)
+- [Starter](starter/README.md)

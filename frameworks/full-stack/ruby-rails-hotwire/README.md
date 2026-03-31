@@ -5,3 +5,8 @@
 # Ruby / Rails + Hotwire
 
 Reusable starter, conventions, and support scripts for the Ruby / Rails + Hotwire full-stack framework.
+
+## Contents
+
+- [Scripts](scripts/README.md)
+- [Starter](starter/README.md)

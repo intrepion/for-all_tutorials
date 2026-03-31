@@ -17,3 +17,11 @@ The repo is organized as a comparison matrix instead of a pure framework dump:
 The extra platform layer makes room for future `back-end`, `front-end`, `mobile`, `desktop`, and platform-specific stacks without reshaping the repo again.
 
 See `docs/architecture.md` for the recommended directory structure and the tradeoffs behind it.
+
+## Contents
+
+- [Docs](docs/README.md)
+- [Frameworks](frameworks/README.md)
+- [Shared](shared/README.md)
+- [Specs](specs/README.md)
+- [Tutorials](tutorials/README.md)
