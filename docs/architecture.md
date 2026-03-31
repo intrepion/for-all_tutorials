@@ -11,20 +11,20 @@ Structure, naming conventions, and workflow guidance for organizing comparable t
 Use a hybrid structure with an explicit platform layer:
 
 - Keep canonical app definitions in `specs/`.
-- Group runnable apps by `level -> project -> platform -> framework`.
+- Group tutorial folders by `level -> project -> platform -> framework`.
 - Group reusable framework setup by `platform -> framework`.
-- Keep shared benchmark and security assets in `shared/`.
+- Keep benchmark and security expectations inside each spec until truly reusable cross-tutorial assets appear.
 
 That gives you the best of both worlds:
 
 - Project-first organization still makes cross-framework comparison easy.
 - The new platform layer keeps the repo ready for non-full-stack stacks.
 - Framework-specific starter code stays reusable instead of being copied into every app.
-- Future benchmarks and security checks can still target the same app contract across all stacks.
+- Benchmark and security rules stay attached to each tutorial contract instead of being split into an empty cross-tutorial layer too early.
 
 ## Why The Platform Layer Matters
 
-Today, every implementation in the repo is full-stack.
+Today, every tutorial in the repo is full-stack.
 
 Later, you want room for categories such as:
 
@@ -92,17 +92,11 @@ for-all_tutorials/
       typescript-sveltekit-bun/
       python-fastapi-jinja-htmx/
       go-echo-templates-htmx/
-
-  shared/
-    benchmarking/
-    security/
-    fixtures/
-    contracts/
 ```
 
 ## Path Shapes
 
-Recommended implementation path:
+Recommended tutorial path:
 
 ```text
 tutorials/<level>/<project>/<platform>/<framework-id>/
@@ -138,26 +132,23 @@ Each project spec should define:
 - benchmark contract
 - security checklist
 
-If two implementations behave differently, the spec is where you resolve it.
+If two tutorial builds behave differently, the spec is where you resolve it.
+Benchmark and security expectations should also live here unless multiple tutorials truly reuse the same supporting assets.
 
 ### `tutorials/`
 
-This is where the real comparable apps live.
+This is where the real comparable tutorials live.
 
 The project folder now groups by platform before framework so you can later compare:
 
-- the same project across frameworks within one platform
-- the same project across different platform categories
+- the same project tutorial across frameworks within one platform
+- the same project tutorial across different platform categories
 
 ### `frameworks/`
 
-This is the reusable support layer.
+This is the reusable support layer for future tutorial writing.
 
 The platform folder sits above the framework folder so future framework families can live beside each other without another repo rewrite.
-
-### `shared/`
-
-This stays cross-cutting and platform-agnostic unless a benchmark or security check truly needs platform-specific variants.
 
 ## Naming Conventions
 
@@ -175,16 +166,15 @@ Avoid display names in folder paths.
 1. Add or refine the app contract in `specs/level-x/<project>/`.
 2. Choose or add the platform group in `tutorials/level-x/<project>/<platform>/`.
 3. Reuse or improve the framework starter in `frameworks/<platform>/<framework-id>/`.
-4. Build the comparable app in `tutorials/level-x/<project>/<platform>/<framework-id>/`.
-5. Attach shared checks from `shared/` before calling the tutorial complete.
+4. Write the comparable tutorial in `tutorials/level-x/<project>/<platform>/<framework-id>/`.
 
 ## Real-World Example
 
 For `Guestbook / Comment Wall`, the comparison question today is:
 
-"How do the full-stack frameworks implement the same tiny SSR CRUD app with the same validation and the same benchmark contract?"
+"How do the full-stack frameworks teach the same tiny SSR CRUD app with the same validation and the same benchmark contract?"
 
-That is why the current implementations live under:
+That is why the current tutorial folders live under:
 
 ```text
 tutorials/level-1/guestbook-comment-wall/full-stack/
