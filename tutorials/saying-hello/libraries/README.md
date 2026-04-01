@@ -6,4 +6,6 @@
 
 Language-level tutorials for implementing the core `greet` logic before any platform adapter is added.
 
-No language tutorial has been scaffolded yet.
+## Contents
+
+- [C#](csharp/README.md)

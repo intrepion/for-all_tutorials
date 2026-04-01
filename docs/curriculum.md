@@ -41,9 +41,9 @@ Project slugs stay stable even if their place in this map changes.
 ### saying-hello
 
 - `Project`: `saying-hello`
-- `Status`: `planned`
+- `Status`: `in-progress`
 - `Prerequisites`: none
 - `Required Surfaces`: `command-line/all`
-- `Recommended First Library Tutorial`: choose a first language library tutorial when implementation starts
-- `Recommended First Surface Tutorial`: `command-line/all` in the same language as the first library tutorial
+- `Recommended First Library Tutorial`: [tutorials/saying-hello/libraries/csharp/README.md](../tutorials/saying-hello/libraries/csharp/README.md)
+- `Recommended First Surface Tutorial`: `command-line/all` in C# after the library tutorial is complete
 - `Notes`: start with a tiny core logic contract such as `greet(name) -> string`, test it thoroughly, then wrap it in a thin adapter; expansion targets may later include `web/back-end`, `web/front-end`, `web/full-stack`, `desktop/all`, `desktop/macos`, `desktop/linux`, `desktop/windows`, `mobile/all`, `mobile/ios`, and `mobile/android`
