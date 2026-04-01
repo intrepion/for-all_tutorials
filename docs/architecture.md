@@ -11,9 +11,10 @@ Structure, naming conventions, and workflow guidance for organizing comparable t
 Use a curriculum structure with an embedded platform layer inside each project:
 
 - Keep canonical app definitions in `specs/`.
+- Turn those specs into test plans before implementation starts.
 - Group tutorial folders by `level -> project -> platform -> framework`.
 - Use zero-padded level slugs such as `level-001-foundations`.
-- Keep benchmark and security expectations inside each spec until there are real shared assets that deserve their own home.
+- Keep testing, benchmark, and security expectations inside each spec until there are real shared assets that deserve their own home.
 
 That gives you the best of both worlds:
 
@@ -21,6 +22,7 @@ That gives you the best of both worlds:
 - Curriculum-first levels make the repo read like a learning path instead of a dump of app ideas.
 - The platform layer keeps the repo ready for non-full-stack stacks.
 - The top level stays lean while the repo is still primarily a documentation catalog.
+- Specs, tests, and coverage expectations stay close to the app contract instead of drifting into tribal knowledge.
 
 ## Why Curriculum Levels Matter
 
@@ -67,6 +69,25 @@ Later, you want room for categories such as:
 - `desktop`
 
 If the repo skips that layer inside `tutorials/` now, you would have to reorganize the whole tree later. Keeping it in the tutorial path makes the structure stable without needing a separate top-level `frameworks/` folder yet.
+
+## Why Specs And Tests Come First
+
+These tutorials are meant to teach disciplined delivery, not just framework syntax.
+
+That means the normal sequence should be:
+
+1. write or refine the spec
+2. turn acceptance criteria into tests
+3. implement the smallest change that makes the tests pass
+4. review code and branch coverage before moving on
+
+In practice, each tutorial should treat:
+
+- the spec as the source of truth
+- the test suite as the executable version of that truth
+- coverage as a signal for whether important paths are still untested
+
+High coverage does not replace judgment, but low coverage at the start of a tutorial usually means important branches were never turned into tests.
 
 ## Recommended Tree
 
@@ -131,6 +152,7 @@ Each project spec should define:
 - data model
 - validation rules
 - auth rules if applicable
+- testing and coverage expectations
 - benchmark contract
 - security checklist
 
@@ -161,10 +183,12 @@ Avoid display names in folder paths.
 ## Suggested Authoring Workflow
 
 1. Add or refine the app contract in `specs/<level>/<project>/`.
-2. Choose or add the platform group in `tutorials/<level>/<project>/<platform>/`.
-3. Write or refine the stack-specific tutorial in `tutorials/<level>/<project>/<platform>/<framework-id>/`.
-4. If a tutorial's teaching scope changes, move it to the level that best matches its prerequisites.
-5. If real cross-project framework guidance appears later, introduce a dedicated `frameworks/` folder only when it contains genuinely reusable material.
+2. Convert acceptance criteria, validation rules, and edge cases into a test plan before implementation starts.
+3. Choose or add the platform group in `tutorials/<level>/<project>/<platform>/`.
+4. Write or refine the stack-specific tutorial in `tutorials/<level>/<project>/<platform>/<framework-id>/` with a test-first workflow.
+5. Review code and branch coverage as part of the tutorial's definition of done, not as a postscript.
+6. If a tutorial's teaching scope changes, move it to the level that best matches its prerequisites.
+7. If real cross-project framework guidance appears later, introduce a dedicated `frameworks/` folder only when it contains genuinely reusable material.
 
 ## Real-World Example
 

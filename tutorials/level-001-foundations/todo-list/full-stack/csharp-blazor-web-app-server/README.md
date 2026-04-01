@@ -14,6 +14,7 @@ Build a small server-hosted Todo List that matches the canonical spec in [specs/
 - filter by `all`, `active`, and `completed`
 - validate on the server
 - persist to SQLite
+- start from the spec and turn it into tests before implementation
 - keep the UI simple and spec-focused
 
 ## Version Note
@@ -23,7 +24,7 @@ This repo now uses the human-readable stack label `C# / Blazor Web App (Server)`
 In the current SDK in this workspace, `10.0.201`, the supported project template is the unified Blazor Web App template:
 
 ```bash
-dotnet new blazor -int Server
+dotnet new blazor --interactivity Server
 ```
 
 For this tutorial, that template is the modern way to build the server-interactive Blazor app this stack is meant to represent.
@@ -35,6 +36,8 @@ For this tutorial, that template is the modern way to build the server-interacti
 - SQLite-backed persistence through EF Core
 - short-lived `DbContext` usage via `IDbContextFactory<TodoDbContext>`
 - HTML-escaped rendering through normal Razor output
+- automated tests that map back to the spec's acceptance criteria
+- a coverage report reviewed for both code and branch gaps
 
 ## Prerequisites
 
@@ -48,12 +51,25 @@ Install the EF Core tool once if needed:
 dotnet tool install --global dotnet-ef
 ```
 
+## Spec-Driven And Test-Driven Workflow
+
+Treat the spec as the contract and the test suite as the executable version of that contract.
+
+Recommended working order:
+
+1. Copy the Todo spec's acceptance criteria into a test checklist.
+2. Write the first failing tests for validation, filtering, and CRUD behavior.
+3. Implement the smallest slice of code that makes those tests pass.
+4. Generate a coverage report and close obvious gaps before moving to the next slice.
+
+The point is to avoid getting a mostly working UI first and only later discovering that filter transitions, invalid edits, or persistence edge cases were never encoded as tests.
+
 ## Create The Project
 
 From a clean working directory:
 
 ```bash
-dotnet new blazor -n TodoList.BlazorServer -o TodoList.BlazorServer -int Server -e
+dotnet new blazor --name TodoList.BlazorServer --output TodoList.BlazorServer --interactivity Server --empty
 cd TodoList.BlazorServer
 dotnet add package Microsoft.EntityFrameworkCore.Sqlite
 dotnet add package Microsoft.EntityFrameworkCore.Design
@@ -61,8 +77,8 @@ dotnet add package Microsoft.EntityFrameworkCore.Design
 
 Why this shape:
 
-- `-int Server` gives you server-side interactivity
-- `-e` starts from the empty template so the tutorial stays close to the repo spec
+- `--interactivity Server` gives you server-side interactivity
+- `--empty` starts from the empty template so the tutorial stays close to the repo spec
 - SQLite keeps persistence durable without introducing extra infrastructure
 
 ## Suggested File Map
@@ -72,6 +88,7 @@ Add these files:
 - `Data/TodoItem.cs`
 - `Data/TodoDbContext.cs`
 - `Services/TodoService.cs`
+- `TodoList.BlazorServer.Tests/`
 
 Update these files:
 
@@ -79,6 +96,13 @@ Update these files:
 - `Components/Pages/Home.razor`
 
 You can keep everything else from the template as-is for this tutorial.
+
+For the test project, a simple starting point is:
+
+```bash
+dotnet new xunit --name TodoList.BlazorServer.Tests
+dotnet add TodoList.BlazorServer.Tests reference TodoList.BlazorServer
+```
 
 ## Data Model
 
@@ -200,6 +224,48 @@ Implementation rules:
 
 That keeps the component focused on interaction and display, while the service owns parity with the spec.
 
+## Testing Strategy
+
+Aim for three layers of confidence from the beginning:
+
+- behavior tests around validation and filtering rules
+- service or integration tests around persistence and CRUD workflows
+- UI-facing tests around page states and visible validation feedback
+
+Concrete behaviors worth turning into tests early:
+
+- create rejects blank, whitespace-only, and overlong titles
+- edit rejects invalid values without corrupting stored data
+- `all`, `active`, and `completed` return the right subset
+- toggling under an active filter removes the item from the visible list when appropriate
+- persistence survives creating a new context and reloading data
+- rendered titles are HTML-escaped
+
+For .NET, a practical first pass is:
+
+- unit or service tests for normalization, validation, and filter logic
+- integration tests for EF Core + SQLite behavior
+- component or UI tests for the `Home.razor` states once the page exists
+
+## Coverage Expectations
+
+Treat coverage as a review tool, not a vanity number.
+
+For this tutorial:
+
+- aim for `100%` code and branch coverage on validation helpers and service-layer decision paths
+- aim for at least `90%` code coverage and `85%` branch coverage across app code overall
+- exclude generated files, migrations, and vendor assets only when clearly documented
+- investigate every uncovered branch before deciding it is acceptable to leave uncovered
+
+Once the first test suite exists, collect coverage on every green pass:
+
+```bash
+dotnet test --collect:"XPlat Code Coverage"
+```
+
+If you later add richer reporting, keep both code coverage and branch coverage visible in the tutorial notes.
+
 ## Build The Page
 
 Replace `Components/Pages/Home.razor` with the todo UI.
@@ -309,11 +375,14 @@ This tutorial is complete when all of the following are true:
 6. The `all`, `active`, and `completed` filters behave exactly like the spec.
 7. Titles are HTML-escaped when rendered.
 8. The tutorial remains close to the canonical app shape without extra features.
+9. Acceptance criteria are represented by automated tests.
+10. Coverage is reviewed for both code and branch gaps before the tutorial is called complete.
+11. Any intentional coverage exclusions are documented.
 
 ## Recommended Next Pass
 
 Once the written tutorial exists, the next improvement would be to add:
 
 - a short "Common Blazor Pitfalls" section
-- a "Testing Notes" section for component and integration coverage
+- a CI recipe for running tests and coverage on every change
 - a migration snippet for reseeding local benchmark data

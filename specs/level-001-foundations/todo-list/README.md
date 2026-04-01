@@ -135,6 +135,33 @@ The app is considered spec-complete when all of the following are true:
 10. A user can delete a todo.
 11. Todo titles are safely escaped when rendered in HTML.
 12. All state-changing requests are protected by the framework’s normal anti-forgery mechanism or an equivalent server-side safeguard.
+13. The acceptance criteria above are represented by automated tests.
+14. Validation rules and filter transitions are covered by automated tests, including failure paths.
+15. A coverage report is generated and reviewed before the tutorial is considered complete.
+
+## Testing And Coverage Contract
+
+This tutorial should be implemented in a spec-driven and test-driven way.
+
+That means:
+
+- treat the acceptance criteria as executable requirements, not just prose
+- write or update tests before, or at least alongside, implementation work
+- do not defer failure-path and edge-case tests until after the feature feels "done"
+- keep test names behavior-focused so they map back to the spec
+
+Recommended test layers:
+
+- unit tests for title normalization, title validation, and filter parsing
+- service or integration tests for create, edit, toggle, delete, ordering, filtering, and persistence behavior
+- UI, component, or end-to-end tests for empty state, filtered-empty state, validation messages, and HTML escaping
+
+Coverage expectations for the first complete pass:
+
+- aim for `100%` code and branch coverage on domain logic, validation helpers, and service-layer decision paths
+- aim for at least `90%` code coverage and `85%` branch coverage across app code overall
+- exclude generated code, migrations, and vendor assets only when clearly documented
+- if tooling cannot report branch coverage in a given stack, document that limitation and still cover every important decision path with tests
 
 ## Benchmark Contract
 
