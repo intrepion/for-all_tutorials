@@ -4,26 +4,29 @@ for-all_tutorials
 
 # For All Tutorials
 
-Comparable, spec-driven tutorials organized as a long-form curriculum, with room to grow into other platform categories later.
+Comparable, spec-driven tutorials organized as a project-first curriculum.
 
-The repo is organized as a curriculum-style tutorial matrix instead of a pure framework dump:
+The repo is organized around stable project slugs instead of level IDs in paths:
 
-- `specs/` defines the canonical requirements, testing expectations, benchmark expectations, and security checklist for each tutorial app.
-- `tutorials/` contains the per-stack tutorial folders, grouped by level, project, platform, and framework.
-- `docs/` explains the architecture and growth path.
+- `specs/` defines the canonical contract for each project app.
+- `tutorials/` contains per-project tutorials, split into language-level `libraries` and surface-level adapters.
+- `docs/` explains the architecture and keeps the mutable curriculum map.
 
-The platform layer inside `tutorials/` makes room for future `back-end`, `front-end`, `mobile`, `desktop`, and platform-specific stacks without reshaping the repo again, and the zero-padded `level-001` style folders keep the curriculum sortable as it grows past 100 levels.
+Curriculum order lives in [docs/curriculum.md](docs/curriculum.md), not in folder names. That keeps project paths stable while the learning sequence evolves.
 
 The default authoring flow is:
 
 1. refine the spec
-2. translate the spec into tests
-3. implement against those tests
-4. review code and branch coverage before calling the tutorial complete
+2. update the curriculum map
+3. translate the spec into tests
+4. build the language-level library tutorial
+5. build the surface adapter tutorial
+6. review code and branch coverage before calling the tutorial complete
 
-That means these tutorials should be spec-driven and test-driven from the beginning, with coverage pushed high early instead of being treated as a later cleanup step.
+Repo-wide coverage policy:
 
-See `docs/architecture.md` for the recommended directory structure and the tradeoffs behind it.
+- baseline: `90%` code coverage and `85%` branch coverage
+- validation and service logic: `100%` code coverage and `100%` branch coverage
 
 ## Contents
 

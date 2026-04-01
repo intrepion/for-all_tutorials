@@ -4,8 +4,9 @@
 
 # Docs
 
-Repository documentation for structure, workflow, and comparison rules.
+Repository documentation for structure, workflow, and curriculum planning.
 
 ## Contents
 
 - [Repository Architecture](architecture.md)
+- [Curriculum Map](curriculum.md)
