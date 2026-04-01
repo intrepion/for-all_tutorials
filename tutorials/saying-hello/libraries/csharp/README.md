@@ -4,13 +4,13 @@
 
 # C#
 
-Spec-driven, test-driven C# library tutorial for the `saying-hello` core `greet` contract.
+Spec-driven C# library tutorial for the `saying-hello` core `greet` contract.
 
 ## Goal
 
 Build the smallest C# library that satisfies the canonical `saying-hello` spec before any surface adapter is added.
 
-This tutorial should produce a tiny, well-tested core that later surface tutorials can call instead of re-implementing greeting rules in UI or transport code.
+This tutorial should produce a tiny core that later surface tutorials can call instead of re-implementing greeting rules in UI or transport code.
 
 ## Start From The Spec
 
@@ -28,13 +28,25 @@ Canonical behavior:
 - return `Hello, <name>!` when the trimmed value is non-empty
 - return `Hello!` when the trimmed value is empty or whitespace only
 
+## Related Setups
+
+Complete the reusable setup guides before or alongside this tutorial:
+
+- [C# Setup Root](../../../../setups/csharp/README.md)
+- [.NET SDK](../../../../setups/csharp/sdk/README.md)
+- [Testing](../../../../setups/csharp/testing/README.md)
+- [xUnit](../../../../setups/csharp/testing/xunit/README.md)
+- [NUnit](../../../../setups/csharp/testing/nunit/README.md)
+- [MSTest](../../../../setups/csharp/testing/mstest/README.md)
+- [TUnit](../../../../setups/csharp/testing/tunit/README.md)
+
 ## Prerequisites
 
-- .NET SDK `10.0.201` or later in the local environment
+- the shared C# setup guides are understood well enough to scaffold a library and a test project
 - comfort with basic `dotnet` CLI commands
-- willingness to follow red, green, refactor instead of writing the library first
+- willingness to follow red, green, refactor through one chosen testing setup instead of writing the library first
 
-## Recommended Project Shape
+## Shared Project Shape
 
 Create a small solution with one class library and one test project:
 
@@ -46,72 +58,40 @@ SayingHello.CSharp/
       SayingHello.csproj
       GreetingService.cs
   tests/
-    SayingHello.Tests/
-      SayingHello.Tests.csproj
+    <chosen-test-project>/
+      <chosen-test-project>.csproj
       GreetingServiceTests.cs
 ```
 
-Recommended commands:
+Shared scaffold commands:
 
 ```bash
 dotnet new sln --format sln --name SayingHello --output SayingHello.CSharp
-dotnet new classlib --name SayingHello --output SayingHello.CSharp/src/SayingHello --framework net10.0
-dotnet new xunit --name SayingHello.Tests --output SayingHello.CSharp/tests/SayingHello.Tests --framework net10.0
+dotnet new classlib --name SayingHello --output SayingHello.CSharp/src/SayingHello --framework <target-framework>
 dotnet sln SayingHello.CSharp/SayingHello.sln add SayingHello.CSharp/src/SayingHello/SayingHello.csproj
-dotnet sln SayingHello.CSharp/SayingHello.sln add SayingHello.CSharp/tests/SayingHello.Tests/SayingHello.Tests.csproj
-dotnet add SayingHello.CSharp/tests/SayingHello.Tests/SayingHello.Tests.csproj reference SayingHello.CSharp/src/SayingHello/SayingHello.csproj
 ```
 
-Using `--format sln` keeps the solution file familiar for early tutorials.
+Using `--format sln` keeps the solution file familiar for early tutorials. The chosen testing setup will add the test project afterwards.
 
 After scaffolding, remove the placeholder files that the templates generate and replace them with the names used in this tutorial:
 
 - delete `src/SayingHello/Class1.cs`
-- delete `tests/SayingHello.Tests/UnitTest1.cs`
 - add `src/SayingHello/GreetingService.cs`
-- add `tests/SayingHello.Tests/GreetingServiceTests.cs`
 
-## Work Test-First
+## Choose A Testing Setup
 
-Follow this loop for every slice:
+Pick one test framework and follow its setup guide:
 
-1. read the spec and choose one behavior
-2. write the smallest failing test for that behavior
-3. make the test compile
-4. implement the smallest change that makes it pass
-5. refactor only after the test is green
-6. review coverage before moving on
+- [xUnit](../../../../setups/csharp/testing/xunit/README.md)
+- [NUnit](../../../../setups/csharp/testing/nunit/README.md)
+- [MSTest](../../../../setups/csharp/testing/mstest/README.md)
+- [TUnit](../../../../setups/csharp/testing/tunit/README.md)
 
-Do not write the full `greet` method up front. Let the spec unfold through tests.
+Each setup guide explains how to scaffold the test project, attach it to the solution, and collect coverage. This project tutorial supplies the production target and the project-specific behaviors that those tests must cover.
 
-## First Failing Test
+## Shared Implementation Target
 
-Start with the happiest path:
-
-```csharp
-using SayingHello;
-
-namespace SayingHello.Tests;
-
-public sealed class GreetingServiceTests
-{
-    [Fact]
-    public void Greet_ReturnsGreetingForNonEmptyName()
-    {
-        var service = new GreetingService();
-
-        var result = service.Greet("Ada");
-
-        Assert.Equal("Hello, Ada!", result);
-    }
-}
-```
-
-Your first `dotnet test` run should fail because `GreetingService` does not exist yet. That is the right starting point.
-
-## First Green Implementation
-
-Create the smallest implementation that satisfies the first test:
+The production code should converge on a tiny service like this after the tests drive it there:
 
 ```csharp
 namespace SayingHello;
@@ -125,54 +105,11 @@ public sealed class GreetingService
 }
 ```
 
-This is intentionally incomplete. It gets one behavior green without pretending the rest of the spec is already handled.
-
-## Expand The Test Suite
-
-Add the remaining spec cases one by one:
-
-- `Greet_ReturnsGreetingForTrimmedName`
-- `Greet_ReturnsGenericGreetingForEmptyString`
-- `Greet_ReturnsGenericGreetingForWhitespaceOnlyString`
-
-Example trimming test:
-
-```csharp
-[Fact]
-public void Greet_ReturnsGreetingForTrimmedName()
-{
-    var service = new GreetingService();
-
-    var result = service.Greet("  Ada  ");
-
-    Assert.Equal("Hello, Ada!", result);
-}
-```
-
-Only after the trimming and empty-input tests are red should you refactor the implementation to something like:
-
-```csharp
-namespace SayingHello;
-
-public sealed class GreetingService
-{
-    public string Greet(string name)
-    {
-        var trimmedName = name.Trim();
-
-        if (trimmedName.Length == 0)
-        {
-            return "Hello!";
-        }
-
-        return $"Hello, {trimmedName}!";
-    }
-}
-```
+Do not start by typing the final version. Let the chosen testing setup and the project spec pull the implementation into shape through failing tests.
 
 ## Coverage Expectations
 
-This library tutorial should meet the repo-wide baseline:
+Whichever testing setup you choose, the resulting tutorial should meet the repo-wide baseline:
 
 - `90%` code coverage
 - `85%` branch coverage
@@ -189,28 +126,12 @@ That means the tests should fully exercise:
 - empty input
 - whitespace-only input
 
-## Suggested Test Commands
-
-Run the test suite often:
-
-```bash
-dotnet test SayingHello.CSharp/SayingHello.sln
-```
-
-The current xUnit template in this workspace includes `coverlet.collector` by default, so a concrete coverage command can be:
-
-```bash
-dotnet test SayingHello.CSharp/SayingHello.sln --collect:"XPlat Code Coverage"
-```
-
-The important requirement is to verify both the repo's `90/85` baseline and the `100/100` goal for service logic.
-
 ## Definition Of Done
 
 This tutorial is done when:
 
 - the library behavior matches [specs/saying-hello/README.md](../../../../specs/saying-hello/README.md)
-- the tutorial clearly follows a red, green, refactor sequence
+- one testing setup clearly supports a red, green, refactor sequence
 - the core `GreetingService.Greet` behavior is thoroughly tested
 - the library achieves `100%` code coverage and `100%` branch coverage for the service logic
 - a later surface tutorial can consume this library instead of rewriting the greeting rules

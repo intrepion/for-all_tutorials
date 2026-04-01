@@ -11,6 +11,7 @@ Practical guidance for organizing this repo as a spec-driven, test-driven tutori
 Use a project-first structure with curriculum ordering kept outside the filesystem:
 
 - keep stable project slugs in `specs/` and `tutorials/`
+- keep reusable setup guidance in `setups/`
 - keep curriculum order in [docs/curriculum.md](curriculum.md)
 - treat each project spec as the canonical contract
 - split tutorials into a core-logic `libraries` branch and a surface-adapter `surfaces` branch
@@ -27,6 +28,7 @@ This separates identity from ordering:
 - curriculum order is mutable
 - every tutorial is still a project app
 - specs are the source of truth
+- setups capture reusable environment and tooling guidance
 - tests are the executable form of the spec
 - code coverage and branch coverage are part of done
 - surface tutorials should keep adapters thin by building on a language-level core first
@@ -43,11 +45,32 @@ for-all_tutorials/
     saying-hello/
       README.md
 
+  setups/
+    README.md
+    csharp/
+      README.md
+      sdk/
+        README.md
+      testing/
+        README.md
+        xunit/
+          README.md
+        nunit/
+          README.md
+        mstest/
+          README.md
+        tunit/
+          README.md
+      frameworks/
+        README.md
+
   tutorials/
     saying-hello/
       README.md
       libraries/
         README.md
+        csharp/
+          README.md
       surfaces/
         README.md
         command-line/
@@ -127,6 +150,7 @@ Each library tutorial should:
 - focus on domain logic, validation, and service behavior
 - establish the strongest tests and coverage first
 - be usable as the conceptual base for later surface tutorials in the same language
+- link to the relevant setup docs instead of embedding local toolchain details
 
 ### `surfaces/`
 
@@ -144,6 +168,29 @@ Each surface tutorial should:
 - keep surface-specific code thin
 - avoid moving core rules into the UI or transport layer
 - focus on adapting the already-defined project behavior to the selected surface
+
+## Setups
+
+Reusable setup guidance belongs in `setups/`, not inside individual project tutorials.
+
+Recommended shape:
+
+```text
+setups/<language>/
+setups/<language>/sdk/
+setups/<language>/testing/<test-framework>/
+setups/<language>/frameworks/<framework>/
+```
+
+That means:
+
+- keep one reusable setup area per language
+- put xUnit, NUnit, MSTest, TUnit, or similar variants under `setups/<language>/testing/`
+- put framework bootstrap guidance under `setups/<language>/frameworks/`
+- keep project tutorials focused on the project contract and project flow
+- keep environment, template, runner, and coverage-command details in setup docs
+
+This avoids copying the same environment notes across every project tutorial.
 
 ## Allowed Surfaces And Targets
 
@@ -215,8 +262,8 @@ If a stack cannot produce a trustworthy branch-coverage metric with the approved
 
 1. Create or refine `specs/<project>/README.md`.
 2. Add or update the project's entry in [docs/curriculum.md](curriculum.md).
-3. Write the first language library tutorial in `tutorials/<project>/libraries/<language>/`.
-4. Build tests for the core logic before building the surface adapter.
+3. Create or refine the relevant setup docs in `setups/<language>/`.
+4. Write the first language library tutorial in `tutorials/<project>/libraries/<language>/`.
 5. Add the first surface tutorial in `tutorials/<project>/surfaces/<surface>/<target>/<framework>/`.
 6. Keep adapter code thin and keep business rules in the library-level core.
 7. Review code coverage and branch coverage before marking the tutorial complete.
@@ -229,7 +276,8 @@ Then the recommended first path is:
 
 1. write `specs/saying-hello/README.md`
 2. add `saying-hello` to [docs/curriculum.md](curriculum.md)
-3. create `tutorials/saying-hello/libraries/<language>/` and implement `greet`
-4. test that logic to the repo's coverage standard
-5. create `tutorials/saying-hello/surfaces/command-line/all/<framework>/`
-6. wrap the already-tested `greet` logic in a thin CLI adapter
+3. create reusable C# setup docs such as `setups/csharp/sdk/` and `setups/csharp/testing/xunit/`
+4. create `tutorials/saying-hello/libraries/csharp/` for the project-specific core logic flow
+5. test `greet` to the repo's coverage standard using one chosen C# testing setup
+6. create `tutorials/saying-hello/surfaces/command-line/all/<framework>/`
+7. wrap the already-tested `greet` logic in a thin CLI adapter
