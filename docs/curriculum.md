@@ -30,8 +30,8 @@ Each project entry should capture:
 - `Status`
 - `Prerequisites`
 - `Required Surfaces`
-- `Recommended First Library Tutorial`
-- `Recommended First Surface Tutorial`
+- `Recommended Tutorial`
+- `Suggested Setup Path`
 - `Notes`
 
 Project slugs stay stable even if their place in this map changes.
@@ -44,6 +44,6 @@ Project slugs stay stable even if their place in this map changes.
 - `Status`: `in-progress`
 - `Prerequisites`: none
 - `Required Surfaces`: `command-line/all`
-- `Recommended First Library Tutorial`: [tutorials/saying-hello/libraries/csharp/README.md](../tutorials/saying-hello/libraries/csharp/README.md)
-- `Recommended First Surface Tutorial`: `command-line/all` in C# after the library tutorial is complete
-- `Notes`: start with a tiny core logic contract such as `greet(name) -> string`, use the shared C# setup docs before building the project tutorial, test it thoroughly, then wrap it in a thin adapter; expansion targets may later include `web/back-end`, `web/front-end`, `web/full-stack`, `desktop/all`, `desktop/macos`, `desktop/linux`, `desktop/windows`, `mobile/all`, `mobile/ios`, and `mobile/android`
+- `Recommended Tutorial`: [tutorials/saying-hello/README.md](../tutorials/saying-hello/README.md)
+- `Suggested Setup Path`: start with [setups/csharp/sdk/README.md](../setups/csharp/sdk/README.md) and one C# testing setup such as [setups/csharp/testing/xunit/README.md](../setups/csharp/testing/xunit/README.md)
+- `Notes`: start with a tiny core logic contract such as `greet(name) -> string`, follow the stack-agnostic TDD tutorial, then realize it through one chosen setup path and wrap it in a thin adapter; expansion targets may later include `web/back-end`, `web/front-end`, `web/full-stack`, `desktop/all`, `desktop/macos`, `desktop/linux`, `desktop/windows`, `mobile/all`, `mobile/ios`, and `mobile/android`

@@ -4,7 +4,7 @@
 
 # Tutorials
 
-Per-project tutorials, split into language-level core logic and surface-level adapters.
+Per-project tutorials that explain the stack-agnostic TDD flow for each project and point to reusable setup guides when stack-specific details are needed.
 
 ## Contents
 

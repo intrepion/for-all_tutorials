@@ -14,7 +14,7 @@ Use a project-first structure with curriculum ordering kept outside the filesyst
 - keep reusable setup guidance in `setups/`
 - keep curriculum order in [docs/curriculum.md](curriculum.md)
 - treat each project spec as the canonical contract
-- split tutorials into a core-logic `libraries` branch and a surface-adapter `surfaces` branch
+- keep tutorials stack-agnostic and project-specific
 - require tests and coverage from the beginning instead of treating them as cleanup
 
 This separates identity from ordering:
@@ -31,7 +31,7 @@ This separates identity from ordering:
 - setups capture reusable environment and tooling guidance
 - tests are the executable form of the spec
 - code coverage and branch coverage are part of done
-- surface tutorials should keep adapters thin by building on a language-level core first
+- project tutorials should keep adapters thin by building on a well-tested core logic unit first
 
 ## Recommended Tree
 
@@ -67,38 +67,6 @@ for-all_tutorials/
   tutorials/
     saying-hello/
       README.md
-      libraries/
-        README.md
-        csharp/
-          README.md
-      surfaces/
-        README.md
-        command-line/
-          all/
-            README.md
-        web/
-          back-end/
-            README.md
-          front-end/
-            README.md
-          full-stack/
-            README.md
-        desktop/
-          all/
-            README.md
-          macos/
-            README.md
-          linux/
-            README.md
-          windows/
-            README.md
-        mobile/
-          all/
-            README.md
-          ios/
-            README.md
-          android/
-            README.md
 ```
 
 ## Specs
@@ -117,57 +85,33 @@ At minimum, each spec should define:
 - benchmark expectations if relevant
 - security expectations if relevant
 
-The core logic contract is the shared concept that library tutorials and surface tutorials both implement.
+The core logic contract is the shared concept that every project tutorial and setup-guided implementation should realize consistently.
 
 ## Tutorials
 
-Each project gets one tutorial root:
+Each project gets one stack-agnostic tutorial root:
 
 ```text
-tutorials/<project>/
+tutorials/<project>/README.md
 ```
 
-Inside that root, tutorials split into two branches:
+The project tutorial should explain:
 
-```text
-tutorials/<project>/libraries/
-tutorials/<project>/surfaces/
-```
+- the project goal
+- the contract it is implementing from the spec
+- the red, green, refactor sequence
+- the order in which behaviors should be introduced
+- the point at which a thin surface adapter is added
+- the coverage expectations for the finished project
 
-### `libraries/`
+The project tutorial should not duplicate:
 
-Library tutorials teach the language-level core logic for the project before any platform adapter is added.
+- language installation guidance
+- framework bootstrap guidance
+- test-runner template details
+- environment-specific commands that are already covered in `setups/`
 
-Recommended shape:
-
-```text
-tutorials/<project>/libraries/<language>/
-```
-
-Each library tutorial should:
-
-- implement the core logic contract from the spec
-- focus on domain logic, validation, and service behavior
-- establish the strongest tests and coverage first
-- be usable as the conceptual base for later surface tutorials in the same language
-- link to the relevant setup docs instead of embedding local toolchain details
-
-### `surfaces/`
-
-Surface tutorials adapt the project to a user-facing environment.
-
-Recommended shape:
-
-```text
-tutorials/<project>/surfaces/<surface>/<target>/<framework>/
-```
-
-Each surface tutorial should:
-
-- point back to the relevant library tutorial when one exists
-- keep surface-specific code thin
-- avoid moving core rules into the UI or transport layer
-- focus on adapting the already-defined project behavior to the selected surface
+If a project eventually grows too large for one file, add a small number of sibling markdown files under `tutorials/<project>/` rather than creating language or framework subtrees.
 
 ## Setups
 
@@ -215,7 +159,7 @@ Current target taxonomy:
 - `mobile/ios`
 - `mobile/android`
 
-Using explicit `target` folders, including `all`, keeps the tree uniform and scriptable.
+Using explicit target names, including `all`, keeps the platform vocabulary consistent across specs, curriculum entries, and setup guides.
 
 ## Curriculum Map
 
@@ -228,8 +172,8 @@ That map should carry:
 - status such as `planned`, `in-progress`, or `complete`
 - prerequisites
 - required surfaces
-- recommended first library tutorial
-- recommended first surface tutorial
+- recommended tutorial
+- suggested setup path
 - notes
 
 Avoid planning dozens of speculative projects far in advance. Add projects when there is genuine intent to build them, and reorder the map as the curriculum becomes clearer.
@@ -263,9 +207,9 @@ If a stack cannot produce a trustworthy branch-coverage metric with the approved
 1. Create or refine `specs/<project>/README.md`.
 2. Add or update the project's entry in [docs/curriculum.md](curriculum.md).
 3. Create or refine the relevant setup docs in `setups/<language>/`.
-4. Write the first language library tutorial in `tutorials/<project>/libraries/<language>/`.
-5. Add the first surface tutorial in `tutorials/<project>/surfaces/<surface>/<target>/<framework>/`.
-6. Keep adapter code thin and keep business rules in the library-level core.
+4. Write the project tutorial in `tutorials/<project>/README.md`.
+5. Build the code by combining the project tutorial with one chosen setup path.
+6. Keep adapter code thin and keep business rules in the core logic unit.
 7. Review code coverage and branch coverage before marking the tutorial complete.
 
 ## Real-World Example
@@ -277,7 +221,7 @@ Then the recommended first path is:
 1. write `specs/saying-hello/README.md`
 2. add `saying-hello` to [docs/curriculum.md](curriculum.md)
 3. create reusable C# setup docs such as `setups/csharp/sdk/` and `setups/csharp/testing/xunit/`
-4. create `tutorials/saying-hello/libraries/csharp/` for the project-specific core logic flow
-5. test `greet` to the repo's coverage standard using one chosen C# testing setup
-6. create `tutorials/saying-hello/surfaces/command-line/all/<framework>/`
-7. wrap the already-tested `greet` logic in a thin CLI adapter
+4. write [tutorials/saying-hello/README.md](../tutorials/saying-hello/README.md) as the stack-agnostic TDD walkthrough
+5. test `greet` to the repo's coverage standard using one chosen setup path
+6. add the required `command-line/all` adapter
+7. keep the adapter thin and the greeting rules in the tested core logic
