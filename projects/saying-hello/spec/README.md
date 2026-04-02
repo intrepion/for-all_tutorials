@@ -1,10 +1,10 @@
 <!-- breadcrumbs:start -->
-[for-all_tutorials](../../README.md) / [Specs](../README.md) / Saying Hello
+[for-all_tutorials](../../../README.md) / [Projects](../../README.md) / [Saying Hello](../README.md) / Spec
 <!-- breadcrumbs:end -->
 
-# Saying Hello
+# Spec
 
-Canonical project contract for the first project app in the curriculum.
+Canonical project contract for the `saying-hello` project.
 
 ## Goal
 
@@ -17,7 +17,7 @@ Build the smallest useful project app that introduces:
 
 ## Core Logic Contract
 
-The shared library-level contract is:
+The shared contract is:
 
 ```text
 greet(name: string) -> string
@@ -49,7 +49,7 @@ This first project does not include:
 
 ## Surface Expectations
 
-Every surface tutorial should adapt the same `greet` behavior instead of redefining it.
+Every implementation path should adapt the same `greet` behavior instead of redefining it.
 
 Initial required surface:
 

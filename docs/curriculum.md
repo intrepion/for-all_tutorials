@@ -44,6 +44,6 @@ Project slugs stay stable even if their place in this map changes.
 - `Status`: `in-progress`
 - `Prerequisites`: none
 - `Required Surfaces`: `command-line/all`
-- `Recommended Tutorial`: [tutorials/saying-hello/README.md](../tutorials/saying-hello/README.md)
-- `Suggested Setup Path`: start with [setups/csharp/sdk/README.md](../setups/csharp/sdk/README.md) and one C# testing setup such as [setups/csharp/testing/xunit/README.md](../setups/csharp/testing/xunit/README.md)
+- `Recommended Tutorial`: [projects/saying-hello/tutorial/tdd.md](../projects/saying-hello/tutorial/tdd.md)
+- `Suggested Setup Path`: start with [setups/code/dotnet/toolchain.md](../setups/code/dotnet/toolchain.md) and one `.NET` testing setup such as [setups/code/dotnet/testing/xunit.md](../setups/code/dotnet/testing/xunit.md)
 - `Notes`: start with a tiny core logic contract such as `greet(name) -> string`, follow the stack-agnostic TDD tutorial, then realize it through one chosen setup path and wrap it in a thin adapter; expansion targets may later include `web/back-end`, `web/front-end`, `web/full-stack`, `desktop/all`, `desktop/macos`, `desktop/linux`, `desktop/windows`, `mobile/all`, `mobile/ios`, and `mobile/android`

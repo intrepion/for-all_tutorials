@@ -1,14 +1,14 @@
 <!-- breadcrumbs:start -->
-[for-all_tutorials](../../../../README.md) / [Setups](../../../README.md) / [C#](../../README.md) / [Testing](../README.md) / MSTest
+[for-all_tutorials](../../../../README.md) / [Setups](../../../README.md) / [Code](../../README.md) / [dotnet](../README.md) / [Testing](README.md) / mstest.md
 <!-- breadcrumbs:end -->
 
 # MSTest
 
-Reusable MSTest setup guide for C# tutorials.
+Reusable MSTest setup guide for `.NET` tutorials.
 
 ## Goal
 
-Create an MSTest test project, attach it to a C# solution, and keep coverage collection aligned with the repo policy.
+Create an MSTest test project, attach it to a `.NET` solution, and keep coverage collection aligned with the repo policy.
 
 ## Create The Test Project
 
@@ -20,7 +20,7 @@ dotnet sln <solution-path> add <test-project-path>/<test-project-name>.csproj
 dotnet add <test-project-path>/<test-project-name>.csproj reference <library-project-path>
 ```
 
-The explicit `--coverage-tool coverlet` keeps the coverage workflow aligned with the other C# test-framework setups.
+The explicit `--coverage-tool coverlet` keeps the coverage workflow aligned with the other `.NET` testing setups.
 
 Then replace the template placeholder file such as `Test1.cs` with the test file names used by the tutorial.
 

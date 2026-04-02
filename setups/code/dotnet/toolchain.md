@@ -1,14 +1,14 @@
 <!-- breadcrumbs:start -->
-[for-all_tutorials](../../../README.md) / [Setups](../../README.md) / [C#](../README.md) / .NET SDK
+[for-all_tutorials](../../../README.md) / [Setups](../../README.md) / [Code](../README.md) / [dotnet](README.md) / toolchain.md
 <!-- breadcrumbs:end -->
 
-# .NET SDK
+# Toolchain
 
-Base C# and .NET setup guidance for project tutorials that use the `dotnet` toolchain.
+Core `.NET` toolchain guidance for project tutorials that use the `dotnet` ecosystem.
 
 ## Goal
 
-Set up a clean, repeatable foundation for C# tutorials without tying the instructions to any one local machine.
+Set up a clean, repeatable foundation for `.NET` tutorials without tying the instructions to any one local machine.
 
 ## Scope
 
@@ -16,12 +16,12 @@ This guide covers:
 
 - the base `dotnet` CLI workflow
 - solution and class-library scaffolding
-- common repository conventions for C# tutorials
+- common repository conventions for `.NET` tutorials
 
 This guide does not cover:
 
 - test-framework-specific scaffolding
-- UI or web framework bootstrapping
+- framework-specific bootstrapping
 - project-specific business logic
 
 ## Recommended Conventions
@@ -29,12 +29,12 @@ This guide does not cover:
 - use SDK-style projects
 - keep source under `src/`
 - keep tests under `tests/`
-- keep nullable reference types enabled
-- keep implicit usings enabled unless a tutorial has a strong reason not to
+- keep nullable reference types enabled when the chosen language supports them
+- keep a small solution or equivalent workspace root when the stack supports it
 
 ## Verify The Toolchain
 
-Before starting a C# tutorial, confirm that `dotnet` is available:
+Before starting a `.NET` tutorial, confirm that `dotnet` is available:
 
 ```bash
 dotnet --info
@@ -66,7 +66,7 @@ If the class-library template creates a placeholder file such as `Class1.cs`, re
 
 ## Ready State
 
-The base C# SDK setup is ready when:
+The base `.NET` toolchain setup is ready when:
 
 - `dotnet` commands run successfully
 - the solution exists

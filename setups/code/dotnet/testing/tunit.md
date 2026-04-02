@@ -1,14 +1,14 @@
 <!-- breadcrumbs:start -->
-[for-all_tutorials](../../../../README.md) / [Setups](../../../README.md) / [C#](../../README.md) / [Testing](../README.md) / TUnit
+[for-all_tutorials](../../../../README.md) / [Setups](../../../README.md) / [Code](../../README.md) / [dotnet](../README.md) / [Testing](README.md) / tunit.md
 <!-- breadcrumbs:end -->
 
 # TUnit
 
-Reusable TUnit setup guide for C# tutorials.
+Reusable TUnit setup guide for `.NET` tutorials.
 
 ## Goal
 
-Create a TUnit test project, attach it to a C# solution, and use Microsoft.Testing.Platform-compatible coverage collection.
+Create a TUnit test project, attach it to a `.NET` solution, and use Microsoft.Testing.Platform-compatible coverage collection.
 
 ## Option A: Install The Template
 

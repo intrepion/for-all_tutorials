@@ -10,11 +10,10 @@ Practical guidance for organizing this repo as a spec-driven, test-driven tutori
 
 Use a project-first structure with curriculum ordering kept outside the filesystem:
 
-- keep stable project slugs in `specs/` and `tutorials/`
+- keep stable project slugs in `projects/`
 - keep reusable setup guidance in `setups/`
 - keep curriculum order in [docs/curriculum.md](curriculum.md)
-- treat each project spec as the canonical contract
-- keep tutorials stack-agnostic and project-specific
+- keep each project's overview, spec, and tutorial materials together
 - require tests and coverage from the beginning instead of treating them as cleanup
 
 This separates identity from ordering:
@@ -27,7 +26,7 @@ This separates identity from ordering:
 - project slugs are stable
 - curriculum order is mutable
 - every tutorial is still a project app
-- specs are the source of truth
+- each project keeps its own spec and tutorial side by side
 - setups capture reusable environment and tooling guidance
 - tests are the executable form of the spec
 - code coverage and branch coverage are part of done
@@ -41,37 +40,59 @@ for-all_tutorials/
     architecture.md
     curriculum.md
 
-  specs/
-    saying-hello/
-      README.md
-
   setups/
     README.md
-    csharp/
+    code/
       README.md
-      sdk/
+      dotnet/
         README.md
-      testing/
-        README.md
-        xunit/
+        languages.md
+        toolchain.md
+        testing/
           README.md
-        nunit/
+          xunit.md
+          nunit.md
+          mstest.md
+          tunit.md
+        frameworks/
           README.md
-        mstest/
-          README.md
-        tunit/
-          README.md
-      frameworks/
-        README.md
+    storage/
+      README.md
 
-  tutorials/
+  projects/
+    README.md
     saying-hello/
       README.md
+      spec/
+        README.md
+      tutorial/
+        README.md
+        tdd.md
 ```
 
-## Specs
+## Projects
 
-Each project spec is the canonical contract for every tutorial built from that project.
+Each project should keep its own materials together:
+
+```text
+projects/<project>/
+  README.md
+  spec/
+    README.md
+  tutorial/
+    README.md
+    tdd.md
+```
+
+This lets one folder answer three questions cleanly:
+
+- what is this project?
+- what is the canonical contract?
+- how should it be built test-first?
+
+### `projects/<project>/spec/`
+
+The spec is the canonical contract for every implementation of that project.
 
 At minimum, each spec should define:
 
@@ -87,15 +108,14 @@ At minimum, each spec should define:
 
 The core logic contract is the shared concept that every project tutorial and setup-guided implementation should realize consistently.
 
-## Tutorials
+### `projects/<project>/tutorial/`
 
-Each project gets one stack-agnostic tutorial root:
+The tutorial folder should contain:
 
-```text
-tutorials/<project>/README.md
-```
+- a `README.md` that explains the files in the folder
+- a `tdd.md` walkthrough that explains the stack-agnostic red, green, refactor sequence
 
-The project tutorial should explain:
+The TDD walkthrough should explain:
 
 - the project goal
 - the contract it is implementing from the spec
@@ -111,7 +131,7 @@ The project tutorial should not duplicate:
 - test-runner template details
 - environment-specific commands that are already covered in `setups/`
 
-If a project eventually grows too large for one file, add a small number of sibling markdown files under `tutorials/<project>/` rather than creating language or framework subtrees.
+If a project eventually grows too large for one file, add a small number of sibling markdown files under `projects/<project>/tutorial/` rather than creating language or framework subtrees.
 
 ## Setups
 
@@ -120,17 +140,22 @@ Reusable setup guidance belongs in `setups/`, not inside individual project tuto
 Recommended shape:
 
 ```text
-setups/<language>/
-setups/<language>/sdk/
-setups/<language>/testing/<test-framework>/
-setups/<language>/frameworks/<framework>/
+setups/code/<ecosystem>/
+setups/code/<ecosystem>/languages.md
+setups/code/<ecosystem>/toolchain.md
+setups/code/<ecosystem>/testing/<framework>.md
+setups/code/<ecosystem>/frameworks/<framework>.md
+setups/storage/
 ```
 
 That means:
 
-- keep one reusable setup area per language
-- put xUnit, NUnit, MSTest, TUnit, or similar variants under `setups/<language>/testing/`
-- put framework bootstrap guidance under `setups/<language>/frameworks/`
+- keep one reusable setup area per code ecosystem
+- put language choices in `languages.md`
+- standardize core ecosystem guidance in `toolchain.md`
+- put xUnit, NUnit, MSTest, TUnit, or similar variants under `setups/code/<ecosystem>/testing/`
+- put framework bootstrap guidance under `setups/code/<ecosystem>/frameworks/`
+- keep storage and database concerns under `setups/storage/`
 - keep project tutorials focused on the project contract and project flow
 - keep environment, template, runner, and coverage-command details in setup docs
 
@@ -204,13 +229,14 @@ If a stack cannot produce a trustworthy branch-coverage metric with the approved
 
 ## Suggested Authoring Workflow
 
-1. Create or refine `specs/<project>/README.md`.
+1. Create or refine `projects/<project>/README.md`.
 2. Add or update the project's entry in [docs/curriculum.md](curriculum.md).
-3. Create or refine the relevant setup docs in `setups/<language>/`.
-4. Write the project tutorial in `tutorials/<project>/README.md`.
-5. Build the code by combining the project tutorial with one chosen setup path.
-6. Keep adapter code thin and keep business rules in the core logic unit.
-7. Review code coverage and branch coverage before marking the tutorial complete.
+3. Create or refine the relevant setup docs in `setups/code/<ecosystem>/` or `setups/storage/`.
+4. Create or refine `projects/<project>/spec/README.md`.
+5. Write the project tutorial index and `projects/<project>/tutorial/tdd.md`.
+6. Build the code by combining the project tutorial with one chosen setup path.
+7. Keep adapter code thin and keep business rules in the core logic unit.
+8. Review code coverage and branch coverage before marking the tutorial complete.
 
 ## Real-World Example
 
@@ -218,10 +244,10 @@ For `saying-hello`, the project spec defines a tiny contract such as `greet(name
 
 Then the recommended first path is:
 
-1. write `specs/saying-hello/README.md`
+1. write [projects/saying-hello/spec/README.md](../projects/saying-hello/spec/README.md)
 2. add `saying-hello` to [docs/curriculum.md](curriculum.md)
-3. create reusable C# setup docs such as `setups/csharp/sdk/` and `setups/csharp/testing/xunit/`
-4. write [tutorials/saying-hello/README.md](../tutorials/saying-hello/README.md) as the stack-agnostic TDD walkthrough
+3. create reusable `.NET` setup docs such as `setups/code/dotnet/toolchain.md` and `setups/code/dotnet/testing/xunit.md`
+4. write [projects/saying-hello/tutorial/README.md](../projects/saying-hello/tutorial/README.md) and [projects/saying-hello/tutorial/tdd.md](../projects/saying-hello/tutorial/tdd.md)
 5. test `greet` to the repo's coverage standard using one chosen setup path
 6. add the required `command-line/all` adapter
 7. keep the adapter thin and the greeting rules in the tested core logic

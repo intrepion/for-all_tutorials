@@ -4,8 +4,9 @@
 
 # Setups
 
-Reusable language, tooling, testing, and framework setup guides that project tutorials can reference instead of repeating environment-specific instructions.
+Reusable ecosystem, tooling, testing, and storage setup guides that project tutorials can reference instead of repeating environment-specific instructions.
 
 ## Contents
 
-- [C#](csharp/README.md)
+- [Code](code/README.md)
+- [Storage](storage/README.md)

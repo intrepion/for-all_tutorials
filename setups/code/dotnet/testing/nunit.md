@@ -1,21 +1,21 @@
 <!-- breadcrumbs:start -->
-[for-all_tutorials](../../../../README.md) / [Setups](../../../README.md) / [C#](../../README.md) / [Testing](../README.md) / xUnit
+[for-all_tutorials](../../../../README.md) / [Setups](../../../README.md) / [Code](../../README.md) / [dotnet](../README.md) / [Testing](README.md) / nunit.md
 <!-- breadcrumbs:end -->
 
-# xUnit
+# NUnit
 
-Reusable xUnit setup guide for C# tutorials.
+Reusable NUnit setup guide for `.NET` tutorials.
 
 ## Goal
 
-Create an xUnit test project, attach it to a C# solution, and enable repeatable coverage collection.
+Create an NUnit test project, attach it to a `.NET` solution, and enable repeatable coverage collection.
 
 ## Create The Test Project
 
 Substitute the placeholders with the names and paths from the project tutorial:
 
 ```bash
-dotnet new xunit --name <test-project-name> --output <test-project-path> --framework <target-framework>
+dotnet new nunit --name <test-project-name> --output <test-project-path> --framework <target-framework>
 dotnet sln <solution-path> add <test-project-path>/<test-project-name>.csproj
 dotnet add <test-project-path>/<test-project-name>.csproj reference <library-project-path>
 ```
@@ -29,10 +29,10 @@ namespace Example.Tests;
 
 public sealed class ExampleTests
 {
-    [Fact]
+    [Test]
     public void Example_Passes()
     {
-        Assert.Equal(4, 2 + 2);
+        Assert.That(2 + 2, Is.EqualTo(4));
     }
 }
 ```
