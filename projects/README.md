@@ -38,8 +38,15 @@ Project specs in this folder share these rules:
 - a single run only needs one chosen surface and target path
 - the currently supported setup paths belong in [docs/curriculum.md](../docs/curriculum.md) and `setups/`, not in each spec
 - adapters must not redefine the core project rules
+
+## Shared Coverage Policy
+
+Unless a local spec explicitly declares an exception, projects in this folder use this coverage policy:
+
 - baseline coverage is `90%` code and `85%` branch
 - core validation and service logic should target `100%` code and `100%` branch
+
+Local specs should only restate coverage numbers when a project has a special-case requirement that differs from this shared policy.
 
 ## Shared Tutorial Workflow
 

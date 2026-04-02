@@ -61,6 +61,8 @@ For this project, the core repo owns the `greet` rules and adapter repos must no
 
 ## Testing And Coverage Contract
 
+This spec follows the shared coverage policy in [Projects](../../README.md#shared-coverage-policy).
+
 This project should be built in a spec-driven and test-driven way.
 
 Minimum test expectations:
@@ -69,10 +71,3 @@ Minimum test expectations:
 - tests for trimming behavior
 - tests for empty and whitespace-only input
 - tests for every adapter built in the chosen run that prove it delegates to the core logic correctly
-
-Coverage policy:
-
-- baseline: `90%` code coverage and `85%` branch coverage
-- validation and service logic: `100%` code coverage and `100%` branch coverage
-
-For this project, the core `greet` logic should meet the stricter `100%` / `100%` standard.
