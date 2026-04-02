@@ -12,6 +12,7 @@ Project-specific materials, with each project keeping its own overview, spec, an
 - [Mad Lib](mad-lib/README.md)
 - [Printing Quotes](printing-quotes/README.md)
 - [Saying Hello](saying-hello/README.md)
+- [Simple Math](simple-math/README.md)
 
 ## Shared Workflow
 

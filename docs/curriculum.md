@@ -276,3 +276,14 @@ Project slugs stay stable even if their place in this map changes.
 - `Recommended Tutorial`: [projects/mad-lib/tutorial/README.md](../projects/mad-lib/tutorial/README.md)
 - `Suggested Output Repos`: one core library repo for the chosen ecosystem, language, and test framework, then one adapter repo for the chosen surface implementation
 - `Notes`: start with a small formatting contract such as `format_mad_lib(noun, verb, adjective, adverb) -> string`, build the core repo first, then add adapter repos that consume that core; this project builds on the earlier formatting exercises by combining four named inputs into one fixed story template
+
+## Stage 4
+
+### simple-math
+
+- `Project`: `simple-math`
+- `Status`: `planned`
+- `Prerequisites`: `count-characters`
+- `Recommended Tutorial`: [projects/simple-math/tutorial/README.md](../projects/simple-math/tutorial/README.md)
+- `Suggested Output Repos`: one core library repo for the chosen ecosystem, language, and test framework, then one adapter repo for the chosen surface implementation
+- `Notes`: start with small arithmetic and formatting contracts such as `calculate_simple_math(first, second)` and `format_simple_math_report(first, second, results)`, build the core repo first, then add adapter repos that consume that core; this project builds on earlier input-to-output exercises by introducing numeric parsing, arithmetic, and multi-line report formatting
