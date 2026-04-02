@@ -9,6 +9,7 @@ Project-specific materials, with each project keeping its own overview, spec, an
 ## Contents
 
 - [Counting the Number of Characters](count-characters/README.md)
+- [Mad Lib](mad-lib/README.md)
 - [Printing Quotes](printing-quotes/README.md)
 - [Saying Hello](saying-hello/README.md)
 
