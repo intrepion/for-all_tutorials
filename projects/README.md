@@ -8,11 +8,18 @@ Project-specific materials, with each project keeping its own overview, spec, an
 
 ## Contents
 
+- [Area of a Rectangular Room](area-of-a-rectangular-room/README.md)
+- [Computing Simple Interest](computing-simple-interest/README.md)
 - [Counting the Number of Characters](count-characters/README.md)
+- [Currency Conversion](currency-conversion/README.md)
+- [Determining Compound Interest](determining-compound-interest/README.md)
 - [Mad Lib](mad-lib/README.md)
+- [Paint Calculator](paint-calculator/README.md)
+- [Pizza Party](pizza-party/README.md)
 - [Printing Quotes](printing-quotes/README.md)
 - [Retirement Calculator](retirement-calculator/README.md)
 - [Saying Hello](saying-hello/README.md)
+- [Self-Checkout](self-checkout/README.md)
 - [Simple Math](simple-math/README.md)
 
 ## Shared Workflow

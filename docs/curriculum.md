@@ -298,3 +298,80 @@ Project slugs stay stable even if their place in this map changes.
 - `Recommended Tutorial`: [projects/retirement-calculator/tutorial/README.md](../projects/retirement-calculator/tutorial/README.md)
 - `Suggested Output Repos`: one core library repo for the chosen ecosystem, language, and test framework, then one adapter repo for the chosen surface implementation
 - `Notes`: start with small calculation and formatting contracts such as `calculate_retirement(current_age, desired_retirement_age, current_year)` and `format_retirement_report(current_year, years_left, retirement_year)`, build the core repo first, then add adapter repos that consume that core; this project builds on earlier numeric exercises by combining prompted ages with the current calendar year from the runtime
+
+## Stage 6
+
+### area-of-a-rectangular-room
+
+- `Project`: `area-of-a-rectangular-room`
+- `Status`: `planned`
+- `Prerequisites`: `simple-math`
+- `Recommended Tutorial`: [projects/area-of-a-rectangular-room/tutorial/README.md](../projects/area-of-a-rectangular-room/tutorial/README.md)
+- `Suggested Output Repos`: one core library repo for the chosen ecosystem, language, and test framework, then one adapter repo for the chosen surface implementation
+- `Notes`: start with small calculation and formatting contracts such as `calculate_room_area(length_feet, width_feet)` and `format_room_area_report(length_feet, width_feet, area)`, build the core repo first, then add adapter repos that consume that core; this project builds on earlier numeric exercises by introducing unit conversion and fixed-precision metric output
+
+## Stage 7
+
+### pizza-party
+
+- `Project`: `pizza-party`
+- `Status`: `planned`
+- `Prerequisites`: `simple-math`
+- `Recommended Tutorial`: [projects/pizza-party/tutorial/README.md](../projects/pizza-party/tutorial/README.md)
+- `Suggested Output Repos`: one core library repo for the chosen ecosystem, language, and test framework, then one adapter repo for the chosen surface implementation
+- `Notes`: start with small distribution and formatting contracts such as `calculate_pizza_distribution(people, pizzas, slices_per_pizza)` and `format_pizza_distribution_report(people, pizzas, distribution)`, build the core repo first, then add adapter repos that consume that core; this project builds on earlier numeric exercises by introducing integer division, remainders, and leftover handling
+
+## Stage 8
+
+### paint-calculator
+
+- `Project`: `paint-calculator`
+- `Status`: `planned`
+- `Prerequisites`: `area-of-a-rectangular-room`
+- `Recommended Tutorial`: [projects/paint-calculator/tutorial/README.md](../projects/paint-calculator/tutorial/README.md)
+- `Suggested Output Repos`: one core library repo for the chosen ecosystem, language, and test framework, then one adapter repo for the chosen surface implementation
+- `Notes`: start with small calculation and formatting contracts such as `calculate_paint_requirements(length_feet, width_feet)` and `format_paint_purchase_message(square_feet, gallons_needed)`, build the core repo first, then add adapter repos that consume that core; this project builds on room-area calculation by introducing ceiling rounding with a fixed `350` square-feet-per-gallon coverage rule
+
+## Stage 9
+
+### self-checkout
+
+- `Project`: `self-checkout`
+- `Status`: `planned`
+- `Prerequisites`: `pizza-party`
+- `Recommended Tutorial`: [projects/self-checkout/tutorial/README.md](../projects/self-checkout/tutorial/README.md)
+- `Suggested Output Repos`: one core library repo for the chosen ecosystem, language, and test framework, then one adapter repo for the chosen surface implementation
+- `Notes`: start with small calculation and formatting contracts such as `calculate_checkout_summary(items)` and `format_checkout_report(summary)`, build the core repo first, then add adapter repos that consume that core; this project builds on earlier quantity-based numeric exercises by introducing exact cent-based money handling, percentage tax calculation, and fixed-precision currency output
+
+## Stage 10
+
+### currency-conversion
+
+- `Project`: `currency-conversion`
+- `Status`: `planned`
+- `Prerequisites`: `self-checkout`
+- `Recommended Tutorial`: [projects/currency-conversion/tutorial/README.md](../projects/currency-conversion/tutorial/README.md)
+- `Suggested Output Repos`: one core library repo for the chosen ecosystem, language, and test framework, then one adapter repo for the chosen surface implementation
+- `Notes`: start with small calculation and formatting contracts such as `calculate_currency_conversion(amount_euros, exchange_rate_hundredths)` and `format_currency_conversion_report(amount_euros, exchange_rate_hundredths, usd_cents)`, build the core repo first, then add adapter repos that consume that core; this project builds on earlier money exercises by introducing scaled exchange-rate input, exact cent-based conversion, and deterministic rounding to U.S. dollar cents
+
+## Stage 11
+
+### computing-simple-interest
+
+- `Project`: `computing-simple-interest`
+- `Status`: `planned`
+- `Prerequisites`: `currency-conversion`
+- `Recommended Tutorial`: [projects/computing-simple-interest/tutorial/README.md](../projects/computing-simple-interest/tutorial/README.md)
+- `Suggested Output Repos`: one core library repo for the chosen ecosystem, language, and test framework, then one adapter repo for the chosen surface implementation
+- `Notes`: start with small calculation and formatting contracts such as `calculate_simple_interest(principal_dollars, annual_rate_tenths_percent, years)` and `format_simple_interest_report(years, annual_rate_tenths_percent, accrued_amount_cents)`, build the core repo first, then add adapter repos that consume that core; this project builds on earlier money exercises by making rate scaling and arithmetic order explicit in a deterministic simple-interest calculation
+
+## Stage 12
+
+### determining-compound-interest
+
+- `Project`: `determining-compound-interest`
+- `Status`: `planned`
+- `Prerequisites`: `computing-simple-interest`
+- `Recommended Tutorial`: [projects/determining-compound-interest/tutorial/README.md](../projects/determining-compound-interest/tutorial/README.md)
+- `Suggested Output Repos`: one core library repo for the chosen ecosystem, language, and test framework, then one adapter repo for the chosen surface implementation
+- `Notes`: start with small calculation and formatting contracts such as `calculate_compound_interest(principal_dollars, annual_rate_tenths_percent, years, compounds_per_year)` and `format_compound_interest_report(principal_dollars, annual_rate_tenths_percent, years, compounds_per_year, accrued_amount_cents)`, build the core repo first, then add adapter repos that consume that core; this project builds directly on simple interest by adding exponent-based growth and compound periods while keeping deterministic cent-rounded output
