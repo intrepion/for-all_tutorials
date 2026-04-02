@@ -12,7 +12,7 @@ This file answers:
 
 - what should be learned first
 - what each project depends on
-- which surface paths are currently supported or encouraged
+- which ecosystems, languages, framework guides, testing options, surfaces, and targets are currently documented
 - which tutorial path should usually be built first
 - what state each project is in
 
@@ -22,6 +22,49 @@ This file should stay incremental:
 - reorder stages when the curriculum becomes clearer
 - avoid turning this into a giant speculative backlog
 
+## Option Catalogs
+
+Keep shared option lists here so project entries can stay small.
+
+### Ecosystems
+
+- `dotnet`
+
+### Languages By Ecosystem
+
+#### `dotnet`
+
+- `C#`
+- `F#`
+- `Visual Basic`
+
+### Framework Options By Ecosystem
+
+#### `dotnet`
+
+- no framework-specific guide has been written yet
+
+### Testing Options By Ecosystem
+
+#### `dotnet`
+
+- `xunit`
+- `nunit`
+- `mstest`
+- `tunit`
+
+### Surface Options By Ecosystem
+
+#### `dotnet`
+
+- `command-line`
+- `web`
+
+### Target Options By Surface
+
+- `command-line`: `all`
+- `web`: `back-end`, `front-end`, `full-stack`
+
 ## Entry Shape
 
 Each project entry should capture:
@@ -29,9 +72,7 @@ Each project entry should capture:
 - `Project`
 - `Status`
 - `Prerequisites`
-- `Surface Options`
 - `Recommended Tutorial`
-- `Suggested Setup Paths`
 - `Suggested Output Repos`
 - `Notes`
 
@@ -44,11 +85,9 @@ Project slugs stay stable even if their place in this map changes.
 - `Project`: `saying-hello`
 - `Status`: `in-progress`
 - `Prerequisites`: none
-- `Surface Options`: `command-line/all`, `web/full-stack`
 - `Recommended Tutorial`: [projects/saying-hello/tutorial/README.md](../projects/saying-hello/tutorial/README.md)
-- `Suggested Setup Paths`: for `.NET`, start with [setups/code/dotnet/toolchain.md](../setups/code/dotnet/toolchain.md), choose one testing guide such as [setups/code/dotnet/testing/xunit.md](../setups/code/dotnet/testing/xunit.md), then choose one adapter guide such as [setups/code/dotnet/adapters/command-line/all.md](../setups/code/dotnet/adapters/command-line/all.md) or [setups/code/dotnet/adapters/web/full-stack.md](../setups/code/dotnet/adapters/web/full-stack.md)
-- `Suggested Output Repos`: one core library repo for the chosen ecosystem, language, and test framework, then one adapter repo per chosen surface path
-- `Notes`: start with a tiny core logic contract such as `greet(name) -> string`, follow the project tutorial starting with the core walkthrough, build the core repo first, then add adapter repos that consume that core; a single run only needs one supported surface path, and more can be added later
+- `Suggested Output Repos`: one core library repo for the chosen ecosystem, language, and test framework, then one adapter repo for the chosen surface implementation
+- `Notes`: start with a tiny core logic contract such as `greet(name) -> string`, follow the project tutorial starting with the core walkthrough, build the core repo first, then add adapter repos that consume that core; choose the exact surface and target later from the shared option catalogs and setup docs
 
 ## Stage 1
 
@@ -57,8 +96,6 @@ Project slugs stay stable even if their place in this map changes.
 - `Project`: `count-characters`
 - `Status`: `planned`
 - `Prerequisites`: `saying-hello`
-- `Surface Options`: `command-line/all`, `web/full-stack`
 - `Recommended Tutorial`: [projects/count-characters/tutorial/README.md](../projects/count-characters/tutorial/README.md)
-- `Suggested Setup Paths`: for `.NET`, start with [setups/code/dotnet/toolchain.md](../setups/code/dotnet/toolchain.md), choose one testing guide such as [setups/code/dotnet/testing/xunit.md](../setups/code/dotnet/testing/xunit.md), then choose one adapter guide such as [setups/code/dotnet/adapters/command-line/all.md](../setups/code/dotnet/adapters/command-line/all.md) or [setups/code/dotnet/adapters/web/full-stack.md](../setups/code/dotnet/adapters/web/full-stack.md)
-- `Suggested Output Repos`: one core library repo for the chosen ecosystem, language, and test framework, then one adapter repo per chosen surface path
+- `Suggested Output Repos`: one core library repo for the chosen ecosystem, language, and test framework, then one adapter repo for the chosen surface implementation
 - `Notes`: start with small core logic contracts such as `count_characters(input) -> integer` and `format_character_count_message(input, count) -> string`, build the core repo first, then add adapter repos that consume that core; this project builds on `saying-hello` by introducing counting, exact input preservation, and zero/one/many message formatting

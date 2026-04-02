@@ -234,15 +234,21 @@ Using explicit target names, including `all`, keeps the platform vocabulary cons
 
 Curriculum order belongs in [docs/curriculum.md](curriculum.md), not in folder names.
 
+Keep shared option catalogs near the top of that file, such as:
+
+- ecosystems
+- framework options by ecosystem
+- testing options by ecosystem
+- surface options by ecosystem
+- target options by surface
+
 That map should carry:
 
 - current stage
 - project slug
 - status such as `planned`, `in-progress`, or `complete`
 - prerequisites
-- surface options
 - recommended tutorial
-- suggested setup paths
 - suggested output repos
 - notes
 

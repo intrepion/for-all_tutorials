@@ -36,7 +36,7 @@ The default model is:
 Project specs in this folder share these rules:
 
 - a single run only needs one chosen surface and target path
-- the currently supported setup paths belong in [docs/curriculum.md](../docs/curriculum.md) and `setups/`, not in each spec
+- the currently supported setup paths belong in `setups/`, not in each spec
 - adapters must not redefine the core project rules
 
 ## Shared Coverage Policy
