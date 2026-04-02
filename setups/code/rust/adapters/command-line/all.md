@@ -13,7 +13,7 @@ Create a thin command-line adapter that can call a well-tested core library with
 ## Use This After
 
 - [Toolchain](../../../toolchain.md)
-- [Built In](../../../testing/builtin.md)
+- [Libtest](../../../testing/libtest.md)
 - an existing core library repo for the project logic
 
 ## Scope
@@ -27,7 +27,7 @@ This guide covers:
 This guide does not cover:
 
 - project-specific business rules
-- third-party argument-parsing frameworks
+- command-line framework choices such as [Clap](../../../frameworks/command-line/clap.md) or [Ratatui](../../../frameworks/command-line/ratatui.md)
 - project-specific command parsing
 
 ## Suggested Scaffold Commands
@@ -68,3 +68,4 @@ The Rust `command-line/all` adapter setup is ready when:
 - the binary crate exists
 - the adapter repo depends on the core library
 - the binary entry point can delegate to the core library
+- any optional command-line framework still delegates to the core library

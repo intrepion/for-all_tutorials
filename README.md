@@ -14,6 +14,8 @@ The repo is organized around stable project slugs instead of level IDs in paths:
 - `setups/` captures reusable code-ecosystem, testing, adapter, framework, and storage setup guidance.
 - `docs/` explains the architecture and keeps the mutable curriculum map.
 
+The current setup catalog includes command-line and `web/full-stack` framework paths across multiple ecosystems so the same project can later be built and compared in several stacks.
+
 Curriculum order lives in [docs/curriculum.md](docs/curriculum.md), not in folder names. That keeps project paths stable while the learning sequence evolves.
 
 The default authoring flow is:

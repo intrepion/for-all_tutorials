@@ -45,6 +45,8 @@ for-all_tutorials/
     README.md
     code/
       README.md
+      beam/
+        ...
       dotnet/
         README.md
         languages.md
@@ -65,6 +67,27 @@ for-all_tutorials/
           tunit.md
         frameworks/
           README.md
+          command-line/
+            README.md
+            builtin.md
+            spectre-console.md
+          web/
+            README.md
+            full-stack/
+              README.md
+              blazor-server.md
+      go/
+        ...
+      java/
+        ...
+      javascript/
+        ...
+      php/
+        ...
+      python/
+        ...
+      ruby/
+        ...
       rust/
         README.md
         languages.md
@@ -74,11 +97,24 @@ for-all_tutorials/
           command-line/
             README.md
             all.md
+          web/
+            README.md
+            full-stack.md
         testing/
           README.md
-          builtin.md
+          libtest.md
         frameworks/
           README.md
+          command-line/
+            README.md
+            builtin.md
+            clap.md
+            ratatui.md
+          web/
+            README.md
+            full-stack/
+              README.md
+              leptos-ssr.md
     storage/
       README.md
 
@@ -168,7 +204,8 @@ setups/code/<ecosystem>/languages.md
 setups/code/<ecosystem>/toolchain.md
 setups/code/<ecosystem>/adapters/<surface>/<target>.md
 setups/code/<ecosystem>/testing/<framework>.md
-setups/code/<ecosystem>/frameworks/<framework>.md
+setups/code/<ecosystem>/frameworks/<surface>/<framework>.md
+setups/code/<ecosystem>/frameworks/<surface>/<target>/<framework>.md
 setups/storage/
 ```
 
@@ -179,7 +216,8 @@ That means:
 - standardize core ecosystem guidance in `toolchain.md`
 - put surface and target adapter setup under `setups/code/<ecosystem>/adapters/`
 - put xUnit, NUnit, MSTest, TUnit, or similar variants under `setups/code/<ecosystem>/testing/`
-- put framework bootstrap guidance under `setups/code/<ecosystem>/frameworks/`
+- put framework bootstrap guidance under `setups/code/<ecosystem>/frameworks/<surface>/` when the framework is tied to a specific surface
+- add a target layer under `frameworks/` when the framework only applies to one target such as `web/full-stack`
 - keep storage and database concerns under `setups/storage/`
 - keep project tutorials focused on the project contract and project flow
 - keep environment, template, runner, and coverage-command details in setup docs
@@ -251,7 +289,7 @@ Curriculum order belongs in [docs/curriculum.md](curriculum.md), not in folder n
 Keep shared option catalogs near the top of that file, such as:
 
 - ecosystems
-- framework options by ecosystem
+- framework options by ecosystem and surface or target
 - testing options by ecosystem
 - surface options by ecosystem
 - target options by surface
@@ -313,7 +351,7 @@ Then one possible early path is:
 
 1. write [projects/saying-hello/spec/README.md](../projects/saying-hello/spec/README.md)
 2. add `saying-hello` to [docs/curriculum.md](curriculum.md)
-3. create reusable `.NET` setup docs such as `setups/code/dotnet/toolchain.md`, `setups/code/dotnet/testing/xunit.md`, and adapter guides like `setups/code/dotnet/adapters/command-line/all.md` or `setups/code/dotnet/adapters/web/full-stack.md`
+3. create reusable `.NET` setup docs such as `setups/code/dotnet/toolchain.md`, `setups/code/dotnet/testing/xunit.md`, adapter guides like `setups/code/dotnet/adapters/command-line/all.md` or `setups/code/dotnet/adapters/web/full-stack.md`, and framework guides like `setups/code/dotnet/frameworks/command-line/spectre-console.md` or `setups/code/dotnet/frameworks/web/full-stack/blazor-server.md`
 4. write [projects/saying-hello/tutorial/README.md](../projects/saying-hello/tutorial/README.md), [projects/saying-hello/tutorial/core.md](../projects/saying-hello/tutorial/core.md), and [projects/saying-hello/tutorial/adapter.md](../projects/saying-hello/tutorial/adapter.md)
 5. build a separate core library repo and test `greet` to the repo's coverage standard
 6. build a separate adapter repo for the chosen surface path

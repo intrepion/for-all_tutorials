@@ -28,10 +28,22 @@ Keep shared option lists here so project entries can stay small.
 
 ### Ecosystems
 
+- `beam`
 - `dotnet`
+- `go`
+- `java`
+- `javascript`
+- `php`
+- `python`
+- `ruby`
 - `rust`
 
 ### Languages By Ecosystem
+
+#### `beam`
+
+- `Elixir`
+- `Erlang`
 
 #### `dotnet`
 
@@ -39,21 +51,80 @@ Keep shared option lists here so project entries can stay small.
 - `F#`
 - `Visual Basic`
 
+#### `go`
+
+- `Go`
+
+#### `java`
+
+- `Java`
+
+#### `javascript`
+
+- `JavaScript`
+- `TypeScript`
+
+#### `php`
+
+- `PHP`
+
+#### `python`
+
+- `Python`
+
+#### `ruby`
+
+- `Ruby`
+
 #### `rust`
 
 - `Rust`
 
-### Framework Options By Ecosystem
+### Framework Options By Ecosystem And Surface Or Target
+
+#### `beam`
+
+- `web/full-stack`: `phoenix-liveview`
 
 #### `dotnet`
 
-- no framework-specific guide has been written yet
+- `command-line`: `builtin`, `spectre-console`
+- `web/full-stack`: `blazor-server`
+
+#### `go`
+
+- `web/full-stack`: `echo-templates-htmx`
+
+#### `java`
+
+- `web/full-stack`: `quarkus-native-qute`
+
+#### `javascript`
+
+- `web/full-stack`: `sveltekit-bun-adapter`
+
+#### `php`
+
+- `web/full-stack`: `laravel-octane-livewire`
+
+#### `python`
+
+- `web/full-stack`: `fastapi-jinja2-htmx`
+
+#### `ruby`
+
+- `web/full-stack`: `rails-hotwire`
 
 #### `rust`
 
-- no framework-specific guide has been written yet
+- `command-line`: `builtin`, `clap`, `ratatui`
+- `web/full-stack`: `leptos-ssr`
 
 ### Testing Options By Ecosystem
+
+#### `beam`
+
+- no testing-specific guide has been written yet
 
 #### `dotnet`
 
@@ -62,20 +133,73 @@ Keep shared option lists here so project entries can stay small.
 - `mstest`
 - `tunit`
 
+#### `go`
+
+- no testing-specific guide has been written yet
+
+#### `java`
+
+- no testing-specific guide has been written yet
+
+#### `javascript`
+
+- no testing-specific guide has been written yet
+
+#### `php`
+
+- no testing-specific guide has been written yet
+
+#### `python`
+
+- no testing-specific guide has been written yet
+
+#### `ruby`
+
+- no testing-specific guide has been written yet
+
 #### `rust`
 
-- `builtin`
+- `libtest`
 
 ### Surface Options By Ecosystem
+
+#### `beam`
+
+- `web`
 
 #### `dotnet`
 
 - `command-line`
 - `web`
 
+#### `go`
+
+- `web`
+
+#### `java`
+
+- `web`
+
+#### `javascript`
+
+- `web`
+
+#### `php`
+
+- `web`
+
+#### `python`
+
+- `web`
+
+#### `ruby`
+
+- `web`
+
 #### `rust`
 
 - `command-line`
+- `web`
 
 ### Target Options By Surface
 

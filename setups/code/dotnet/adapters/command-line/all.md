@@ -30,6 +30,7 @@ This guide does not cover:
 - project-specific business rules
 - test-framework-specific assertions or templates
 - project-specific command parsing
+- command-line framework choices such as [Spectre Console](../../../frameworks/command-line/spectre-console.md)
 
 ## Suggested Scaffold Commands
 
@@ -73,3 +74,4 @@ The `.NET` `command-line/all` adapter setup is ready when:
 - the console project is added to the solution
 - the console project depends on the core library
 - the console entry point can delegate to the core library
+- any optional command-line framework still delegates to the core library

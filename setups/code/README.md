@@ -16,5 +16,12 @@ Use an ecosystem guide to find:
 
 ## Contents
 
+- [beam](beam/README.md)
 - [dotnet](dotnet/README.md)
+- [go](go/README.md)
+- [java](java/README.md)
+- [javascript](javascript/README.md)
+- [php](php/README.md)
+- [python](python/README.md)
+- [ruby](ruby/README.md)
 - [rust](rust/README.md)
