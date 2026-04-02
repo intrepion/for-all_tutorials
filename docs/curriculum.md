@@ -254,3 +254,14 @@ Project slugs stay stable even if their place in this map changes.
 - `Recommended Tutorial`: [projects/count-characters/tutorial/README.md](../projects/count-characters/tutorial/README.md)
 - `Suggested Output Repos`: one core library repo for the chosen ecosystem, language, and test framework, then one adapter repo for the chosen surface implementation
 - `Notes`: start with small core logic contracts such as `count_characters(input) -> integer` and `format_character_count_message(input, count) -> string`, build the core repo first, then add adapter repos that consume that core; this project builds on `saying-hello` by introducing counting, exact input preservation, and zero/one/many message formatting
+
+## Stage 2
+
+### printing-quotes
+
+- `Project`: `printing-quotes`
+- `Status`: `planned`
+- `Prerequisites`: `count-characters`
+- `Recommended Tutorial`: [projects/printing-quotes/tutorial/README.md](../projects/printing-quotes/tutorial/README.md)
+- `Suggested Output Repos`: one core library repo for the chosen ecosystem, language, and test framework, then one adapter repo for the chosen surface implementation
+- `Notes`: start with a small formatting contract such as `format_attributed_quote(author, quote) -> string`, build the core repo first, then add adapter repos that consume that core; this project builds on the earlier string exercises by combining two inputs into one formatted sentence and surrounding the quote text with literal double quotation marks
