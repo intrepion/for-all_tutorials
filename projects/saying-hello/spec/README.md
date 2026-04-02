@@ -53,22 +53,7 @@ Every tutorial run should adapt the same `greet` behavior instead of redefining 
 
 A single run only needs one chosen surface and target path.
 
-Current example paths include:
-
-- `command-line/all`
-- `web/full-stack`
-
-Additional paths may include:
-
-- `web/back-end`
-- `web/front-end`
-- `desktop/all`
-- `desktop/macos`
-- `desktop/linux`
-- `desktop/windows`
-- `mobile/all`
-- `mobile/ios`
-- `mobile/android`
+The supported setup paths for a given moment belong in the curriculum map and setup guides, not in this spec.
 
 ## Testing And Coverage Contract
 
