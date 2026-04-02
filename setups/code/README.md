@@ -17,3 +17,4 @@ Use an ecosystem guide to find:
 ## Contents
 
 - [dotnet](dotnet/README.md)
+- [rust](rust/README.md)

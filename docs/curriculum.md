@@ -29,6 +29,7 @@ Keep shared option lists here so project entries can stay small.
 ### Ecosystems
 
 - `dotnet`
+- `rust`
 
 ### Languages By Ecosystem
 
@@ -38,9 +39,17 @@ Keep shared option lists here so project entries can stay small.
 - `F#`
 - `Visual Basic`
 
+#### `rust`
+
+- `Rust`
+
 ### Framework Options By Ecosystem
 
 #### `dotnet`
+
+- no framework-specific guide has been written yet
+
+#### `rust`
 
 - no framework-specific guide has been written yet
 
@@ -53,12 +62,20 @@ Keep shared option lists here so project entries can stay small.
 - `mstest`
 - `tunit`
 
+#### `rust`
+
+- `builtin`
+
 ### Surface Options By Ecosystem
 
 #### `dotnet`
 
 - `command-line`
 - `web`
+
+#### `rust`
+
+- `command-line`
 
 ### Target Options By Surface
 

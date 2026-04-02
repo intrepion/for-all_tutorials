@@ -65,6 +65,20 @@ for-all_tutorials/
           tunit.md
         frameworks/
           README.md
+      rust/
+        README.md
+        languages.md
+        toolchain.md
+        adapters/
+          README.md
+          command-line/
+            README.md
+            all.md
+        testing/
+          README.md
+          builtin.md
+        frameworks/
+          README.md
     storage/
       README.md
 
