@@ -11,6 +11,7 @@ Project-specific materials, with each project keeping its own overview, spec, an
 - [Counting the Number of Characters](count-characters/README.md)
 - [Mad Lib](mad-lib/README.md)
 - [Printing Quotes](printing-quotes/README.md)
+- [Retirement Calculator](retirement-calculator/README.md)
 - [Saying Hello](saying-hello/README.md)
 - [Simple Math](simple-math/README.md)
 

@@ -287,3 +287,14 @@ Project slugs stay stable even if their place in this map changes.
 - `Recommended Tutorial`: [projects/simple-math/tutorial/README.md](../projects/simple-math/tutorial/README.md)
 - `Suggested Output Repos`: one core library repo for the chosen ecosystem, language, and test framework, then one adapter repo for the chosen surface implementation
 - `Notes`: start with small arithmetic and formatting contracts such as `calculate_simple_math(first, second)` and `format_simple_math_report(first, second, results)`, build the core repo first, then add adapter repos that consume that core; this project builds on earlier input-to-output exercises by introducing numeric parsing, arithmetic, and multi-line report formatting
+
+## Stage 5
+
+### retirement-calculator
+
+- `Project`: `retirement-calculator`
+- `Status`: `planned`
+- `Prerequisites`: `simple-math`
+- `Recommended Tutorial`: [projects/retirement-calculator/tutorial/README.md](../projects/retirement-calculator/tutorial/README.md)
+- `Suggested Output Repos`: one core library repo for the chosen ecosystem, language, and test framework, then one adapter repo for the chosen surface implementation
+- `Notes`: start with small calculation and formatting contracts such as `calculate_retirement(current_age, desired_retirement_age, current_year)` and `format_retirement_report(current_year, years_left, retirement_year)`, build the core repo first, then add adapter repos that consume that core; this project builds on earlier numeric exercises by combining prompted ages with the current calendar year from the runtime
