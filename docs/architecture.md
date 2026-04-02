@@ -28,6 +28,7 @@ This separates identity from ordering:
 - every tutorial is still a project app
 - each project keeps its own spec and tutorial side by side
 - setups capture reusable environment and tooling guidance
+- this repo stores tutorials, not the resulting implementation repos
 - tests are the executable form of the spec
 - code coverage and branch coverage are part of done
 - project tutorials should keep adapters thin by building on a well-tested core logic unit first
@@ -168,6 +169,39 @@ That means:
 
 This avoids copying the same environment notes across every project tutorial.
 
+## Output Repositories
+
+Following a tutorial should create code in separate repositories outside this curriculum repo.
+
+Recommended model:
+
+- one core library repo owns the shared project rules for a chosen ecosystem, language, and test framework
+- one adapter repo owns each chosen surface and target
+- adapter repos should consume the core library instead of copying its logic
+- adding a new adapter should repeat only the adapter-level TDD work, not the core TDD work
+
+The tutorial repo stays stable while the output repos can evolve independently.
+
+### Recommended Output Shape
+
+For a small project such as `saying-hello`, a typical run can produce:
+
+```text
+<project>-<ecosystem>-<language>-<test-framework>-core/
+  src/
+    <core-library>/
+  tests/
+    <core-library>.Tests/
+
+<project>-<ecosystem>-<language>-<test-framework>-<surface>-<target>/
+  src/
+    <adapter>/
+  tests/
+    <adapter>.Tests/
+```
+
+The exact dependency mechanism can vary by ecosystem, but the adapter repo should depend on the core library as a real dependency rather than by duplicating the code.
+
 ## Allowed Surfaces And Targets
 
 Current surface taxonomy:
@@ -206,6 +240,7 @@ That map should carry:
 - surface options
 - recommended tutorial
 - suggested setup paths
+- suggested output repos
 - notes
 
 Avoid planning dozens of speculative projects far in advance. Add projects when there is genuine intent to build them, and reorder the map as the curriculum becomes clearer.
@@ -241,9 +276,11 @@ If a stack cannot produce a trustworthy branch-coverage metric with the approved
 3. Create or refine the relevant setup docs in `setups/code/<ecosystem>/` or `setups/storage/`.
 4. Create or refine `projects/<project>/spec/README.md`.
 5. Write the project tutorial index and `projects/<project>/tutorial/tdd.md`.
-6. Build the code by combining the project tutorial with one chosen setup path.
-7. Keep adapter code thin and keep business rules in the core logic unit.
-8. Review code coverage and branch coverage before marking the tutorial complete.
+6. Define the expected output repos for a normal tutorial run.
+7. Build the core library repo by combining the project tutorial with one chosen setup path.
+8. Build one or more adapter repos that consume that core library.
+9. Keep adapter code thin and keep business rules in the core logic unit.
+10. Review code coverage and branch coverage before marking the tutorial complete.
 
 ## Real-World Example
 
@@ -255,6 +292,6 @@ Then one possible early path is:
 2. add `saying-hello` to [docs/curriculum.md](curriculum.md)
 3. create reusable `.NET` setup docs such as `setups/code/dotnet/toolchain.md`, `setups/code/dotnet/testing/xunit.md`, and adapter guides like `setups/code/dotnet/adapters/command-line/all.md` or `setups/code/dotnet/adapters/web/full-stack.md`
 4. write [projects/saying-hello/tutorial/README.md](../projects/saying-hello/tutorial/README.md) and [projects/saying-hello/tutorial/tdd.md](../projects/saying-hello/tutorial/tdd.md)
-5. test `greet` to the repo's coverage standard using one chosen setup path
-6. add the chosen adapter for that run
-7. keep the adapter thin and the greeting rules in the tested core logic
+5. build a separate core library repo and test `greet` to the repo's coverage standard
+6. build a separate adapter repo for the chosen surface path
+7. keep the adapter thin and the greeting rules in the tested core logic repo

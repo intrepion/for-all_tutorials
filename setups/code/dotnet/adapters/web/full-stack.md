@@ -14,15 +14,16 @@ Create a thin web host that can receive requests, render UI, and delegate projec
 
 - [Toolchain](../../../toolchain.md)
 - one guide from [Testing](../../../testing/README.md)
+- an existing core library repo for the project logic
 - one guide from [Frameworks](../../../frameworks/README.md) when the chosen stack needs framework-specific bootstrap instructions
 
 ## Scope
 
 This guide covers:
 
-- wiring a `.NET` web host to a core library
-- adding the host project to the solution
-- referencing the core library from the host
+- wiring a `.NET` web host repo to a core library
+- adding the host project to its solution
+- adding a dependency on the core library from the host
 - keeping UI, transport, and host lifecycle concerns outside the core project rules
 
 This guide does not cover:
@@ -35,7 +36,7 @@ This guide does not cover:
 
 1. Use the chosen framework guide to scaffold the web host project.
 2. Add the web host project to the solution.
-3. Add a project reference from the web host to the core library.
+3. Add a dependency from the web host to the core library.
 4. Keep request handlers, page models, components, or server actions thin.
 5. Delegate validation and service rules to the core library.
 6. Let the web host focus on transport, rendering, and user interaction.
@@ -46,14 +47,12 @@ This guide does not cover:
 <solution-root>/
   <solution-name>.sln
   src/
-    <library-name>/
-      <library-name>.csproj
     <host-name>/
       <host-name>.csproj
       Program.cs
 ```
 
-The exact host files will vary by framework. Keep the core library stable even when the host framework changes.
+The exact host files will vary by framework. Keep the core library in its own repo and keep that dependency stable even when the host framework changes.
 
 ## Adapter Rule
 
@@ -69,5 +68,5 @@ The `.NET` `web/full-stack` adapter setup is ready when:
 
 - the web host project exists
 - the web host project is added to the solution
-- the web host references the core library
+- the web host depends on the core library
 - the web host can delegate project rules to the core library instead of redefining them

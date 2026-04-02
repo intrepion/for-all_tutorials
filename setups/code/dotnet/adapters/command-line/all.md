@@ -14,14 +14,15 @@ Create a thin console adapter that can call a well-tested core library without m
 
 - [Toolchain](../../../toolchain.md)
 - one guide from [Testing](../../../testing/README.md)
+- an existing core library repo for the project logic
 
 ## Scope
 
 This guide covers:
 
-- scaffolding a console adapter with `dotnet new console`
-- adding the adapter to the solution
-- referencing the core library from the adapter
+- scaffolding a console adapter repo with `dotnet new console`
+- adding the adapter project to its solution
+- adding a dependency on the core library from the adapter
 - keeping the adapter thin
 
 This guide does not cover:
@@ -35,9 +36,10 @@ This guide does not cover:
 Replace the placeholders with the names used by the project tutorial:
 
 ```bash
+dotnet new sln --format sln --name <solution-name> --output <solution-root>
 dotnet new console --name <adapter-name> --output <solution-root>/src/<adapter-name> --framework <target-framework>
 dotnet sln <solution-root>/<solution-name>.sln add <solution-root>/src/<adapter-name>/<adapter-name>.csproj
-dotnet add <solution-root>/src/<adapter-name>/<adapter-name>.csproj reference <solution-root>/src/<library-name>/<library-name>.csproj
+dotnet add <solution-root>/src/<adapter-name>/<adapter-name>.csproj package <core-package-name> --version <core-package-version>
 ```
 
 ## Suggested File Shape
@@ -46,12 +48,12 @@ dotnet add <solution-root>/src/<adapter-name>/<adapter-name>.csproj reference <s
 <solution-root>/
   <solution-name>.sln
   src/
-    <library-name>/
-      <library-name>.csproj
     <adapter-name>/
       <adapter-name>.csproj
       Program.cs
 ```
+
+The core library repo should stay separate. The adapter repo should depend on it as a real dependency rather than by copying the core source files.
 
 ## Adapter Rule
 
@@ -69,5 +71,5 @@ The `.NET` `command-line/all` adapter setup is ready when:
 
 - the console project exists
 - the console project is added to the solution
-- the console project references the core library
+- the console project depends on the core library
 - the console entry point can delegate to the core library

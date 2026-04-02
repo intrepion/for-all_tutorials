@@ -8,18 +8,20 @@ Core `.NET` toolchain guidance for project tutorials that use the `dotnet` ecosy
 
 ## Goal
 
-Set up a clean, repeatable foundation for `.NET` tutorials without tying the instructions to any one local machine.
+Set up a clean, repeatable foundation for `.NET` output repos without tying the instructions to any one local machine.
 
 ## Scope
 
 This guide covers:
 
 - the base `dotnet` CLI workflow
-- solution and class-library scaffolding
+- solution scaffolding
+- class-library scaffolding for core-library repos
 - common repository conventions for `.NET` tutorials
 
 This guide does not cover:
 
+- adapter-specific scaffolding
 - test-framework-specific scaffolding
 - framework-specific bootstrapping
 - project-specific business logic
@@ -44,7 +46,7 @@ Choose the target framework that the project tutorial standardizes on, for examp
 
 ## Suggested Scaffold Commands
 
-Use placeholders and substitute the values that fit the project you are building:
+For a core-library repo, use placeholders and substitute the values that fit the project you are building:
 
 ```bash
 dotnet new sln --format sln --name <solution-name> --output <solution-root>
@@ -64,9 +66,11 @@ dotnet sln <solution-root>/<solution-name>.sln add <solution-root>/src/<library-
 
 If the class-library template creates a placeholder file such as `Class1.cs`, replace it with the production file names used by the tutorial.
 
+For an adapter repo, use this guide for the base `.NET` CLI conventions, then switch to the relevant adapter setup guide for the actual host project scaffold.
+
 ## Ready State
 
-The base `.NET` toolchain setup is ready when:
+For a core-library repo, the base `.NET` toolchain setup is ready when:
 
 - `dotnet` commands run successfully
 - the solution exists

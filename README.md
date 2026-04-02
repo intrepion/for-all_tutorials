@@ -6,6 +6,8 @@ for-all_tutorials
 
 Comparable, spec-driven tutorials organized as a project-first curriculum.
 
+This repository stores the tutorials themselves. The code produced by following a tutorial should live in separate implementation repositories outside this repo.
+
 The repo is organized around stable project slugs instead of level IDs in paths:
 
 - `projects/` keeps each project's overview, spec, and tutorial materials together.
@@ -20,8 +22,8 @@ The default authoring flow is:
 2. update the curriculum map
 3. add or confirm the relevant setup guides
 4. write the project tutorial and TDD walkthrough
-5. translate that walkthrough into code using one chosen setup path
-6. add a thin surface adapter when the project requires one
+5. translate the core part of that walkthrough into a separate core-library repo
+6. translate the adapter part into one or more separate adapter repos
 7. review code and branch coverage before calling the tutorial complete
 
 Repo-wide coverage policy:

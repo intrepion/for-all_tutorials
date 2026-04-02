@@ -6,6 +6,8 @@
 
 Project-specific red, green, refactor sequence for `saying-hello`.
 
+## Core Repo
+
 ### 1. Red: Write The First Failing Test
 
 Start with the happiest path:
@@ -117,9 +119,11 @@ The exact shape can vary by stack:
 
 The important thing is that the greeting rules live in one small unit that can be tested directly.
 
+## Adapter Repo
+
 ### 13. Red: Add An Adapter-Level Test
 
-If your stack makes adapter testing practical, add a failing test that proves the chosen adapter delegates to the core logic correctly.
+In a separate adapter repo, add a failing test that proves the chosen adapter delegates to the core logic correctly.
 
 ### 14. Green: Add The Thin Surface Adapter
 

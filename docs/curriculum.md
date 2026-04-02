@@ -32,6 +32,7 @@ Each project entry should capture:
 - `Surface Options`
 - `Recommended Tutorial`
 - `Suggested Setup Paths`
+- `Suggested Output Repos`
 - `Notes`
 
 Project slugs stay stable even if their place in this map changes.
@@ -46,4 +47,5 @@ Project slugs stay stable even if their place in this map changes.
 - `Surface Options`: `command-line/all`, `web/full-stack`
 - `Recommended Tutorial`: [projects/saying-hello/tutorial/tdd.md](../projects/saying-hello/tutorial/tdd.md)
 - `Suggested Setup Paths`: for `.NET`, start with [setups/code/dotnet/toolchain.md](../setups/code/dotnet/toolchain.md), choose one testing guide such as [setups/code/dotnet/testing/xunit.md](../setups/code/dotnet/testing/xunit.md), then choose one adapter guide such as [setups/code/dotnet/adapters/command-line/all.md](../setups/code/dotnet/adapters/command-line/all.md) or [setups/code/dotnet/adapters/web/full-stack.md](../setups/code/dotnet/adapters/web/full-stack.md)
-- `Notes`: start with a tiny core logic contract such as `greet(name) -> string`, follow the stack-agnostic TDD tutorial, then realize it through one chosen setup path and wrap it in a thin adapter; a single run only needs one supported surface path, and more can be added later
+- `Suggested Output Repos`: one core library repo for the chosen ecosystem, language, and test framework, then one adapter repo per chosen surface path
+- `Notes`: start with a tiny core logic contract such as `greet(name) -> string`, follow the stack-agnostic TDD tutorial, build the core repo first, then add adapter repos that consume that core; a single run only needs one supported surface path, and more can be added later

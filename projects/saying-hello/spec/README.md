@@ -55,6 +55,16 @@ A single run only needs one chosen surface and target path.
 
 The supported setup paths for a given moment belong in the curriculum map and setup guides, not in this spec.
 
+## Output Repository Expectations
+
+The code produced from this tutorial should live outside this curriculum repo.
+
+A normal run should separate responsibilities like this:
+
+- one core library repo owns the `greet` rules
+- each adapter repo depends on that core library
+- adapter repos must not reimplement the greeting rules
+
 ## Testing And Coverage Contract
 
 This project should be built in a spec-driven and test-driven way.

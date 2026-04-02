@@ -21,3 +21,8 @@ Project home for the first project app in the curriculum.
 - the repo-wide coverage expectations
 
 Use the spec as the source of truth, the tutorial as the teaching path, and `setups/` for stack-specific implementation details.
+
+A full run of this project usually produces separate implementation repos outside this curriculum repo:
+
+- one core library repo that owns `greet`
+- one adapter repo for each chosen surface path
