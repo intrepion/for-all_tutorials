@@ -20,9 +20,4 @@ Project home for the second project app in the curriculum.
 - separating counting logic from message-formatting logic
 - keeping adapters thin while the core owns the counting and formatting rules
 
-Use the spec as the source of truth, the tutorial as the teaching path, and `setups/` for stack-specific implementation details.
-
-A full run of this project usually produces separate implementation repos outside this curriculum repo:
-
-- one core library repo that owns the counting and formatting rules
-- one adapter repo for each chosen surface path
+This project follows the shared workflow and output model in [Projects](../README.md#shared-workflow) and [Projects](../README.md#shared-output-model).

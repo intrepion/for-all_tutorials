@@ -49,21 +49,15 @@ This first project does not include:
 
 ## Surface Expectations
 
-Every tutorial run should adapt the same `greet` behavior instead of redefining it.
+This spec follows the shared surface and setup-path rules in [Projects](../../README.md#shared-spec-conventions).
 
-A single run only needs one chosen surface and target path.
-
-The supported setup paths for a given moment belong in the curriculum map and setup guides, not in this spec.
+For this project, every tutorial run should adapt the same `greet` behavior instead of redefining it.
 
 ## Output Repository Expectations
 
-The code produced from this tutorial should live outside this curriculum repo.
+This project follows the shared output model in [Projects](../../README.md#shared-output-model).
 
-A normal run should separate responsibilities like this:
-
-- one core library repo owns the `greet` rules
-- each adapter repo depends on that core library
-- adapter repos must not reimplement the greeting rules
+For this project, the core repo owns the `greet` rules and adapter repos must not reimplement them.
 
 ## Testing And Coverage Contract
 
