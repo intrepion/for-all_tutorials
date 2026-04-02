@@ -8,4 +8,5 @@ Reusable Ruby setup guides for specific surfaces and targets.
 
 ## Contents
 
+- [Command Line](command-line/README.md)
 - [Web](web/README.md)

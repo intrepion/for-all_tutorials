@@ -8,6 +8,7 @@ Framework-specific setup guides for JavaScript tutorials that need more than the
 
 ## Contents
 
+- [Command Line](command-line/README.md)
 - [Web](web/README.md)
 
 Use a framework guide together with:

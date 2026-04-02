@@ -84,6 +84,7 @@ Keep shared option lists here so project entries can stay small.
 
 #### `beam`
 
+- `command-line`: `builtin`
 - `web/full-stack`: `phoenix-liveview`
 
 #### `dotnet`
@@ -93,26 +94,32 @@ Keep shared option lists here so project entries can stay small.
 
 #### `go`
 
+- `command-line`: `builtin`
 - `web/full-stack`: `echo-templates-htmx`
 
 #### `java`
 
+- `command-line`: `builtin`
 - `web/full-stack`: `quarkus-native-qute`
 
 #### `javascript`
 
+- `command-line`: `builtin`, `commander`
 - `web/full-stack`: `sveltekit-bun-adapter`
 
 #### `php`
 
+- `command-line`: `builtin`, `symfony-console`
 - `web/full-stack`: `laravel-octane-livewire`
 
 #### `python`
 
+- `command-line`: `builtin`, `click`, `typer`
 - `web/full-stack`: `fastapi-jinja2-htmx`
 
 #### `ruby`
 
+- `command-line`: `builtin`
 - `web/full-stack`: `rails-hotwire`
 
 #### `rust`
@@ -165,6 +172,7 @@ Keep shared option lists here so project entries can stay small.
 
 #### `beam`
 
+- `command-line`
 - `web`
 
 #### `dotnet`
@@ -174,26 +182,32 @@ Keep shared option lists here so project entries can stay small.
 
 #### `go`
 
+- `command-line`
 - `web`
 
 #### `java`
 
+- `command-line`
 - `web`
 
 #### `javascript`
 
+- `command-line`
 - `web`
 
 #### `php`
 
+- `command-line`
 - `web`
 
 #### `python`
 
+- `command-line`
 - `web`
 
 #### `ruby`
 
+- `command-line`
 - `web`
 
 #### `rust`

@@ -8,6 +8,7 @@ Framework-specific setup guides for PHP tutorials that need more than the base t
 
 ## Contents
 
+- [Command Line](command-line/README.md)
 - [Web](web/README.md)
 
 Use a framework guide together with:
