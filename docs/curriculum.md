@@ -45,10 +45,10 @@ Project slugs stay stable even if their place in this map changes.
 - `Status`: `in-progress`
 - `Prerequisites`: none
 - `Surface Options`: `command-line/all`, `web/full-stack`
-- `Recommended Tutorial`: [projects/saying-hello/tutorial/tdd.md](../projects/saying-hello/tutorial/tdd.md)
+- `Recommended Tutorial`: [projects/saying-hello/tutorial/README.md](../projects/saying-hello/tutorial/README.md)
 - `Suggested Setup Paths`: for `.NET`, start with [setups/code/dotnet/toolchain.md](../setups/code/dotnet/toolchain.md), choose one testing guide such as [setups/code/dotnet/testing/xunit.md](../setups/code/dotnet/testing/xunit.md), then choose one adapter guide such as [setups/code/dotnet/adapters/command-line/all.md](../setups/code/dotnet/adapters/command-line/all.md) or [setups/code/dotnet/adapters/web/full-stack.md](../setups/code/dotnet/adapters/web/full-stack.md)
 - `Suggested Output Repos`: one core library repo for the chosen ecosystem, language, and test framework, then one adapter repo per chosen surface path
-- `Notes`: start with a tiny core logic contract such as `greet(name) -> string`, follow the stack-agnostic TDD tutorial, build the core repo first, then add adapter repos that consume that core; a single run only needs one supported surface path, and more can be added later
+- `Notes`: start with a tiny core logic contract such as `greet(name) -> string`, follow the project tutorial starting with the core walkthrough, build the core repo first, then add adapter repos that consume that core; a single run only needs one supported surface path, and more can be added later
 
 ## Stage 1
 
@@ -58,7 +58,7 @@ Project slugs stay stable even if their place in this map changes.
 - `Status`: `planned`
 - `Prerequisites`: `saying-hello`
 - `Surface Options`: `command-line/all`, `web/full-stack`
-- `Recommended Tutorial`: [projects/count-characters/tutorial/tdd.md](../projects/count-characters/tutorial/tdd.md)
+- `Recommended Tutorial`: [projects/count-characters/tutorial/README.md](../projects/count-characters/tutorial/README.md)
 - `Suggested Setup Paths`: for `.NET`, start with [setups/code/dotnet/toolchain.md](../setups/code/dotnet/toolchain.md), choose one testing guide such as [setups/code/dotnet/testing/xunit.md](../setups/code/dotnet/testing/xunit.md), then choose one adapter guide such as [setups/code/dotnet/adapters/command-line/all.md](../setups/code/dotnet/adapters/command-line/all.md) or [setups/code/dotnet/adapters/web/full-stack.md](../setups/code/dotnet/adapters/web/full-stack.md)
 - `Suggested Output Repos`: one core library repo for the chosen ecosystem, language, and test framework, then one adapter repo per chosen surface path
 - `Notes`: start with small core logic contracts such as `count_characters(input) -> integer` and `format_character_count_message(input, count) -> string`, build the core repo first, then add adapter repos that consume that core; this project builds on `saying-hello` by introducing counting, exact input preservation, and zero/one/many message formatting

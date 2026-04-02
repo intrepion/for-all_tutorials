@@ -21,7 +21,7 @@ The default authoring flow is:
 1. refine the project spec
 2. update the curriculum map
 3. add or confirm the relevant setup guides
-4. write the project tutorial and TDD walkthrough
+4. write the project tutorial plus core and adapter walkthroughs
 5. translate the core part of that walkthrough into a separate core-library repo
 6. translate the adapter part into one or more separate adapter repos
 7. review code and branch coverage before calling the tutorial complete

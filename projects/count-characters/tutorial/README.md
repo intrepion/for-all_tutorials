@@ -4,18 +4,19 @@
 
 # Tutorial
 
-Instructions for building `count-characters` from the spec using one setup path and the TDD walkthrough.
+Instructions for building `count-characters` from the spec using one setup path and separate core and adapter walkthroughs.
 
 ## Contents
 
-- [TDD Walkthrough](tdd.md)
+- [Core Walkthrough](core.md)
+- [Adapter Walkthrough](adapter.md)
 
 ## Project-Specific Flow
 
-Follow the shared tutorial workflow in [Projects](../../README.md#shared-tutorial-workflow), then use this project's step ranges:
+Follow the shared tutorial workflow in [Projects](../../README.md#shared-tutorial-workflow), then use this project's walkthrough files:
 
-- core repo: [TDD Walkthrough](tdd.md) steps `1` through `21`
-- adapter repo: [TDD Walkthrough](tdd.md) steps `22` through `24`
+- core repo: [Core Walkthrough](core.md)
+- adapter repo: [Adapter Walkthrough](adapter.md)
 
 For this project, the core repo should expose `count_characters` and `format_character_count_message`, and the adapter repo should compose them without redefining their rules.
 

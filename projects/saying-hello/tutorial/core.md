@@ -1,12 +1,10 @@
 <!-- breadcrumbs:start -->
-[for-all_tutorials](../../../../README.md) / [Projects](../../../README.md) / [Saying Hello](../../README.md) / [Tutorial](../README.md) / tdd.md
+[for-all_tutorials](../../../../README.md) / [Projects](../../../README.md) / [Saying Hello](../../README.md) / [Tutorial](../README.md) / core.md
 <!-- breadcrumbs:end -->
 
-# TDD Walkthrough
+# Core Walkthrough
 
-Project-specific red, green, refactor sequence for `saying-hello`.
-
-## Core Repo
+Project-specific red, green, refactor sequence for the `saying-hello` core repo.
 
 ### 1. Red: Write The First Failing Test
 
@@ -118,22 +116,3 @@ The exact shape can vary by stack:
 - one static helper
 
 The important thing is that the greeting rules live in one small unit that can be tested directly.
-
-## Adapter Repo
-
-### 13. Red: Add An Adapter-Level Test
-
-In a separate adapter repo, add a failing test that proves the chosen adapter delegates to the core logic correctly.
-
-### 14. Green: Add The Thin Surface Adapter
-
-Add the thinnest possible adapter for the surface you are building:
-
-- accept the smallest useful input for that surface
-- pass that input to `greet`
-- return, render, or print the result in the form that surface requires
-- keep transport, parsing, and input/output code out of the core greeting logic
-
-### 15. Refactor
-
-Clean up any remaining duplication while keeping the full suite green.

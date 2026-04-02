@@ -16,7 +16,7 @@ Project-specific materials, with each project keeping its own overview, spec, an
 Every project in this folder follows the same high-level pattern:
 
 1. Use the project `spec/README.md` as the source of truth.
-2. Use the project `tutorial/README.md` and `tutorial/tdd.md` as the teaching path.
+2. Use the project `tutorial/README.md`, `tutorial/core.md`, and `tutorial/adapter.md` as the teaching path.
 3. Use `setups/` for stack-specific implementation details.
 4. Build the core logic first in a separate core library repo.
 5. Add one or more separate adapter repos only after the core logic is tested.
@@ -49,10 +49,10 @@ Project tutorial indexes in this folder share this flow:
 2. choose one setup path
 3. create a separate core library repo
 4. use the setup guides for that core repo
-5. follow the local TDD walkthrough for the core repo
+5. follow the local core walkthrough for the core repo
 6. create a separate adapter repo for the chosen surface and target
 7. use the setup guides for that adapter repo
-8. follow the local TDD walkthrough for the adapter repo
+8. follow the local adapter walkthrough for the adapter repo
 9. verify that the finished repos still match the local spec
 
 ## Shared Finish Checklist

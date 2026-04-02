@@ -76,7 +76,8 @@ for-all_tutorials/
         README.md
       tutorial/
         README.md
-        tdd.md
+        core.md
+        adapter.md
 ```
 
 ## Projects
@@ -90,7 +91,8 @@ projects/<project>/
     README.md
   tutorial/
     README.md
-    tdd.md
+    core.md
+    adapter.md
 ```
 
 This lets one folder answer three questions cleanly:
@@ -122,9 +124,10 @@ The core logic contract is the shared concept that every project tutorial and se
 The tutorial folder should contain:
 
 - a `README.md` that explains the files in the folder
-- a `tdd.md` walkthrough that explains the stack-agnostic red, green, refactor sequence
+- a `core.md` walkthrough for the core library repo
+- an `adapter.md` walkthrough for each adapter repo run
 
-The TDD walkthrough should explain:
+The walkthrough files should explain:
 
 - the red, green, refactor sequence
 - the order in which behaviors should be introduced
@@ -275,7 +278,7 @@ If a stack cannot produce a trustworthy branch-coverage metric with the approved
 2. Add or update the project's entry in [docs/curriculum.md](curriculum.md).
 3. Create or refine the relevant setup docs in `setups/code/<ecosystem>/` or `setups/storage/`.
 4. Create or refine `projects/<project>/spec/README.md`.
-5. Write the project tutorial index and `projects/<project>/tutorial/tdd.md`.
+5. Write the project tutorial index plus `projects/<project>/tutorial/core.md` and `projects/<project>/tutorial/adapter.md`.
 6. Define the expected output repos for a normal tutorial run.
 7. Build the core library repo by combining the project tutorial with one chosen setup path.
 8. Build one or more adapter repos that consume that core library.
@@ -291,7 +294,7 @@ Then one possible early path is:
 1. write [projects/saying-hello/spec/README.md](../projects/saying-hello/spec/README.md)
 2. add `saying-hello` to [docs/curriculum.md](curriculum.md)
 3. create reusable `.NET` setup docs such as `setups/code/dotnet/toolchain.md`, `setups/code/dotnet/testing/xunit.md`, and adapter guides like `setups/code/dotnet/adapters/command-line/all.md` or `setups/code/dotnet/adapters/web/full-stack.md`
-4. write [projects/saying-hello/tutorial/README.md](../projects/saying-hello/tutorial/README.md) and [projects/saying-hello/tutorial/tdd.md](../projects/saying-hello/tutorial/tdd.md)
+4. write [projects/saying-hello/tutorial/README.md](../projects/saying-hello/tutorial/README.md), [projects/saying-hello/tutorial/core.md](../projects/saying-hello/tutorial/core.md), and [projects/saying-hello/tutorial/adapter.md](../projects/saying-hello/tutorial/adapter.md)
 5. build a separate core library repo and test `greet` to the repo's coverage standard
 6. build a separate adapter repo for the chosen surface path
 7. keep the adapter thin and the greeting rules in the tested core logic repo
