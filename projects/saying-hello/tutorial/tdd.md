@@ -119,16 +119,16 @@ The important thing is that the greeting rules live in one small unit that can b
 
 ### 13. Red: Add An Adapter-Level Test
 
-If your stack makes adapter testing practical, add a failing test that proves the required `command-line/all` adapter delegates to the core logic correctly.
+If your stack makes adapter testing practical, add a failing test that proves the chosen adapter delegates to the core logic correctly.
 
 ### 14. Green: Add The Thin Surface Adapter
 
-Add the thinnest possible adapter for the required `command-line/all` surface:
+Add the thinnest possible adapter for the surface you are building:
 
-- accept zero or one name input from the command line
+- accept the smallest useful input for that surface
 - pass that input to `greet`
-- print the returned string
-- keep parsing and input/output code out of the core greeting logic
+- return, render, or print the result in the form that surface requires
+- keep transport, parsing, and input/output code out of the core greeting logic
 
 ### 15. Refactor
 

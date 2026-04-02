@@ -4,6 +4,12 @@
 
 # Frameworks
 
-Framework-specific setup guides for future `.NET` tutorials.
+Framework-specific setup guides for `.NET` tutorials that need more than the base toolchain and adapter guidance.
+
+Use a framework guide together with:
+
+- [Toolchain](../toolchain.md)
+- one guide from [Testing](../testing/README.md)
+- one guide from [Adapters](../adapters/README.md)
 
 No `.NET` framework setup guide has been written yet.

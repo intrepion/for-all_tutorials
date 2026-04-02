@@ -10,5 +10,6 @@ Setup guides for the .NET ecosystem.
 
 - [Languages](languages.md)
 - [Toolchain](toolchain.md)
+- [Adapters](adapters/README.md)
 - [Testing](testing/README.md)
 - [Frameworks](frameworks/README.md)

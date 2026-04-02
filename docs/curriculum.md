@@ -12,7 +12,7 @@ This file answers:
 
 - what should be learned first
 - what each project depends on
-- which surfaces are required
+- which surface paths are currently supported or encouraged
 - which tutorial path should usually be built first
 - what state each project is in
 
@@ -29,9 +29,9 @@ Each project entry should capture:
 - `Project`
 - `Status`
 - `Prerequisites`
-- `Required Surfaces`
+- `Surface Options`
 - `Recommended Tutorial`
-- `Suggested Setup Path`
+- `Suggested Setup Paths`
 - `Notes`
 
 Project slugs stay stable even if their place in this map changes.
@@ -43,7 +43,7 @@ Project slugs stay stable even if their place in this map changes.
 - `Project`: `saying-hello`
 - `Status`: `in-progress`
 - `Prerequisites`: none
-- `Required Surfaces`: `command-line/all`
+- `Surface Options`: `command-line/all`, `web/full-stack`
 - `Recommended Tutorial`: [projects/saying-hello/tutorial/tdd.md](../projects/saying-hello/tutorial/tdd.md)
-- `Suggested Setup Path`: start with [setups/code/dotnet/toolchain.md](../setups/code/dotnet/toolchain.md) and one `.NET` testing setup such as [setups/code/dotnet/testing/xunit.md](../setups/code/dotnet/testing/xunit.md)
-- `Notes`: start with a tiny core logic contract such as `greet(name) -> string`, follow the stack-agnostic TDD tutorial, then realize it through one chosen setup path and wrap it in a thin adapter; expansion targets may later include `web/back-end`, `web/front-end`, `web/full-stack`, `desktop/all`, `desktop/macos`, `desktop/linux`, `desktop/windows`, `mobile/all`, `mobile/ios`, and `mobile/android`
+- `Suggested Setup Paths`: for `.NET`, start with [setups/code/dotnet/toolchain.md](../setups/code/dotnet/toolchain.md), choose one testing guide such as [setups/code/dotnet/testing/xunit.md](../setups/code/dotnet/testing/xunit.md), then choose one adapter guide such as [setups/code/dotnet/adapters/command-line/all.md](../setups/code/dotnet/adapters/command-line/all.md) or [setups/code/dotnet/adapters/web/full-stack.md](../setups/code/dotnet/adapters/web/full-stack.md)
+- `Notes`: start with a tiny core logic contract such as `greet(name) -> string`, follow the stack-agnostic TDD tutorial, then realize it through one chosen setup path and wrap it in a thin adapter; a single run only needs one supported surface path, and more can be added later

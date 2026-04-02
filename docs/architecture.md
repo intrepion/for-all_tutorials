@@ -48,6 +48,14 @@ for-all_tutorials/
         README.md
         languages.md
         toolchain.md
+        adapters/
+          README.md
+          command-line/
+            README.md
+            all.md
+          web/
+            README.md
+            full-stack.md
         testing/
           README.md
           xunit.md
@@ -117,12 +125,9 @@ The tutorial folder should contain:
 
 The TDD walkthrough should explain:
 
-- the project goal
-- the contract it is implementing from the spec
 - the red, green, refactor sequence
 - the order in which behaviors should be introduced
 - the point at which a thin surface adapter is added
-- the coverage expectations for the finished project
 
 The project tutorial should not duplicate:
 
@@ -143,6 +148,7 @@ Recommended shape:
 setups/code/<ecosystem>/
 setups/code/<ecosystem>/languages.md
 setups/code/<ecosystem>/toolchain.md
+setups/code/<ecosystem>/adapters/<surface>/<target>.md
 setups/code/<ecosystem>/testing/<framework>.md
 setups/code/<ecosystem>/frameworks/<framework>.md
 setups/storage/
@@ -153,6 +159,7 @@ That means:
 - keep one reusable setup area per code ecosystem
 - put language choices in `languages.md`
 - standardize core ecosystem guidance in `toolchain.md`
+- put surface and target adapter setup under `setups/code/<ecosystem>/adapters/`
 - put xUnit, NUnit, MSTest, TUnit, or similar variants under `setups/code/<ecosystem>/testing/`
 - put framework bootstrap guidance under `setups/code/<ecosystem>/frameworks/`
 - keep storage and database concerns under `setups/storage/`
@@ -196,9 +203,9 @@ That map should carry:
 - project slug
 - status such as `planned`, `in-progress`, or `complete`
 - prerequisites
-- required surfaces
+- surface options
 - recommended tutorial
-- suggested setup path
+- suggested setup paths
 - notes
 
 Avoid planning dozens of speculative projects far in advance. Add projects when there is genuine intent to build them, and reorder the map as the curriculum becomes clearer.
@@ -242,12 +249,12 @@ If a stack cannot produce a trustworthy branch-coverage metric with the approved
 
 For `saying-hello`, the project spec defines a tiny contract such as `greet(name) -> string`.
 
-Then the recommended first path is:
+Then one possible early path is:
 
 1. write [projects/saying-hello/spec/README.md](../projects/saying-hello/spec/README.md)
 2. add `saying-hello` to [docs/curriculum.md](curriculum.md)
-3. create reusable `.NET` setup docs such as `setups/code/dotnet/toolchain.md` and `setups/code/dotnet/testing/xunit.md`
+3. create reusable `.NET` setup docs such as `setups/code/dotnet/toolchain.md`, `setups/code/dotnet/testing/xunit.md`, and adapter guides like `setups/code/dotnet/adapters/command-line/all.md` or `setups/code/dotnet/adapters/web/full-stack.md`
 4. write [projects/saying-hello/tutorial/README.md](../projects/saying-hello/tutorial/README.md) and [projects/saying-hello/tutorial/tdd.md](../projects/saying-hello/tutorial/tdd.md)
 5. test `greet` to the repo's coverage standard using one chosen setup path
-6. add the required `command-line/all` adapter
+6. add the chosen adapter for that run
 7. keep the adapter thin and the greeting rules in the tested core logic

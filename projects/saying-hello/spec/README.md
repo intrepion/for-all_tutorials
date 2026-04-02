@@ -49,17 +49,19 @@ This first project does not include:
 
 ## Surface Expectations
 
-Every implementation path should adapt the same `greet` behavior instead of redefining it.
+Every tutorial run should adapt the same `greet` behavior instead of redefining it.
 
-Initial required surface:
+A single run only needs one chosen surface and target path.
+
+Current example paths include:
 
 - `command-line/all`
+- `web/full-stack`
 
-Future optional surfaces may include:
+Additional paths may include:
 
 - `web/back-end`
 - `web/front-end`
-- `web/full-stack`
 - `desktop/all`
 - `desktop/macos`
 - `desktop/linux`
@@ -77,7 +79,7 @@ Minimum test expectations:
 - tests for non-empty input
 - tests for trimming behavior
 - tests for empty and whitespace-only input
-- tests for every surface adapter that prove it delegates to the core logic correctly
+- tests for every adapter built in the chosen run that prove it delegates to the core logic correctly
 
 Coverage policy:
 
