@@ -463,3 +463,47 @@ Project slugs stay stable even if their place in this map changes.
 - `Recommended Tutorial`: [projects/troubleshooting-car-issues/tutorial/README.md](../projects/troubleshooting-car-issues/tutorial/README.md)
 - `Suggested Output Repos`: one core library repo for the chosen ecosystem, language, and test framework, then one adapter repo for the chosen surface implementation
 - `Notes`: start with small decision and formatting contracts such as `diagnose_car_issue(answers)` and `format_car_diagnosis_message(diagnosis_code)`, build the core repo first, then add adapter repos that consume that core; this project builds on earlier branching exercises by turning a nested yes/no troubleshooting tree into one deterministic diagnosis path
+
+## Stage 21
+
+### anagram-checker
+
+- `Project`: `anagram-checker`
+- `Status`: `planned`
+- `Prerequisites`: `count-characters`
+- `Recommended Tutorial`: [projects/anagram-checker/tutorial/README.md](../projects/anagram-checker/tutorial/README.md)
+- `Suggested Output Repos`: one core library repo for the chosen ecosystem, language, and test framework, then one adapter repo for the chosen surface implementation
+- `Notes`: start with small comparison and formatting contracts such as `are_anagrams(first_input, second_input)` and `format_anagram_result(first_input, second_input, are_anagrams)`, build the core repo first, then add adapter repos that consume that core; this project builds on earlier exact-string exercises by comparing two inputs through character counts while preserving both original strings exactly in the final message
+
+## Stage 22
+
+### password-strength-indicator
+
+- `Project`: `password-strength-indicator`
+- `Status`: `planned`
+- `Prerequisites`: `anagram-checker`
+- `Recommended Tutorial`: [projects/password-strength-indicator/tutorial/README.md](../projects/password-strength-indicator/tutorial/README.md)
+- `Suggested Output Repos`: one core library repo for the chosen ecosystem, language, and test framework, then one adapter repo for the chosen surface implementation
+- `Notes`: start with small scoring, classification, and formatting contracts such as `calculate_password_strength_score(password)`, `classify_password_strength(score)`, and `format_password_strength_message(password, strength)`, build the core repo first, then add adapter repos that consume that core; this project builds on earlier exact-string exercises by classifying one input according to a total, non-overlapping points system based on length and character categories
+
+## Stage 23
+
+### months-to-pay-off-a-credit-card
+
+- `Project`: `months-to-pay-off-a-credit-card`
+- `Status`: `planned`
+- `Prerequisites`: `determining-compound-interest`
+- `Recommended Tutorial`: [projects/months-to-pay-off-a-credit-card/tutorial/README.md](../projects/months-to-pay-off-a-credit-card/tutorial/README.md)
+- `Suggested Output Repos`: one core library repo for the chosen ecosystem, language, and test framework, then one adapter repo for the chosen surface implementation
+- `Notes`: start with small calculation and formatting contracts such as `calculate_credit_card_payoff_months(balance_dollars, apr_tenths_percent, monthly_payment_dollars)` and `format_credit_card_payoff_report(months)`, build the core repo first, then add adapter repos that consume that core; this project builds on earlier interest exercises by introducing a logarithmic payoff formula, daily-rate derivation from APR, and whole-month ceiling rounding
+
+## Stage 24
+
+### validating-inputs
+
+- `Project`: `validating-inputs`
+- `Status`: `planned`
+- `Prerequisites`: `password-strength-indicator`
+- `Recommended Tutorial`: [projects/validating-inputs/tutorial/README.md](../projects/validating-inputs/tutorial/README.md)
+- `Suggested Output Repos`: one core library repo for the chosen ecosystem, language, and test framework, then one adapter repo for the chosen surface implementation
+- `Notes`: start with small validation and formatting contracts such as `validate_first_name(first_name)`, `validate_last_name(last_name)`, `validate_zip_code(zip_code)`, `validate_employee_id(employee_id)`, `collect_validation_errors(first_name, last_name, zip_code, employee_id)`, and `format_validation_report(errors)`, build the core repo first, then add adapter repos that consume that core; this project builds on earlier exact-string and classification exercises by composing several narrow validators into one stable multi-error report
