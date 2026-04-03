@@ -13,7 +13,7 @@ Instructions for building `parsing-a-data-file` from the spec using one setup pa
 
 ## Project-Specific Flow
 
-Follow the shared tutorial workflow in [Projects](../../README.md#shared-tutorial-workflow), then use this project's walkthrough files:
+Follow the shared repository-creation and tutorial workflow in [Projects](../../README.md#shared-repository-creation) and [Projects](../../README.md#shared-tutorial-workflow), then use this project's walkthrough files:
 
 - core repo: [Core Walkthrough](core.md)
 - adapter repo: [Adapter Walkthrough](adapter.md)

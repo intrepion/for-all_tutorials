@@ -87,6 +87,28 @@ The default model is:
 - adapter repos depend on the core library instead of copying its logic
 - adapter repo names always include a storage slot, using `no-storage` when the adapter does not use storage
 
+## Shared Repository Creation
+
+Before starting a project walkthrough, create the output repository that walkthrough will target.
+
+For a core repo:
+
+- use the name shape `<project>-<ecosystem>-<language>-<test-framework>-core`
+- use a short description that says it is the manual, spec-driven, test-driven core library for that project and stack
+
+For an adapter repo:
+
+- use the name shape `<project>-<ecosystem>-<language>-<test-framework>-<storage>-<surface>-<target>-<framework>`
+- use a short description that says it is the manual adapter for that project and stack and that it consumes the separately tested core library
+
+Recommended sequence:
+
+1. choose the repo role: core or adapter
+2. choose the repo name from the shared naming shape
+3. create the remote repo in the forge you use, with a short one-sentence description
+4. create or clone the local working copy for that repo
+5. then start the setup guides and the project walkthrough for that repo
+
 ## Shared Spec Conventions
 
 Project specs in this folder share these rules:
@@ -110,10 +132,10 @@ Project tutorial indexes in this folder share this flow:
 
 1. read the local spec
 2. choose one setup path
-3. create a separate core library repo
+3. create a separate core library repo using [Shared Repository Creation](#shared-repository-creation)
 4. use the setup guides for that core repo
 5. follow the local core walkthrough for the core repo
-6. create a separate adapter repo for the chosen surface and target
+6. create a separate adapter repo for the chosen surface and target using [Shared Repository Creation](#shared-repository-creation)
 7. use the setup guides for that adapter repo
 8. follow the local adapter walkthrough for the adapter repo
 9. verify that the finished repos still match the local spec
