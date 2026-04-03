@@ -1,0 +1,23 @@
+<!-- breadcrumbs:start -->
+[for-all_tutorials](../../README.md) / [Projects](../README.md) / Comparing Numbers
+<!-- breadcrumbs:end -->
+
+# Comparing Numbers
+
+Project home for the `comparing-numbers` curriculum project.
+
+## Contents
+
+- [Spec](spec/README.md)
+- [Tutorial](tutorial/README.md)
+
+## Purpose
+
+`comparing-numbers` exists to teach:
+
+- checking whether three entered numbers are all different before continuing
+- selecting the largest value from three distinct numbers
+- separating distinctness checks, largest-number comparison, and output formatting
+- keeping adapters thin while the core owns the comparison rules
+
+This project follows the shared workflow and output model in [Projects](../README.md#shared-workflow) and [Projects](../README.md#shared-output-model).
