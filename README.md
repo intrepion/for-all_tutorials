@@ -6,12 +6,13 @@ for-all_tutorials
 
 Comparable, spec-driven tutorials organized as a project-first curriculum.
 
-This repository stores the tutorials themselves. The code produced by following a tutorial should live in separate implementation repositories outside this repo.
+This repository stores tutorial source material plus generated tutorial outputs. The code produced by following a tutorial should live in separate implementation repositories outside this repo.
 
 The repo is organized around stable project slugs instead of level IDs in paths:
 
-- `projects/` keeps each project's overview, spec, and tutorial materials together.
-- `setups/` captures reusable code-ecosystem, testing, adapter, framework, and storage setup guidance.
+- `partials/projects/` keeps each project's overview, spec, instructions, and manifest together.
+- `setups/` captures the broader reusable code-ecosystem, testing, adapter, framework, and storage setup guidance while `partials/setups/` is still in a pilot phase.
+- `tutorials/` is generated output and should be regenerated rather than edited by hand.
 - `docs/` explains the architecture and keeps the mutable curriculum map.
 
 The current setup catalog includes command-line and `web/full-stack` framework paths across multiple ecosystems so the same project can later be built and compared in several stacks.
@@ -23,10 +24,11 @@ The default authoring flow is:
 1. refine the project spec
 2. update the curriculum map
 3. add or confirm the relevant setup guides
-4. write the project tutorial plus core and adapter walkthroughs
-5. translate the core part of that walkthrough into a separate core-library repo
-6. translate the adapter part into one or more separate adapter repos
-7. review code and branch coverage before calling the tutorial complete
+4. write or refine the project instructions and manifest in `partials/projects/`
+5. regenerate the compiled tutorials from `partials/`
+6. translate the core part of that compiled tutorial into a separate core-library repo
+7. translate the adapter part into one or more separate adapter repos
+8. review code and branch coverage before calling the tutorial complete
 
 Repo-wide coverage policy:
 
@@ -36,5 +38,5 @@ Repo-wide coverage policy:
 ## Contents
 
 - [Docs](docs/README.md)
-- [Projects](projects/README.md)
+- [Partials](partials/README.md)
 - [Setups](setups/README.md)

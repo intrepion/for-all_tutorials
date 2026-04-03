@@ -1,0 +1,10 @@
+[package]
+name = "tutorial_generator"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+askama = "0.12"
+serde = { version = "1.0", features = ["derive"] }
+serde_yaml = "0.9"
+regex = "1.10"

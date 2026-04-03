@@ -4,16 +4,17 @@
 
 # Repository Architecture
 
-Practical guidance for organizing this repo as a spec-driven, test-driven tutorial curriculum with stable project paths and a separate curriculum map.
+Practical guidance for organizing this repo as a spec-driven, test-driven tutorial curriculum with stable project paths, source partials, generated tutorials, and a separate curriculum map.
 
 ## Recommendation
 
 Use a project-first structure with curriculum ordering kept outside the filesystem:
 
-- keep stable project slugs in `projects/`
-- keep reusable setup guidance in `setups/`
+- keep stable project slugs in `partials/projects/`
+- keep generated learner-facing outputs in `tutorials/`
+- keep reusable setup guidance in `setups/` while `partials/setups/` is still being scaled out
 - keep curriculum order in [docs/curriculum.md](curriculum.md)
-- keep each project's overview, spec, and tutorial materials together
+- keep each project's overview, spec, instructions, and manifest together
 - require tests and coverage from the beginning instead of treating them as cleanup
 
 This separates identity from ordering:
@@ -26,12 +27,12 @@ This separates identity from ordering:
 - project slugs are stable
 - curriculum order is mutable
 - every tutorial is still a project app
-- each project keeps its own spec and tutorial side by side
+- each project keeps its own spec, instructions, and manifest side by side
 - setups capture reusable environment and tooling guidance
-- this repo stores tutorials, not the resulting implementation repos
+- this repo stores tutorial source material and generated tutorials, not the resulting implementation repos
 - tests are the executable form of the spec
 - code coverage and branch coverage are part of done
-- project tutorials should keep adapters thin by building on a well-tested core logic unit first
+- project instructions and compiled tutorials should keep adapters thin by building on a well-tested core logic unit first
 
 ## Recommended Tree
 
@@ -140,28 +141,46 @@ for-all_tutorials/
     storage/
       README.md
 
-  projects/
+  partials/
     README.md
-    saying-hello/
+    projects/
       README.md
-      spec/
+      saying-hello/
         README.md
-      tutorial/
-        README.md
-        core.md
-        adapter.md
+        manifest.yaml
+        spec/
+          README.md
+        instructions/
+          README.md
+          core.md
+          adapter.md
+
+  tutorials/
+    saying-hello/
+      dotnet/
+        csharp/
+          xunit/
+            core/
+              README.md
+            adapters/
+              no-storage/
+                command-line/
+                  all/
+                    no-framework/
+                      README.md
 ```
 
-## Projects
+## Project Partials
 
-Each project should keep its own materials together:
+Each project source slice should keep its own materials together:
 
 ```text
-projects/<project>/
+partials/projects/<project>/
   README.md
+  manifest.yaml
   spec/
     README.md
-  tutorial/
+  instructions/
     README.md
     core.md
     adapter.md
@@ -171,9 +190,9 @@ This lets one folder answer three questions cleanly:
 
 - what is this project?
 - what is the canonical contract?
-- how should it be built test-first?
+- how should it be assembled into compiled tutorials?
 
-### `projects/<project>/spec/`
+### `partials/projects/<project>/spec/`
 
 The spec is the canonical contract for every implementation of that project.
 
@@ -189,34 +208,66 @@ At minimum, each spec should define:
 - benchmark expectations if relevant
 - security expectations if relevant
 
-The core logic contract is the shared concept that every project tutorial and setup-guided implementation should realize consistently.
+The core logic contract is the shared concept that every project instruction slice and setup-guided implementation should realize consistently.
 
-### `projects/<project>/tutorial/`
+### `partials/projects/<project>/instructions/`
 
-The tutorial folder should contain:
+The instructions folder should contain:
 
-- a `README.md` that explains the files in the folder
-- a `core.md` walkthrough for the core library repo
-- an `adapter.md` walkthrough for each adapter repo run
+- a `README.md` source index that explains the files in the folder
+- a `core.md` instruction fragment for the core library repo
+- an `adapter.md` instruction fragment for each adapter repo run
 
-The walkthrough files should explain:
+The instruction files should explain:
 
 - the red, green, refactor sequence
 - the order in which behaviors should be introduced
 - the point at which a thin surface adapter is added
 
-The project tutorial should not duplicate:
+The project instructions should not duplicate:
 
 - language installation guidance
 - framework bootstrap guidance
 - test-runner template details
 - environment-specific commands that are already covered in `setups/`
 
-If a project eventually grows too large for one file, add a small number of sibling markdown files under `projects/<project>/tutorial/` rather than creating language or framework subtrees.
+If a project eventually grows too large for one file, add a small number of sibling markdown files under `partials/projects/<project>/instructions/` rather than creating language or framework subtrees.
+
+### `partials/projects/<project>/manifest.yaml`
+
+The manifest declares which compiled tutorial outputs are actively supported.
+
+At minimum, each manifest should define:
+
+- the stable project slug
+- a manifest version
+- the active compiled outputs
+- the selected stack for each output
+- the source partials that feed each output
+
+Manifests with empty `compiled_outputs` are still valuable because they make the absence of generated outputs explicit instead of accidental.
+
+## Generated Tutorials
+
+Generated learner-facing tutorials belong under `tutorials/`.
+
+Recommended shape:
+
+```text
+tutorials/<project>/<ecosystem>/<language>/<testing>/core/README.md
+tutorials/<project>/<ecosystem>/<language>/<testing>/adapters/<storage>/<surface>/<target>/<framework>/README.md
+```
+
+These files should:
+
+- be generated from `partials/`
+- be safe to delete and regenerate
+- never be treated as the canonical authoring source
+- match the stack encoded in their path exactly
 
 ## Setups
 
-Reusable setup guidance belongs in `setups/`, not inside individual project tutorials.
+Reusable setup guidance belongs in `setups/`, not inside individual project instruction slices or generated tutorials.
 
 Recommended shape:
 
@@ -249,10 +300,10 @@ That means:
 - put framework bootstrap guidance under `setups/code/<ecosystem>/frameworks/<surface>/` when the framework is tied to a specific surface
 - add a target layer under `frameworks/` when the framework only applies to one target such as `web/full-stack`
 - keep storage and database concerns under `setups/storage/`
-- keep project tutorials focused on the project contract and project flow
+- keep project instructions and generated tutorials focused on the project contract and project flow
 - keep environment, template, runner, and coverage-command details in setup docs
 
-This avoids copying the same environment notes across every project tutorial.
+This avoids copying the same environment notes across every project instruction slice and generated tutorial.
 
 ## Output Repositories
 
@@ -342,7 +393,7 @@ That map should carry:
 - project slug
 - prerequisites
 - unlocks
-- recommended tutorial
+- recommended instructions
 - notes
 
 Avoid planning dozens of speculative projects far in advance. Add projects when there is genuine intent to build them, and reorder the map as the curriculum becomes clearer.
@@ -373,16 +424,17 @@ If a stack cannot produce a trustworthy branch-coverage metric with the approved
 
 ## Suggested Authoring Workflow
 
-1. Create or refine `projects/<project>/README.md`.
+1. Create or refine `partials/projects/<project>/README.md`.
 2. Add or update the project's entry in [docs/curriculum.md](curriculum.md).
 3. Create or refine the relevant setup docs in `setups/code/<ecosystem>/` or `setups/storage/`.
-4. Create or refine `projects/<project>/spec/README.md`.
-5. Write the project tutorial index plus `projects/<project>/tutorial/core.md` and `projects/<project>/tutorial/adapter.md`.
-6. Define the expected output repos for a normal tutorial run.
-7. Build the core library repo by combining the project tutorial with one chosen setup path.
-8. Build one or more adapter repos that consume that core library.
-9. Keep adapter code thin and keep business rules in the core logic unit.
-10. Review code coverage and branch coverage before marking the tutorial complete.
+4. Create or refine `partials/projects/<project>/spec/README.md`.
+5. Write the project instruction index plus `partials/projects/<project>/instructions/core.md` and `partials/projects/<project>/instructions/adapter.md`.
+6. Define the active compiled outputs in `partials/projects/<project>/manifest.yaml`.
+7. Regenerate `tutorials/` from `partials/`.
+8. Build the core library repo by combining the compiled tutorial with one chosen setup path.
+9. Build one or more adapter repos that consume that core library.
+10. Keep adapter code thin and keep business rules in the core logic unit.
+11. Review code coverage and branch coverage before marking the tutorial complete.
 
 ## Real-World Example
 
@@ -390,10 +442,12 @@ For `saying-hello`, the project spec defines a tiny contract such as `greet(name
 
 Then one possible early path is:
 
-1. write [projects/saying-hello/spec/README.md](../projects/saying-hello/spec/README.md)
+1. write [partials/projects/saying-hello/spec/README.md](../partials/projects/saying-hello/spec/README.md)
 2. add `saying-hello` to [docs/curriculum.md](curriculum.md)
 3. create reusable `.NET` setup docs such as `setups/code/dotnet/languages/csharp.md`, `setups/code/dotnet/toolchain/sdk.md`, `setups/code/dotnet/toolchain/dotnet-cli.md`, `setups/code/dotnet/testing/xunit.md`, adapter guides like `setups/code/dotnet/adapters/command-line/all.md` or `setups/code/dotnet/adapters/web/full-stack.md`, and framework guides like `setups/code/dotnet/frameworks/command-line/spectre-console.md` or `setups/code/dotnet/frameworks/web/full-stack/blazor-server.md`
-4. write [projects/saying-hello/tutorial/README.md](../projects/saying-hello/tutorial/README.md), [projects/saying-hello/tutorial/core.md](../projects/saying-hello/tutorial/core.md), and [projects/saying-hello/tutorial/adapter.md](../projects/saying-hello/tutorial/adapter.md)
-5. build a separate core library repo and test `greet` to the repo's coverage standard
-6. build a separate adapter repo for the chosen surface path
-7. keep the adapter thin and the greeting rules in the tested core logic repo
+4. write [partials/projects/saying-hello/instructions/README.md](../partials/projects/saying-hello/instructions/README.md), [partials/projects/saying-hello/instructions/core.md](../partials/projects/saying-hello/instructions/core.md), and [partials/projects/saying-hello/instructions/adapter.md](../partials/projects/saying-hello/instructions/adapter.md)
+5. declare the active outputs in [partials/projects/saying-hello/manifest.yaml](../partials/projects/saying-hello/manifest.yaml)
+6. generate [tutorials/saying-hello/dotnet/csharp/xunit/core/README.md](../tutorials/saying-hello/dotnet/csharp/xunit/core/README.md) and [tutorials/saying-hello/dotnet/csharp/xunit/adapters/no-storage/command-line/all/no-framework/README.md](../tutorials/saying-hello/dotnet/csharp/xunit/adapters/no-storage/command-line/all/no-framework/README.md)
+7. build a separate core library repo and test `greet` to the repo's coverage standard
+8. build a separate adapter repo for the chosen surface path
+9. keep the adapter thin and the greeting rules in the tested core logic repo
