@@ -9,11 +9,16 @@ Project-specific materials, with each project keeping its own overview, spec, an
 ## Contents
 
 - [Area of a Rectangular Room](area-of-a-rectangular-room/README.md)
+- [BMI Calculator](bmi-calculator/README.md)
+- [Blood Alcohol Calculator](blood-alcohol-calculator/README.md)
 - [Computing Simple Interest](computing-simple-interest/README.md)
 - [Counting the Number of Characters](count-characters/README.md)
 - [Currency Conversion](currency-conversion/README.md)
 - [Determining Compound Interest](determining-compound-interest/README.md)
+- [Legal Driving Age](legal-driving-age/README.md)
 - [Mad Lib](mad-lib/README.md)
+- [Multistate Sales Tax Calculator](multistate-sales-tax-calculator/README.md)
+- [Numbers to Names](numbers-to-names/README.md)
 - [Paint Calculator](paint-calculator/README.md)
 - [Pizza Party](pizza-party/README.md)
 - [Printing Quotes](printing-quotes/README.md)
@@ -21,6 +26,9 @@ Project-specific materials, with each project keeping its own overview, spec, an
 - [Saying Hello](saying-hello/README.md)
 - [Self-Checkout](self-checkout/README.md)
 - [Simple Math](simple-math/README.md)
+- [Tax Calculator](tax-calculator/README.md)
+- [Temperature Converter](temperature-converter/README.md)
+- [Troubleshooting Car Issues](troubleshooting-car-issues/README.md)
 
 ## Shared Workflow
 

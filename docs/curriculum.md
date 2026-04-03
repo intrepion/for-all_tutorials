@@ -375,3 +375,91 @@ Project slugs stay stable even if their place in this map changes.
 - `Recommended Tutorial`: [projects/determining-compound-interest/tutorial/README.md](../projects/determining-compound-interest/tutorial/README.md)
 - `Suggested Output Repos`: one core library repo for the chosen ecosystem, language, and test framework, then one adapter repo for the chosen surface implementation
 - `Notes`: start with small calculation and formatting contracts such as `calculate_compound_interest(principal_dollars, annual_rate_tenths_percent, years, compounds_per_year)` and `format_compound_interest_report(principal_dollars, annual_rate_tenths_percent, years, compounds_per_year, accrued_amount_cents)`, build the core repo first, then add adapter repos that consume that core; this project builds directly on simple interest by adding exponent-based growth and compound periods while keeping deterministic cent-rounded output
+
+## Stage 13
+
+### tax-calculator
+
+- `Project`: `tax-calculator`
+- `Status`: `planned`
+- `Prerequisites`: `self-checkout`
+- `Recommended Tutorial`: [projects/tax-calculator/tutorial/README.md](../projects/tax-calculator/tutorial/README.md)
+- `Suggested Output Repos`: one core library repo for the chosen ecosystem, language, and test framework, then one adapter repo for the chosen surface implementation
+- `Notes`: start with small calculation and formatting contracts such as `calculate_tax_for_order(order_amount_cents, state)` and `format_tax_report(summary)`, build the core repo first, then add adapter repos that consume that core; this project builds on earlier money exercises by adding a simple conditional branch where the fixed `5.5%` tax rule applies only for the exact `WI` case
+
+## Stage 14
+
+### legal-driving-age
+
+- `Project`: `legal-driving-age`
+- `Status`: `planned`
+- `Prerequisites`: `simple-math`
+- `Recommended Tutorial`: [projects/legal-driving-age/tutorial/README.md](../projects/legal-driving-age/tutorial/README.md)
+- `Suggested Output Repos`: one core library repo for the chosen ecosystem, language, and test framework, then one adapter repo for the chosen surface implementation
+- `Notes`: start with small comparison and formatting contracts such as `is_old_enough_to_drive(age)` and `format_driving_eligibility_message(is_old_enough)`, build the core repo first, then add adapter repos that consume that core; this project builds on earlier numeric input exercises by introducing a simple inclusive threshold check at the fixed legal age of `16`
+
+## Stage 15
+
+### blood-alcohol-calculator
+
+- `Project`: `blood-alcohol-calculator`
+- `Status`: `planned`
+- `Prerequisites`: `determining-compound-interest`, `legal-driving-age`
+- `Recommended Tutorial`: [projects/blood-alcohol-calculator/tutorial/README.md](../projects/blood-alcohol-calculator/tutorial/README.md)
+- `Suggested Output Repos`: one core library repo for the chosen ecosystem, language, and test framework, then one adapter repo for the chosen surface implementation
+- `Notes`: start with small calculation, comparison, and formatting contracts such as `calculate_bac_hundredths(weight_pounds, gender, number_of_drinks, pure_alcohol_ounces_per_drink_hundredths, hours_since_last_drink)`, `is_legal_to_drive_with_bac(bac_hundredths)`, and `format_bac_report(bac_hundredths, is_legal_to_drive)`, build the core repo first, then add adapter repos that consume that core; this project builds on earlier formula-driven and threshold-driven exercises by combining a multi-step calculation with a fixed legal BAC threshold of `0.08`
+
+## Stage 16
+
+### temperature-converter
+
+- `Project`: `temperature-converter`
+- `Status`: `planned`
+- `Prerequisites`: `simple-math`, `legal-driving-age`
+- `Recommended Tutorial`: [projects/temperature-converter/tutorial/README.md](../projects/temperature-converter/tutorial/README.md)
+- `Suggested Output Repos`: one core library repo for the chosen ecosystem, language, and test framework, then one adapter repo for the chosen surface implementation
+- `Notes`: start with small conversion and formatting contracts such as `convert_temperature_tenths(starting_temperature_tenths, conversion_choice)` and `format_temperature_conversion_report(conversion_choice, converted_temperature_tenths)`, build the core repo first, then add adapter repos that consume that core; this project builds on earlier numeric input and branching exercises by letting the user choose which conversion formula runs
+
+## Stage 17
+
+### bmi-calculator
+
+- `Project`: `bmi-calculator`
+- `Status`: `planned`
+- `Prerequisites`: `simple-math`, `legal-driving-age`
+- `Recommended Tutorial`: [projects/bmi-calculator/tutorial/README.md](../projects/bmi-calculator/tutorial/README.md)
+- `Suggested Output Repos`: one core library repo for the chosen ecosystem, language, and test framework, then one adapter repo for the chosen surface implementation
+- `Notes`: start with small calculation, classification, and formatting contracts such as `calculate_bmi_tenths(weight_pounds, height_inches)`, `classify_bmi(bmi_tenths)`, and `format_bmi_report(bmi_tenths, classification)`, build the core repo first, then add adapter repos that consume that core; this project builds on earlier formula and branching exercises by comparing a rounded BMI against the fixed ideal range from `18.5` through `25.0`
+
+## Stage 18
+
+### multistate-sales-tax-calculator
+
+- `Project`: `multistate-sales-tax-calculator`
+- `Status`: `planned`
+- `Prerequisites`: `tax-calculator`
+- `Recommended Tutorial`: [projects/multistate-sales-tax-calculator/tutorial/README.md](../projects/multistate-sales-tax-calculator/tutorial/README.md)
+- `Suggested Output Repos`: one core library repo for the chosen ecosystem, language, and test framework, then one adapter repo for the chosen surface implementation
+- `Notes`: start with small calculation and formatting contracts such as `calculate_multistate_sales_tax(order_amount_cents, state, county)` and `format_multistate_sales_tax_report(summary)`, build the core repo first, then add adapter repos that consume that core; this project builds directly on the earlier sales-tax exercise by nesting county-level Wisconsin decisions inside the broader state-level tax decision
+
+## Stage 19
+
+### numbers-to-names
+
+- `Project`: `numbers-to-names`
+- `Status`: `planned`
+- `Prerequisites`: `simple-math`
+- `Recommended Tutorial`: [projects/numbers-to-names/tutorial/README.md](../projects/numbers-to-names/tutorial/README.md)
+- `Suggested Output Repos`: one core library repo for the chosen ecosystem, language, and test framework, then one adapter repo for the chosen surface implementation
+- `Notes`: start with small lookup and formatting contracts such as `lookup_month_name(month_number)` and `format_month_lookup_message(month_name)`, build the core repo first, then add adapter repos that consume that core; this project builds on earlier numeric input and branching exercises by mapping a constrained numeric range to calendar names and handling the out-of-range error case
+
+## Stage 20
+
+### troubleshooting-car-issues
+
+- `Project`: `troubleshooting-car-issues`
+- `Status`: `planned`
+- `Prerequisites`: `multistate-sales-tax-calculator`
+- `Recommended Tutorial`: [projects/troubleshooting-car-issues/tutorial/README.md](../projects/troubleshooting-car-issues/tutorial/README.md)
+- `Suggested Output Repos`: one core library repo for the chosen ecosystem, language, and test framework, then one adapter repo for the chosen surface implementation
+- `Notes`: start with small decision and formatting contracts such as `diagnose_car_issue(answers)` and `format_car_diagnosis_message(diagnosis_code)`, build the core repo first, then add adapter repos that consume that core; this project builds on earlier branching exercises by turning a nested yes/no troubleshooting tree into one deterministic diagnosis path
