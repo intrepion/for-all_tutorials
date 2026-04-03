@@ -264,7 +264,18 @@ Keep shared option lists here so project entries can stay small.
 
 ### [Storage](../setups/storage/README.md)
 
-- storage setup guides live here as that part of the repo grows
+- [no-storage](../setups/storage/no-storage.md)
+- [local-files-csv](../setups/storage/local-files-csv.md)
+- [local-files-json](../setups/storage/local-files-json.md)
+- [local-files-yaml](../setups/storage/local-files-yaml.md)
+- [local-files-toml](../setups/storage/local-files-toml.md)
+- [local-files-xml](../setups/storage/local-files-xml.md)
+- [database-firebase](../setups/storage/database-firebase.md)
+- [database-sqlite](../setups/storage/database-sqlite.md)
+- [database-postgres](../setups/storage/database-postgres.md)
+- [database-mysql](../setups/storage/database-mysql.md)
+
+`local-files-*` is the default local-adapter family. `database-*` is the default family to consider for web adapters.
 
 ## Entry Shape
 

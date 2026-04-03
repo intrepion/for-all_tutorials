@@ -140,6 +140,16 @@ for-all_tutorials/
               leptos-ssr.md
     storage/
       README.md
+      no-storage.md
+      local-files-csv.md
+      local-files-json.md
+      local-files-yaml.md
+      local-files-toml.md
+      local-files-xml.md
+      database-firebase.md
+      database-sqlite.md
+      database-postgres.md
+      database-mysql.md
 
   partials/
     README.md
@@ -320,7 +330,22 @@ The tutorial repo stays stable while the output repos can evolve independently.
 
 Adapter repo names should always include a storage slot, even when the adapter does not use storage.
 
+Current storage taxonomy:
+
+- `no-storage`
+- `local-files-csv`
+- `local-files-json`
+- `local-files-yaml`
+- `local-files-toml`
+- `local-files-xml`
+- `database-firebase`
+- `database-sqlite`
+- `database-postgres`
+- `database-mysql`
+
 Use `no-storage` for runs that do not persist data or depend on a storage service.
+
+By default, `local-files-*` slots are for command-line, desktop, and other local single-user adapters. Do not combine `local-files-*` with web adapters unless a project explicitly requires that shape.
 
 ### Recommended Output Shape
 

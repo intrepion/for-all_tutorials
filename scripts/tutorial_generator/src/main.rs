@@ -183,6 +183,7 @@ enum PartialKind {
     AdapterInstructions,
     EcosystemRoot,
     StorageRoot,
+    StoragePartial,
     LanguagePartial,
     ToolchainItem,
     TestingPartial,
@@ -383,6 +384,12 @@ fn build_readme(
             "Storage",
             storage_root.map(|partial| partial.body.clone()),
         );
+    }
+    for partial in partials
+        .iter()
+        .filter(|partial| partial.meta.partial_kind == PartialKind::StoragePartial)
+    {
+        push_subsection(&mut sections, &partial.title, &partial.body, 2);
     }
     for partial in partials.iter().filter(|partial| partial.meta.partial_kind == PartialKind::AdapterPartial)
     {
