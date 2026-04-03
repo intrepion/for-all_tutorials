@@ -233,7 +233,7 @@ Each project entry should capture:
 
 Project slugs stay stable even if their place in this map changes.
 
-## Stage 0
+## Stage 1
 
 ### saying-hello
 
@@ -244,7 +244,7 @@ Project slugs stay stable even if their place in this map changes.
 - `Suggested Output Repos`: one core library repo for the chosen ecosystem, language, and test framework, then one adapter repo for the chosen surface implementation
 - `Notes`: start with a tiny core logic contract such as `greet(name) -> string`, follow the project tutorial starting with the core walkthrough, build the core repo first, then add adapter repos that consume that core; choose the exact surface and target later from the shared option catalogs and setup docs
 
-## Stage 1
+## Stage 2
 
 ### count-characters
 
@@ -255,7 +255,7 @@ Project slugs stay stable even if their place in this map changes.
 - `Suggested Output Repos`: one core library repo for the chosen ecosystem, language, and test framework, then one adapter repo for the chosen surface implementation
 - `Notes`: start with small core logic contracts such as `count_characters(input) -> integer` and `format_character_count_message(input, count) -> string`, build the core repo first, then add adapter repos that consume that core; this project builds on `saying-hello` by introducing counting, exact input preservation, and zero/one/many message formatting
 
-## Stage 2
+## Stage 3
 
 ### printing-quotes
 
@@ -266,7 +266,7 @@ Project slugs stay stable even if their place in this map changes.
 - `Suggested Output Repos`: one core library repo for the chosen ecosystem, language, and test framework, then one adapter repo for the chosen surface implementation
 - `Notes`: start with a small formatting contract such as `format_attributed_quote(author, quote) -> string`, build the core repo first, then add adapter repos that consume that core; this project builds on the earlier string exercises by combining two inputs into one formatted sentence and surrounding the quote text with literal double quotation marks
 
-## Stage 3
+## Stage 4
 
 ### mad-lib
 
@@ -277,7 +277,7 @@ Project slugs stay stable even if their place in this map changes.
 - `Suggested Output Repos`: one core library repo for the chosen ecosystem, language, and test framework, then one adapter repo for the chosen surface implementation
 - `Notes`: start with a small formatting contract such as `format_mad_lib(noun, verb, adjective, adverb) -> string`, build the core repo first, then add adapter repos that consume that core; this project builds on the earlier formatting exercises by combining four named inputs into one fixed story template
 
-## Stage 4
+## Stage 5
 
 ### simple-math
 
@@ -288,7 +288,7 @@ Project slugs stay stable even if their place in this map changes.
 - `Suggested Output Repos`: one core library repo for the chosen ecosystem, language, and test framework, then one adapter repo for the chosen surface implementation
 - `Notes`: start with small arithmetic and formatting contracts such as `calculate_simple_math(first, second)` and `format_simple_math_report(first, second, results)`, build the core repo first, then add adapter repos that consume that core; this project builds on earlier input-to-output exercises by introducing numeric parsing, arithmetic, and multi-line report formatting
 
-## Stage 5
+## Stage 6
 
 ### retirement-calculator
 
@@ -299,7 +299,7 @@ Project slugs stay stable even if their place in this map changes.
 - `Suggested Output Repos`: one core library repo for the chosen ecosystem, language, and test framework, then one adapter repo for the chosen surface implementation
 - `Notes`: start with small calculation and formatting contracts such as `calculate_retirement(current_age, desired_retirement_age, current_year)` and `format_retirement_report(current_year, years_left, retirement_year)`, build the core repo first, then add adapter repos that consume that core; this project builds on earlier numeric exercises by combining prompted ages with the current calendar year from the runtime
 
-## Stage 6
+## Stage 7
 
 ### area-of-a-rectangular-room
 
@@ -310,7 +310,7 @@ Project slugs stay stable even if their place in this map changes.
 - `Suggested Output Repos`: one core library repo for the chosen ecosystem, language, and test framework, then one adapter repo for the chosen surface implementation
 - `Notes`: start with small calculation and formatting contracts such as `calculate_room_area(length_feet, width_feet)` and `format_room_area_report(length_feet, width_feet, area)`, build the core repo first, then add adapter repos that consume that core; this project builds on earlier numeric exercises by introducing unit conversion and fixed-precision metric output
 
-## Stage 7
+## Stage 8
 
 ### pizza-party
 
@@ -321,7 +321,7 @@ Project slugs stay stable even if their place in this map changes.
 - `Suggested Output Repos`: one core library repo for the chosen ecosystem, language, and test framework, then one adapter repo for the chosen surface implementation
 - `Notes`: start with small distribution and formatting contracts such as `calculate_pizza_distribution(people, pizzas, slices_per_pizza)` and `format_pizza_distribution_report(people, pizzas, distribution)`, build the core repo first, then add adapter repos that consume that core; this project builds on earlier numeric exercises by introducing integer division, remainders, and leftover handling
 
-## Stage 8
+## Stage 9
 
 ### paint-calculator
 
@@ -332,7 +332,7 @@ Project slugs stay stable even if their place in this map changes.
 - `Suggested Output Repos`: one core library repo for the chosen ecosystem, language, and test framework, then one adapter repo for the chosen surface implementation
 - `Notes`: start with small calculation and formatting contracts such as `calculate_paint_requirements(length_feet, width_feet)` and `format_paint_purchase_message(square_feet, gallons_needed)`, build the core repo first, then add adapter repos that consume that core; this project builds on room-area calculation by introducing ceiling rounding with a fixed `350` square-feet-per-gallon coverage rule
 
-## Stage 9
+## Stage 10
 
 ### self-checkout
 
@@ -343,7 +343,7 @@ Project slugs stay stable even if their place in this map changes.
 - `Suggested Output Repos`: one core library repo for the chosen ecosystem, language, and test framework, then one adapter repo for the chosen surface implementation
 - `Notes`: start with small calculation and formatting contracts such as `calculate_checkout_summary(items)` and `format_checkout_report(summary)`, build the core repo first, then add adapter repos that consume that core; this project builds on earlier quantity-based numeric exercises by introducing exact cent-based money handling, percentage tax calculation, and fixed-precision currency output
 
-## Stage 10
+## Stage 11
 
 ### currency-conversion
 
@@ -354,7 +354,7 @@ Project slugs stay stable even if their place in this map changes.
 - `Suggested Output Repos`: one core library repo for the chosen ecosystem, language, and test framework, then one adapter repo for the chosen surface implementation
 - `Notes`: start with small calculation and formatting contracts such as `calculate_currency_conversion(amount_euros, exchange_rate_hundredths)` and `format_currency_conversion_report(amount_euros, exchange_rate_hundredths, usd_cents)`, build the core repo first, then add adapter repos that consume that core; this project builds on earlier money exercises by introducing scaled exchange-rate input, exact cent-based conversion, and deterministic rounding to U.S. dollar cents
 
-## Stage 11
+## Stage 12
 
 ### computing-simple-interest
 
@@ -365,7 +365,7 @@ Project slugs stay stable even if their place in this map changes.
 - `Suggested Output Repos`: one core library repo for the chosen ecosystem, language, and test framework, then one adapter repo for the chosen surface implementation
 - `Notes`: start with small calculation and formatting contracts such as `calculate_simple_interest(principal_dollars, annual_rate_tenths_percent, years)` and `format_simple_interest_report(years, annual_rate_tenths_percent, accrued_amount_cents)`, build the core repo first, then add adapter repos that consume that core; this project builds on earlier money exercises by making rate scaling and arithmetic order explicit in a deterministic simple-interest calculation
 
-## Stage 12
+## Stage 13
 
 ### determining-compound-interest
 
@@ -376,7 +376,7 @@ Project slugs stay stable even if their place in this map changes.
 - `Suggested Output Repos`: one core library repo for the chosen ecosystem, language, and test framework, then one adapter repo for the chosen surface implementation
 - `Notes`: start with small calculation and formatting contracts such as `calculate_compound_interest(principal_dollars, annual_rate_tenths_percent, years, compounds_per_year)` and `format_compound_interest_report(principal_dollars, annual_rate_tenths_percent, years, compounds_per_year, accrued_amount_cents)`, build the core repo first, then add adapter repos that consume that core; this project builds directly on simple interest by adding exponent-based growth and compound periods while keeping deterministic cent-rounded output
 
-## Stage 13
+## Stage 14
 
 ### tax-calculator
 
@@ -387,7 +387,7 @@ Project slugs stay stable even if their place in this map changes.
 - `Suggested Output Repos`: one core library repo for the chosen ecosystem, language, and test framework, then one adapter repo for the chosen surface implementation
 - `Notes`: start with small calculation and formatting contracts such as `calculate_tax_for_order(order_amount_cents, state)` and `format_tax_report(summary)`, build the core repo first, then add adapter repos that consume that core; this project builds on earlier money exercises by adding a simple conditional branch where the fixed `5.5%` tax rule applies only for the exact `WI` case
 
-## Stage 14
+## Stage 15
 
 ### password-validation
 
@@ -398,7 +398,7 @@ Project slugs stay stable even if their place in this map changes.
 - `Suggested Output Repos`: one core library repo for the chosen ecosystem, language, and test framework, then one adapter repo for the chosen surface implementation
 - `Notes`: start with small validation and formatting contracts such as `is_known_password(password)` and `format_password_validation_message(is_valid)`, build the core repo first, then add adapter repos that consume that core; this project builds on earlier exact-comparison exercises by matching one entered password against one fixed known password and rendering one of two exact result messages
 
-## Stage 15
+## Stage 16
 
 ### legal-driving-age
 
@@ -409,7 +409,7 @@ Project slugs stay stable even if their place in this map changes.
 - `Suggested Output Repos`: one core library repo for the chosen ecosystem, language, and test framework, then one adapter repo for the chosen surface implementation
 - `Notes`: start with small comparison and formatting contracts such as `is_old_enough_to_drive(age)` and `format_driving_eligibility_message(is_old_enough)`, build the core repo first, then add adapter repos that consume that core; this project builds on earlier numeric input exercises by introducing a simple inclusive threshold check at the fixed legal age of `16`
 
-## Stage 16
+## Stage 17
 
 ### blood-alcohol-calculator
 
@@ -420,7 +420,7 @@ Project slugs stay stable even if their place in this map changes.
 - `Suggested Output Repos`: one core library repo for the chosen ecosystem, language, and test framework, then one adapter repo for the chosen surface implementation
 - `Notes`: start with small calculation, comparison, and formatting contracts such as `calculate_bac_hundredths(weight_pounds, gender, number_of_drinks, pure_alcohol_ounces_per_drink_hundredths, hours_since_last_drink)`, `is_legal_to_drive_with_bac(bac_hundredths)`, and `format_bac_report(bac_hundredths, is_legal_to_drive)`, build the core repo first, then add adapter repos that consume that core; this project builds on earlier formula-driven and threshold-driven exercises by combining a multi-step calculation with a fixed legal BAC threshold of `0.08`
 
-## Stage 17
+## Stage 18
 
 ### temperature-converter
 
@@ -431,7 +431,7 @@ Project slugs stay stable even if their place in this map changes.
 - `Suggested Output Repos`: one core library repo for the chosen ecosystem, language, and test framework, then one adapter repo for the chosen surface implementation
 - `Notes`: start with small conversion and formatting contracts such as `convert_temperature_tenths(starting_temperature_tenths, conversion_choice)` and `format_temperature_conversion_report(conversion_choice, converted_temperature_tenths)`, build the core repo first, then add adapter repos that consume that core; this project builds on earlier numeric input and branching exercises by letting the user choose which conversion formula runs
 
-## Stage 18
+## Stage 19
 
 ### bmi-calculator
 
@@ -442,7 +442,7 @@ Project slugs stay stable even if their place in this map changes.
 - `Suggested Output Repos`: one core library repo for the chosen ecosystem, language, and test framework, then one adapter repo for the chosen surface implementation
 - `Notes`: start with small calculation, classification, and formatting contracts such as `calculate_bmi_tenths(weight_pounds, height_inches)`, `classify_bmi(bmi_tenths)`, and `format_bmi_report(bmi_tenths, classification)`, build the core repo first, then add adapter repos that consume that core; this project builds on earlier formula and branching exercises by comparing a rounded BMI against the fixed ideal range from `18.5` through `25.0`
 
-## Stage 19
+## Stage 20
 
 ### multistate-sales-tax-calculator
 
@@ -453,7 +453,7 @@ Project slugs stay stable even if their place in this map changes.
 - `Suggested Output Repos`: one core library repo for the chosen ecosystem, language, and test framework, then one adapter repo for the chosen surface implementation
 - `Notes`: start with small calculation and formatting contracts such as `calculate_multistate_sales_tax(order_amount_cents, state, county)` and `format_multistate_sales_tax_report(summary)`, build the core repo first, then add adapter repos that consume that core; this project builds directly on the earlier sales-tax exercise by nesting county-level Wisconsin decisions inside the broader state-level tax decision
 
-## Stage 20
+## Stage 21
 
 ### numbers-to-names
 
@@ -464,7 +464,7 @@ Project slugs stay stable even if their place in this map changes.
 - `Suggested Output Repos`: one core library repo for the chosen ecosystem, language, and test framework, then one adapter repo for the chosen surface implementation
 - `Notes`: start with small lookup and formatting contracts such as `lookup_month_name(month_number)` and `format_month_lookup_message(month_name)`, build the core repo first, then add adapter repos that consume that core; this project builds on earlier numeric input and branching exercises by mapping a constrained numeric range to calendar names and handling the out-of-range error case
 
-## Stage 21
+## Stage 22
 
 ### comparing-numbers
 
@@ -475,7 +475,7 @@ Project slugs stay stable even if their place in this map changes.
 - `Suggested Output Repos`: one core library repo for the chosen ecosystem, language, and test framework, then one adapter repo for the chosen surface implementation
 - `Notes`: start with small distinctness, comparison, and formatting contracts such as `all_numbers_are_different(first_number, second_number, third_number)`, `largest_of_three(first_number, second_number, third_number)`, and `format_largest_number_message(largest_number)`, build the core repo first, then add adapter repos that consume that core; this project builds on earlier numeric and branching exercises by checking for duplicate inputs before selecting one largest value from a fixed-size collection
 
-## Stage 22
+## Stage 23
 
 ### troubleshooting-car-issues
 
@@ -486,7 +486,7 @@ Project slugs stay stable even if their place in this map changes.
 - `Suggested Output Repos`: one core library repo for the chosen ecosystem, language, and test framework, then one adapter repo for the chosen surface implementation
 - `Notes`: start with small decision and formatting contracts such as `diagnose_car_issue(answers)` and `format_car_diagnosis_message(diagnosis_code)`, build the core repo first, then add adapter repos that consume that core; this project builds on earlier branching exercises by turning a nested yes/no troubleshooting tree into one deterministic diagnosis path
 
-## Stage 23
+## Stage 24
 
 ### anagram-checker
 
@@ -497,7 +497,7 @@ Project slugs stay stable even if their place in this map changes.
 - `Suggested Output Repos`: one core library repo for the chosen ecosystem, language, and test framework, then one adapter repo for the chosen surface implementation
 - `Notes`: start with small comparison and formatting contracts such as `are_anagrams(first_input, second_input)` and `format_anagram_result(first_input, second_input, are_anagrams)`, build the core repo first, then add adapter repos that consume that core; this project builds on earlier exact-string exercises by comparing two inputs through character counts while preserving both original strings exactly in the final message
 
-## Stage 24
+## Stage 25
 
 ### password-strength-indicator
 
@@ -508,7 +508,7 @@ Project slugs stay stable even if their place in this map changes.
 - `Suggested Output Repos`: one core library repo for the chosen ecosystem, language, and test framework, then one adapter repo for the chosen surface implementation
 - `Notes`: start with small scoring, classification, and formatting contracts such as `calculate_password_strength_score(password)`, `classify_password_strength(score)`, and `format_password_strength_message(password, strength)`, build the core repo first, then add adapter repos that consume that core; this project builds on earlier exact-string exercises by classifying one input according to a total, non-overlapping points system based on length and character categories
 
-## Stage 25
+## Stage 26
 
 ### months-to-pay-off-a-credit-card
 
@@ -519,7 +519,7 @@ Project slugs stay stable even if their place in this map changes.
 - `Suggested Output Repos`: one core library repo for the chosen ecosystem, language, and test framework, then one adapter repo for the chosen surface implementation
 - `Notes`: start with small calculation and formatting contracts such as `calculate_credit_card_payoff_months(balance_dollars, apr_tenths_percent, monthly_payment_dollars)` and `format_credit_card_payoff_report(months)`, build the core repo first, then add adapter repos that consume that core; this project builds on earlier interest exercises by introducing a logarithmic payoff formula, daily-rate derivation from APR, and whole-month ceiling rounding
 
-## Stage 26
+## Stage 27
 
 ### validating-inputs
 
@@ -530,7 +530,7 @@ Project slugs stay stable even if their place in this map changes.
 - `Suggested Output Repos`: one core library repo for the chosen ecosystem, language, and test framework, then one adapter repo for the chosen surface implementation
 - `Notes`: start with small validation and formatting contracts such as `validate_first_name(first_name)`, `validate_last_name(last_name)`, `validate_zip_code(zip_code)`, `validate_employee_id(employee_id)`, `collect_validation_errors(first_name, last_name, zip_code, employee_id)`, and `format_validation_report(errors)`, build the core repo first, then add adapter repos that consume that core; this project builds on earlier exact-string and classification exercises by composing several narrow validators into one stable multi-error report
 
-## Stage 27
+## Stage 28
 
 ### adding-numbers
 
@@ -541,7 +541,7 @@ Project slugs stay stable even if their place in this map changes.
 - `Suggested Output Repos`: one core library repo for the chosen ecosystem, language, and test framework, then one adapter repo for the chosen surface implementation
 - `Notes`: start with small calculation and formatting contracts such as `sum_numbers(numbers)` and `format_total_report(total)`, build the core repo first, then add adapter repos that consume that core; this project builds on earlier arithmetic exercises by moving repeated input collection into a loop while keeping the totaling logic small and reusable
 
-## Stage 28
+## Stage 29
 
 ### handling-bad-input
 
@@ -552,7 +552,7 @@ Project slugs stay stable even if their place in this map changes.
 - `Suggested Output Repos`: one core library repo for the chosen ecosystem, language, and test framework, then one adapter repo for the chosen surface implementation
 - `Notes`: start with small parsing, calculation, and formatting contracts such as `parse_rate_of_return(rate_input)`, `calculate_years_to_double(rate_of_return)`, `format_invalid_rate_message()`, and `format_rule_of_72_report(years)`, build the core repo first, then add adapter repos that consume that core; this project builds on earlier validation exercises by keeping the retry loop in the adapter while the rule-of-72 logic stays small and reusable
 
-## Stage 29
+## Stage 30
 
 ### multiplication-table
 
@@ -563,7 +563,7 @@ Project slugs stay stable even if their place in this map changes.
 - `Suggested Output Repos`: one core library repo for the chosen ecosystem, language, and test framework, then one adapter repo for the chosen surface implementation
 - `Notes`: start with small generation and formatting contracts such as `generate_multiplication_table()` and `format_multiplication_table(rows)`, build the core repo first, then add adapter repos that consume that core; this project builds on earlier arithmetic and loop exercises by generating a complete fixed-range table with nested iteration while keeping rendering separate
 
-## Stage 30
+## Stage 31
 
 ### karvonen-heart-rate
 
@@ -574,7 +574,7 @@ Project slugs stay stable even if their place in this map changes.
 - `Suggested Output Repos`: one core library repo for the chosen ecosystem, language, and test framework, then one adapter repo for the chosen surface implementation
 - `Notes`: start with small calculation, generation, and formatting contracts such as `calculate_target_heart_rate(age, resting_pulse, intensity_percent)`, `generate_karvonen_table(age, resting_pulse)`, and `format_karvonen_table(resting_pulse, age, rows)`, build the core repo first, then add adapter repos that consume that core; this project builds on earlier formula and table exercises by stepping intensity from `55%` through `95%` and rendering the resulting heart-rate table
 
-## Stage 31
+## Stage 32
 
 ### guess-the-number-game
 
@@ -585,7 +585,7 @@ Project slugs stay stable even if their place in this map changes.
 - `Suggested Output Repos`: one core library repo for the chosen ecosystem, language, and test framework, then one adapter repo for the chosen surface implementation
 - `Notes`: start with small difficulty, evaluation, and formatting contracts such as `resolve_difficulty_upper_bound(level)`, `evaluate_guess(secret_number, guess)`, `format_guess_hint(outcome)`, `format_victory_message(guess_count)`, and `format_goodbye_message()`, build the core repo first, then add adapter repos that consume that core; this project builds on earlier looping and validation exercises by moving randomness and replay flow into the adapter while the core stays deterministic and reusable
 
-## Stage 32
+## Stage 33
 
 ### magic-8-ball
 
@@ -596,7 +596,7 @@ Project slugs stay stable even if their place in this map changes.
 - `Suggested Output Repos`: one core library repo for the chosen ecosystem, language, and test framework, then one adapter repo for the chosen surface implementation
 - `Notes`: start with small response-catalog contracts such as `magic_8_ball_response_count()` and `magic_8_ball_response(choice_number)`, build the core repo first, then add adapter repos that consume that core; this project builds on the earlier random-choice exercise by keeping the four canonical answers in the core while the adapter handles question collection and random selection
 
-## Stage 33
+## Stage 34
 
 ### employee-list-removal
 
@@ -607,7 +607,7 @@ Project slugs stay stable even if their place in this map changes.
 - `Suggested Output Repos`: one core library repo for the chosen ecosystem, language, and test framework, then one adapter repo for the chosen surface implementation
 - `Notes`: start with small list, removal, and formatting contracts such as `default_employee_names()`, `remove_employee_by_exact_name(employee_names, employee_name_to_remove)`, and `format_employee_list(employee_names)`, build the core repo first, then add adapter repos that consume that core; this project builds on the earlier array-backed random-choice exercise by moving from indexed lookup to exact-match filtering while keeping the canonical employee list in the core
 
-## Stage 34
+## Stage 35
 
 ### picking-a-winner
 
@@ -618,7 +618,7 @@ Project slugs stay stable even if their place in this map changes.
 - `Suggested Output Repos`: one core library repo for the chosen ecosystem, language, and test framework, then one adapter repo for the chosen surface implementation
 - `Notes`: start with small count, lookup, and formatting contracts such as `contestant_count(contestant_names)`, `winner_name_by_choice_number(contestant_names, choice_number)`, and `format_winner_message(winner_name)`, build the core repo first, then add adapter repos that consume that core; this project builds on the earlier list-filtering exercise by collecting a dynamic contestant list in the adapter and then using random indexed lookup to choose one winner
 
-## Stage 35
+## Stage 36
 
 ### computing-statistics
 
@@ -629,7 +629,7 @@ Project slugs stay stable even if their place in this map changes.
 - `Suggested Output Repos`: one core library repo for the chosen ecosystem, language, and test framework, then one adapter repo for the chosen surface implementation
 - `Notes`: start with small statistics and formatting contracts such as `mean_hundredths(response_times_ms)`, `minimum_response_time(response_times_ms)`, `maximum_response_time(response_times_ms)`, `standard_deviation_hundredths(response_times_ms)`, and `format_statistics_report(response_times_ms, mean_hundredths, minimum_ms, maximum_ms, standard_deviation_hundredths)`, build the core repo first, then add adapter repos that consume that core; this project builds on the earlier dynamic-list exercise by collecting numeric inputs until a sentinel value and then computing a full statistical summary from the resulting list
 
-## Stage 36
+## Stage 37
 
 ### password-generator
 
@@ -640,7 +640,7 @@ Project slugs stay stable even if their place in this map changes.
 - `Suggested Output Repos`: one core library repo for the chosen ecosystem, language, and test framework, then one adapter repo for the chosen surface implementation
 - `Notes`: start with small planning, pool, and formatting contracts such as `password_generation_plan(minimum_length, special_character_count, number_count)`, `letter_character_pool()`, `digit_character_pool()`, `special_character_pool()`, and `format_generated_password(password)`, build the core repo first, then add adapter repos that consume that core; this project builds on the earlier password-classification and random-choice exercises by turning password requirements into a deterministic plan while keeping random character selection and shuffling in the adapter
 
-## Stage 37
+## Stage 38
 
 ### filtering-values
 
@@ -651,7 +651,7 @@ Project slugs stay stable even if their place in this map changes.
 - `Suggested Output Repos`: one core library repo for the chosen ecosystem, language, and test framework, then one adapter repo for the chosen surface implementation
 - `Notes`: start with small filtering and formatting contracts such as `filter_even_numbers(numbers)` and `format_even_numbers_report(even_numbers)`, build the core repo first, then add adapter repos that consume that core; this project builds on the earlier list-filtering exercise by moving from named-record removal to numeric filtering while preserving input order from a space-separated list
 
-## Stage 38
+## Stage 39
 
 ### sorting-records
 
@@ -662,7 +662,7 @@ Project slugs stay stable even if their place in this map changes.
 - `Suggested Output Repos`: one core library repo for the chosen ecosystem, language, and test framework, then one adapter repo for the chosen surface implementation
 - `Notes`: start with small dataset, sorting, and formatting contracts such as `default_employee_records()`, `sort_employee_records_by_last_name(employee_records)`, and `format_employee_record_table(employee_records)`, build the core repo first, then add adapter repos that consume that core; this project builds on the earlier record-list exercise by keeping a fixed employee dataset in the core and then rendering a stable last-name sort in a tabular report
 
-## Stage 39
+## Stage 40
 
 ### filtering-records
 
