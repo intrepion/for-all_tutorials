@@ -85,6 +85,7 @@ The default model is:
 - one core library repo owns the project rules
 - one adapter repo owns each chosen surface and target
 - adapter repos depend on the core library instead of copying its logic
+- adapter repo names always include a storage slot, using `no-storage` when the adapter does not use storage
 
 ## Shared Spec Conventions
 

@@ -86,7 +86,7 @@ for-all_tutorials/
           README.md
           command-line/
             README.md
-            builtin.md
+            no-framework.md
             spectre-console.md
           web/
             README.md
@@ -129,7 +129,7 @@ for-all_tutorials/
           README.md
           command-line/
             README.md
-            builtin.md
+            no-framework.md
             clap.md
             ratatui.md
           web/
@@ -267,6 +267,10 @@ Recommended model:
 
 The tutorial repo stays stable while the output repos can evolve independently.
 
+Adapter repo names should always include a storage slot, even when the adapter does not use storage.
+
+Use `no-storage` for runs that do not persist data or depend on a storage service.
+
 ### Recommended Output Shape
 
 For a small project such as `saying-hello`, a typical run can produce:
@@ -278,7 +282,7 @@ For a small project such as `saying-hello`, a typical run can produce:
   tests/
     <core-library>.Tests/
 
-<project>-<ecosystem>-<language>-<test-framework>-<surface>-<target>/
+<project>-<ecosystem>-<language>-<test-framework>-<storage>-<surface>-<target>-<framework>/
   src/
     <adapter>/
   tests/
@@ -286,6 +290,12 @@ For a small project such as `saying-hello`, a typical run can produce:
 ```
 
 The exact dependency mechanism can vary by ecosystem, but the adapter repo should depend on the core library as a real dependency rather than by duplicating the code.
+
+For example, a minimal console adapter might be named:
+
+```text
+saying-hello-dotnet-csharp-xunit-no-storage-command-line-all-no-framework
+```
 
 ## Allowed Surfaces And Targets
 

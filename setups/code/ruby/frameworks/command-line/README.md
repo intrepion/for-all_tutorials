@@ -8,6 +8,6 @@ Framework-specific setup guides for Ruby command-line adapters.
 
 ## Contents
 
-- [Built In](builtin.md)
+- [No Framework](no-framework.md)
 
-`Built In` is the explicit no-framework naming choice. The generic [command-line/all](../../adapters/command-line/all.md) guide remains the real setup path behind it.
+`No Framework` is the explicit naming choice for adapters that do not add a command-line library. The generic [command-line/all](../../adapters/command-line/all.md) guide remains the real setup path behind it.

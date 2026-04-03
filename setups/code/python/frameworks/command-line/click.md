@@ -33,4 +33,4 @@ The Click setup is ready when:
 
 - the adapter repo already follows the generic `command-line/all` setup
 - Click-specific parsing and command code delegates to the core library
-- the framework slot can be recorded as `click` in output repo names
+- the framework slot can be recorded as `click` in adapter repo names

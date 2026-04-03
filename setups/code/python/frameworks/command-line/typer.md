@@ -33,4 +33,4 @@ The Typer setup is ready when:
 
 - the adapter repo already follows the generic `command-line/all` setup
 - Typer-specific parsing and command code delegates to the core library
-- the framework slot can be recorded as `typer` in output repo names
+- the framework slot can be recorded as `typer` in adapter repo names

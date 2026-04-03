@@ -1,8 +1,8 @@
 <!-- breadcrumbs:start -->
-[for-all_tutorials](../../../../../README.md) / [Setups](../../../../README.md) / [Code](../../../README.md) / [rust](../../README.md) / [Frameworks](../README.md) / [Command Line](README.md) / builtin.md
+[for-all_tutorials](../../../../../README.md) / [Setups](../../../../README.md) / [Code](../../../README.md) / [rust](../../README.md) / [Frameworks](../README.md) / [Command Line](README.md) / no-framework.md
 <!-- breadcrumbs:end -->
 
-# Built In
+# No Framework
 
 Explicit no-framework choice for Rust command-line adapters.
 
@@ -18,8 +18,8 @@ Choose this option when the adapter should use the standard library and base Rus
 
 The generic [command-line/all](../../adapters/command-line/all.md) guide is the real setup path for this choice.
 
-Use `builtin` as the framework slot in output repo names when you want naming consistency across runs.
+Use `no-framework` as the framework slot in adapter repo names when you want naming consistency across runs.
 
 ## Ready State
 
-The built-in Rust command-line framework choice is ready when the adapter repo follows the generic `command-line/all` guide without adding an extra command-line library.
+The Rust no-framework command-line choice is ready when the adapter repo follows the generic `command-line/all` guide without adding an extra command-line library.

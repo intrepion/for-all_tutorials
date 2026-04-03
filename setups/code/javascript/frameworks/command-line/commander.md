@@ -33,4 +33,4 @@ The Commander setup is ready when:
 
 - the adapter repo already follows the generic `command-line/all` setup
 - Commander-specific parsing and command code delegates to the core library
-- the framework slot can be recorded as `commander` in output repo names
+- the framework slot can be recorded as `commander` in adapter repo names

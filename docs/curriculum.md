@@ -34,7 +34,7 @@ Keep shared option lists here so project entries can stay small.
 
 ###### [command-line](../setups/code/beam/frameworks/command-line/README.md)
 
-- [all](../setups/code/beam/adapters/command-line/all.md): [builtin](../setups/code/beam/frameworks/command-line/builtin.md)
+- [all](../setups/code/beam/adapters/command-line/all.md): [no-framework](../setups/code/beam/frameworks/command-line/no-framework.md)
 
 ###### [web](../setups/code/beam/frameworks/web/README.md)
 
@@ -61,7 +61,7 @@ Keep shared option lists here so project entries can stay small.
 
 ###### [command-line](../setups/code/dotnet/frameworks/command-line/README.md)
 
-- [all](../setups/code/dotnet/adapters/command-line/all.md): [builtin](../setups/code/dotnet/frameworks/command-line/builtin.md), [spectre-console](../setups/code/dotnet/frameworks/command-line/spectre-console.md)
+- [all](../setups/code/dotnet/adapters/command-line/all.md): [no-framework](../setups/code/dotnet/frameworks/command-line/no-framework.md), [spectre-console](../setups/code/dotnet/frameworks/command-line/spectre-console.md)
 
 ###### [web](../setups/code/dotnet/frameworks/web/README.md)
 
@@ -91,7 +91,7 @@ Keep shared option lists here so project entries can stay small.
 
 ###### [command-line](../setups/code/go/frameworks/command-line/README.md)
 
-- [all](../setups/code/go/adapters/command-line/all.md): [builtin](../setups/code/go/frameworks/command-line/builtin.md)
+- [all](../setups/code/go/adapters/command-line/all.md): [no-framework](../setups/code/go/frameworks/command-line/no-framework.md)
 
 ###### [web](../setups/code/go/frameworks/web/README.md)
 
@@ -115,7 +115,7 @@ Keep shared option lists here so project entries can stay small.
 
 ###### [command-line](../setups/code/java/frameworks/command-line/README.md)
 
-- [all](../setups/code/java/adapters/command-line/all.md): [builtin](../setups/code/java/frameworks/command-line/builtin.md)
+- [all](../setups/code/java/adapters/command-line/all.md): [no-framework](../setups/code/java/frameworks/command-line/no-framework.md)
 
 ###### [web](../setups/code/java/frameworks/web/README.md)
 
@@ -139,7 +139,7 @@ Keep shared option lists here so project entries can stay small.
 
 ###### [command-line](../setups/code/javascript/frameworks/command-line/README.md)
 
-- [all](../setups/code/javascript/adapters/command-line/all.md): [builtin](../setups/code/javascript/frameworks/command-line/builtin.md), [commander](../setups/code/javascript/frameworks/command-line/commander.md)
+- [all](../setups/code/javascript/adapters/command-line/all.md): [no-framework](../setups/code/javascript/frameworks/command-line/no-framework.md), [commander](../setups/code/javascript/frameworks/command-line/commander.md)
 
 ###### [web](../setups/code/javascript/frameworks/web/README.md)
 
@@ -168,7 +168,7 @@ Keep shared option lists here so project entries can stay small.
 
 ###### [command-line](../setups/code/php/frameworks/command-line/README.md)
 
-- [all](../setups/code/php/adapters/command-line/all.md): [builtin](../setups/code/php/frameworks/command-line/builtin.md), [symfony-console](../setups/code/php/frameworks/command-line/symfony-console.md)
+- [all](../setups/code/php/adapters/command-line/all.md): [no-framework](../setups/code/php/frameworks/command-line/no-framework.md), [symfony-console](../setups/code/php/frameworks/command-line/symfony-console.md)
 
 ###### [web](../setups/code/php/frameworks/web/README.md)
 
@@ -193,7 +193,7 @@ Keep shared option lists here so project entries can stay small.
 
 ###### [command-line](../setups/code/python/frameworks/command-line/README.md)
 
-- [all](../setups/code/python/adapters/command-line/all.md): [builtin](../setups/code/python/frameworks/command-line/builtin.md), [click](../setups/code/python/frameworks/command-line/click.md), [typer](../setups/code/python/frameworks/command-line/typer.md)
+- [all](../setups/code/python/adapters/command-line/all.md): [no-framework](../setups/code/python/frameworks/command-line/no-framework.md), [click](../setups/code/python/frameworks/command-line/click.md), [typer](../setups/code/python/frameworks/command-line/typer.md)
 
 ###### [web](../setups/code/python/frameworks/web/README.md)
 
@@ -218,7 +218,7 @@ Keep shared option lists here so project entries can stay small.
 
 ###### [command-line](../setups/code/ruby/frameworks/command-line/README.md)
 
-- [all](../setups/code/ruby/adapters/command-line/all.md): [builtin](../setups/code/ruby/frameworks/command-line/builtin.md)
+- [all](../setups/code/ruby/adapters/command-line/all.md): [no-framework](../setups/code/ruby/frameworks/command-line/no-framework.md)
 
 ###### [web](../setups/code/ruby/frameworks/web/README.md)
 
@@ -243,7 +243,7 @@ Keep shared option lists here so project entries can stay small.
 
 ###### [command-line](../setups/code/rust/frameworks/command-line/README.md)
 
-- [all](../setups/code/rust/adapters/command-line/all.md): [builtin](../setups/code/rust/frameworks/command-line/builtin.md), [clap](../setups/code/rust/frameworks/command-line/clap.md), [ratatui](../setups/code/rust/frameworks/command-line/ratatui.md)
+- [all](../setups/code/rust/adapters/command-line/all.md): [no-framework](../setups/code/rust/frameworks/command-line/no-framework.md), [clap](../setups/code/rust/frameworks/command-line/clap.md), [ratatui](../setups/code/rust/frameworks/command-line/ratatui.md)
 
 ###### [web](../setups/code/rust/frameworks/web/README.md)
 

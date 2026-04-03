@@ -33,4 +33,4 @@ The Symfony Console setup is ready when:
 
 - the adapter repo already follows the generic `command-line/all` setup
 - Symfony Console-specific parsing and command code delegates to the core library
-- the framework slot can be recorded as `symfony-console` in output repo names
+- the framework slot can be recorded as `symfony-console` in adapter repo names

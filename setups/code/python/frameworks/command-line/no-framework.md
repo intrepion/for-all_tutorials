@@ -1,8 +1,8 @@
 <!-- breadcrumbs:start -->
-[for-all_tutorials](../../../../../README.md) / [Setups](../../../../README.md) / [Code](../../../README.md) / [python](../../README.md) / [Frameworks](../README.md) / [Command Line](README.md) / builtin.md
+[for-all_tutorials](../../../../../README.md) / [Setups](../../../../README.md) / [Code](../../../README.md) / [python](../../README.md) / [Frameworks](../README.md) / [Command Line](README.md) / no-framework.md
 <!-- breadcrumbs:end -->
 
-# Built In
+# No Framework
 
 Explicit no-framework choice for Python command-line adapters.
 
@@ -17,4 +17,4 @@ Choose this option when the adapter should use the base language and runtime fac
 
 The generic [command-line/all](../../adapters/command-line/all.md) guide is the real setup path for this choice.
 
-Use `builtin` as the framework slot in output repo names when you want naming consistency across runs.
+Use `no-framework` as the framework slot in adapter repo names when you want naming consistency across runs.
