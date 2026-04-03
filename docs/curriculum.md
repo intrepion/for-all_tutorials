@@ -738,3 +738,69 @@ Project slugs stay stable even if their place in this map changes.
 - `Recommended Tutorial`: [projects/word-frequency-finder/tutorial/README.md](../projects/word-frequency-finder/tutorial/README.md)
 - `Suggested Output Repos`: one core library repo for the chosen ecosystem, language, and test framework, then one adapter repo for the chosen surface implementation
 - `Notes`: start with small tokenization, counting, and formatting contracts such as `split_text_into_words(text)`, `count_word_frequencies(words)`, and `format_word_frequency_histogram(word_frequency_entries)`, build the core repo first, then add adapter repos that consume that core; this project builds on the earlier text-file exercise by moving from one deterministic replacement rule to counting exact word frequencies and rendering a histogram in first-appearance order
+
+## Stage 47
+
+### whos-in-space
+
+- `Project`: `whos-in-space`
+- `Status`: `planned`
+- `Prerequisites`: `product-search`, `sorting-records`
+- `Recommended Tutorial`: [projects/whos-in-space/tutorial/README.md](../projects/whos-in-space/tutorial/README.md)
+- `Suggested Output Repos`: one core library repo for the chosen ecosystem, language, and test framework, then one adapter repo for the chosen surface implementation
+- `Notes`: start with small parsing and formatting contracts such as `parse_people_in_space_response(json_text)` and `format_people_in_space_report(people_in_space_report)`, build the core repo first, then add adapter repos that consume that core; this project builds on the earlier JSON-parsing and table-format exercises by moving from local sample data to a live HTTP API response while keeping the core deterministic through a canonical sample payload
+
+## Stage 48
+
+### grabbing-the-weather
+
+- `Project`: `grabbing-the-weather`
+- `Status`: `planned`
+- `Prerequisites`: `whos-in-space`, `temperature-converter`
+- `Recommended Tutorial`: [projects/grabbing-the-weather/tutorial/README.md](../projects/grabbing-the-weather/tutorial/README.md)
+- `Suggested Output Repos`: one core library repo for the chosen ecosystem, language, and test framework, then one adapter repo for the chosen surface implementation
+- `Notes`: start with small parsing and formatting contracts such as `parse_current_weather_response(json_text)` and `format_current_weather_report(current_weather_report)`, build the core repo first, then add adapter repos that consume that core; this project builds on the earlier live-API and temperature exercises by fetching current weather data from OpenWeatherMap, requesting Fahrenheit output, and formatting a two-line weather report from a deterministic sample payload
+
+## Stage 49
+
+### flickr-photo-search
+
+- `Project`: `flickr-photo-search`
+- `Status`: `planned`
+- `Prerequisites`: `grabbing-the-weather`
+- `Recommended Tutorial`: [projects/flickr-photo-search/tutorial/README.md](../projects/flickr-photo-search/tutorial/README.md)
+- `Suggested Output Repos`: one core library repo for the chosen ecosystem, language, and test framework, then one adapter repo for the chosen surface implementation
+- `Notes`: start with small parsing and display-item contracts such as `parse_flickr_public_feed_response(json_text)` and `build_photo_display_items(flickr_photo_results)`, build the core repo first, then add adapter repos that consume that core; this project builds on the earlier live-API exercises by querying Flickr's public photo feed and rendering actual photographs in a graphical adapter while keeping the core deterministic through a canonical sample payload
+
+## Stage 50
+
+### movie-recommendations
+
+- `Project`: `movie-recommendations`
+- `Status`: `planned`
+- `Prerequisites`: `grabbing-the-weather`
+- `Recommended Tutorial`: [projects/movie-recommendations/tutorial/README.md](../projects/movie-recommendations/tutorial/README.md)
+- `Suggested Output Repos`: one core library repo for the chosen ecosystem, language, and test framework, then one adapter repo for the chosen surface implementation
+- `Notes`: start with small parsing, formatting, and recommendation contracts such as `parse_movie_details_response(json_text)`, `format_movie_details_report(movie_details)`, and `build_audience_recommendation(audience_score_percent)`, build the core repo first, then add adapter repos that consume that core; this project builds on the earlier live-API exercises by turning one movie-details response into a canonical report plus audience-score guidance while keeping the core deterministic through a canonical sample payload
+
+## Stage 51
+
+### pushing-notes-to-firebase
+
+- `Project`: `pushing-notes-to-firebase`
+- `Status`: `planned`
+- `Prerequisites`: `grabbing-the-weather`
+- `Recommended Tutorial`: [projects/pushing-notes-to-firebase/tutorial/README.md](../projects/pushing-notes-to-firebase/tutorial/README.md)
+- `Suggested Output Repos`: one core library repo for the chosen ecosystem, language, and test framework, then one adapter repo for the chosen surface implementation
+- `Notes`: start with small note-building, parsing, and formatting contracts such as `build_note_record(note_text, created_on)`, `parse_notes_collection_response(json_text)`, `format_note_saved_message()`, and `format_notes_report(note_records)`, build the core repo first, then add adapter repos that consume that core; this project builds on the earlier live-API exercises by moving from read-only HTTP requests to direct REST writes and reads against Firebase while keeping the core deterministic through a canonical sample response
+
+## Stage 52
+
+### creating-your-own-time-service
+
+- `Project`: `creating-your-own-time-service`
+- `Status`: `planned`
+- `Prerequisites`: `grabbing-the-weather`, `pushing-notes-to-firebase`
+- `Recommended Tutorial`: [projects/creating-your-own-time-service/tutorial/README.md](../projects/creating-your-own-time-service/tutorial/README.md)
+- `Suggested Output Repos`: one core library repo for the chosen ecosystem, language, and test framework, then one service adapter repo and one client adapter repo
+- `Notes`: start with small payload, parsing, and formatting contracts such as `build_current_time_payload(current_time_utc)`, `format_current_time_service_response(current_time_payload)`, `parse_current_time_service_response(json_text)`, and `format_current_time_display(current_time_payload)`, build the core repo first, then add both service and client adapter repos that consume that core; this project builds on the earlier live-API exercises by moving from consuming other services to producing a small JSON time service and then consuming that service from a separate client
