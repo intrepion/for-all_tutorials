@@ -584,3 +584,91 @@ Project slugs stay stable even if their place in this map changes.
 - `Recommended Tutorial`: [projects/guess-the-number-game/tutorial/README.md](../projects/guess-the-number-game/tutorial/README.md)
 - `Suggested Output Repos`: one core library repo for the chosen ecosystem, language, and test framework, then one adapter repo for the chosen surface implementation
 - `Notes`: start with small difficulty, evaluation, and formatting contracts such as `resolve_difficulty_upper_bound(level)`, `evaluate_guess(secret_number, guess)`, `format_guess_hint(outcome)`, `format_victory_message(guess_count)`, and `format_goodbye_message()`, build the core repo first, then add adapter repos that consume that core; this project builds on earlier looping and validation exercises by moving randomness and replay flow into the adapter while the core stays deterministic and reusable
+
+## Stage 32
+
+### magic-8-ball
+
+- `Project`: `magic-8-ball`
+- `Status`: `planned`
+- `Prerequisites`: `guess-the-number-game`
+- `Recommended Tutorial`: [projects/magic-8-ball/tutorial/README.md](../projects/magic-8-ball/tutorial/README.md)
+- `Suggested Output Repos`: one core library repo for the chosen ecosystem, language, and test framework, then one adapter repo for the chosen surface implementation
+- `Notes`: start with small response-catalog contracts such as `magic_8_ball_response_count()` and `magic_8_ball_response(choice_number)`, build the core repo first, then add adapter repos that consume that core; this project builds on the earlier random-choice exercise by keeping the four canonical answers in the core while the adapter handles question collection and random selection
+
+## Stage 33
+
+### employee-list-removal
+
+- `Project`: `employee-list-removal`
+- `Status`: `planned`
+- `Prerequisites`: `magic-8-ball`
+- `Recommended Tutorial`: [projects/employee-list-removal/tutorial/README.md](../projects/employee-list-removal/tutorial/README.md)
+- `Suggested Output Repos`: one core library repo for the chosen ecosystem, language, and test framework, then one adapter repo for the chosen surface implementation
+- `Notes`: start with small list, removal, and formatting contracts such as `default_employee_names()`, `remove_employee_by_exact_name(employee_names, employee_name_to_remove)`, and `format_employee_list(employee_names)`, build the core repo first, then add adapter repos that consume that core; this project builds on the earlier array-backed random-choice exercise by moving from indexed lookup to exact-match filtering while keeping the canonical employee list in the core
+
+## Stage 34
+
+### picking-a-winner
+
+- `Project`: `picking-a-winner`
+- `Status`: `planned`
+- `Prerequisites`: `employee-list-removal`
+- `Recommended Tutorial`: [projects/picking-a-winner/tutorial/README.md](../projects/picking-a-winner/tutorial/README.md)
+- `Suggested Output Repos`: one core library repo for the chosen ecosystem, language, and test framework, then one adapter repo for the chosen surface implementation
+- `Notes`: start with small count, lookup, and formatting contracts such as `contestant_count(contestant_names)`, `winner_name_by_choice_number(contestant_names, choice_number)`, and `format_winner_message(winner_name)`, build the core repo first, then add adapter repos that consume that core; this project builds on the earlier list-filtering exercise by collecting a dynamic contestant list in the adapter and then using random indexed lookup to choose one winner
+
+## Stage 35
+
+### computing-statistics
+
+- `Project`: `computing-statistics`
+- `Status`: `planned`
+- `Prerequisites`: `picking-a-winner`
+- `Recommended Tutorial`: [projects/computing-statistics/tutorial/README.md](../projects/computing-statistics/tutorial/README.md)
+- `Suggested Output Repos`: one core library repo for the chosen ecosystem, language, and test framework, then one adapter repo for the chosen surface implementation
+- `Notes`: start with small statistics and formatting contracts such as `mean_hundredths(response_times_ms)`, `minimum_response_time(response_times_ms)`, `maximum_response_time(response_times_ms)`, `standard_deviation_hundredths(response_times_ms)`, and `format_statistics_report(response_times_ms, mean_hundredths, minimum_ms, maximum_ms, standard_deviation_hundredths)`, build the core repo first, then add adapter repos that consume that core; this project builds on the earlier dynamic-list exercise by collecting numeric inputs until a sentinel value and then computing a full statistical summary from the resulting list
+
+## Stage 36
+
+### password-generator
+
+- `Project`: `password-generator`
+- `Status`: `planned`
+- `Prerequisites`: `password-strength-indicator`, `magic-8-ball`
+- `Recommended Tutorial`: [projects/password-generator/tutorial/README.md](../projects/password-generator/tutorial/README.md)
+- `Suggested Output Repos`: one core library repo for the chosen ecosystem, language, and test framework, then one adapter repo for the chosen surface implementation
+- `Notes`: start with small planning, pool, and formatting contracts such as `password_generation_plan(minimum_length, special_character_count, number_count)`, `letter_character_pool()`, `digit_character_pool()`, `special_character_pool()`, and `format_generated_password(password)`, build the core repo first, then add adapter repos that consume that core; this project builds on the earlier password-classification and random-choice exercises by turning password requirements into a deterministic plan while keeping random character selection and shuffling in the adapter
+
+## Stage 37
+
+### filtering-values
+
+- `Project`: `filtering-values`
+- `Status`: `planned`
+- `Prerequisites`: `employee-list-removal`
+- `Recommended Tutorial`: [projects/filtering-values/tutorial/README.md](../projects/filtering-values/tutorial/README.md)
+- `Suggested Output Repos`: one core library repo for the chosen ecosystem, language, and test framework, then one adapter repo for the chosen surface implementation
+- `Notes`: start with small filtering and formatting contracts such as `filter_even_numbers(numbers)` and `format_even_numbers_report(even_numbers)`, build the core repo first, then add adapter repos that consume that core; this project builds on the earlier list-filtering exercise by moving from named-record removal to numeric filtering while preserving input order from a space-separated list
+
+## Stage 38
+
+### sorting-records
+
+- `Project`: `sorting-records`
+- `Status`: `planned`
+- `Prerequisites`: `employee-list-removal`
+- `Recommended Tutorial`: [projects/sorting-records/tutorial/README.md](../projects/sorting-records/tutorial/README.md)
+- `Suggested Output Repos`: one core library repo for the chosen ecosystem, language, and test framework, then one adapter repo for the chosen surface implementation
+- `Notes`: start with small dataset, sorting, and formatting contracts such as `default_employee_records()`, `sort_employee_records_by_last_name(employee_records)`, and `format_employee_record_table(employee_records)`, build the core repo first, then add adapter repos that consume that core; this project builds on the earlier record-list exercise by keeping a fixed employee dataset in the core and then rendering a stable last-name sort in a tabular report
+
+## Stage 39
+
+### filtering-records
+
+- `Project`: `filtering-records`
+- `Status`: `planned`
+- `Prerequisites`: `sorting-records`
+- `Recommended Tutorial`: [projects/filtering-records/tutorial/README.md](../projects/filtering-records/tutorial/README.md)
+- `Suggested Output Repos`: one core library repo for the chosen ecosystem, language, and test framework, then one adapter repo for the chosen surface implementation
+- `Notes`: start with small dataset, filtering, sorting, and formatting contracts such as `default_employee_records()`, `filter_employee_records_by_search_string(employee_records, search_string)`, `sort_employee_records_by_last_name(employee_records)`, and `format_employee_record_table(employee_records)`, build the core repo first, then add adapter repos that consume that core; this project builds on the earlier record-sorting exercise by filtering the fixed employee dataset against first and last name fields before rendering the canonical sorted table
