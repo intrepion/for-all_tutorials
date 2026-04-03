@@ -12,7 +12,7 @@ Create a thin command-line adapter that can read input, write output, and delega
 
 ## Use This After
 
-- [Toolchain](../../../toolchain.md)
+- [Toolchain](../../../toolchain/README.md)
 - an existing core library repo for the project logic
 - one guide from [Testing](../../../testing/README.md) when a PHP testing guide has been added
 

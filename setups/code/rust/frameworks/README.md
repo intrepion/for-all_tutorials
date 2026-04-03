@@ -13,6 +13,6 @@ Framework-specific setup guides for Rust tutorials that need more than the base 
 
 Use a framework guide together with:
 
-- [Toolchain](../toolchain.md)
+- [Toolchain](../toolchain/README.md)
 - one guide from [Testing](../testing/README.md)
 - one guide from [Adapters](../adapters/README.md)

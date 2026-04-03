@@ -8,8 +8,8 @@ Setup guides for the PHP ecosystem.
 
 ## Contents
 
-- [Languages](languages.md)
-- [Toolchain](toolchain.md)
+- [Languages](languages/README.md)
+- [Toolchain](toolchain/README.md)
 - [Adapters](adapters/README.md)
 - [Testing](testing/README.md)
 - [Frameworks](frameworks/README.md)

@@ -8,7 +8,7 @@ Explicit no-framework choice for Rust command-line adapters.
 
 ## Use This After
 
-- [Toolchain](../../toolchain.md)
+- [Toolchain](../../toolchain/README.md)
 - [Libtest](../../testing/libtest.md)
 - [All](../../adapters/command-line/all.md)
 

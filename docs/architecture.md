@@ -46,11 +46,28 @@ for-all_tutorials/
     code/
       README.md
       beam/
+        README.md
+        languages/
+          README.md
+          elixir.md
+          erlang.md
+        toolchain/
+          README.md
+          otp.md
+          mix.md
+          rebar3.md
         ...
       dotnet/
         README.md
-        languages.md
-        toolchain.md
+        languages/
+          README.md
+          csharp.md
+          fsharp.md
+          visual-basic.md
+        toolchain/
+          README.md
+          sdk.md
+          dotnet-cli.md
         adapters/
           README.md
           command-line/
@@ -90,8 +107,13 @@ for-all_tutorials/
         ...
       rust/
         README.md
-        languages.md
-        toolchain.md
+        languages/
+          README.md
+          rust.md
+        toolchain/
+          README.md
+          rustup.md
+          cargo.md
         adapters/
           README.md
           command-line/
@@ -200,11 +222,19 @@ Recommended shape:
 
 ```text
 setups/code/<ecosystem>/
-setups/code/<ecosystem>/languages.md
-setups/code/<ecosystem>/toolchain.md
+setups/code/<ecosystem>/languages/README.md
+setups/code/<ecosystem>/languages/<language>.md
+setups/code/<ecosystem>/toolchain/README.md
+setups/code/<ecosystem>/toolchain/<tool>.md
+setups/code/<ecosystem>/adapters/README.md
+setups/code/<ecosystem>/adapters/<surface>/README.md
 setups/code/<ecosystem>/adapters/<surface>/<target>.md
+setups/code/<ecosystem>/testing/README.md
 setups/code/<ecosystem>/testing/<framework>.md
+setups/code/<ecosystem>/frameworks/README.md
+setups/code/<ecosystem>/frameworks/<surface>/README.md
 setups/code/<ecosystem>/frameworks/<surface>/<framework>.md
+setups/code/<ecosystem>/frameworks/<surface>/<target>/README.md
 setups/code/<ecosystem>/frameworks/<surface>/<target>/<framework>.md
 setups/storage/
 ```
@@ -212,8 +242,8 @@ setups/storage/
 That means:
 
 - keep one reusable setup area per code ecosystem
-- put language choices in `languages.md`
-- standardize core ecosystem guidance in `toolchain.md`
+- use `languages/` as a folder with an index plus one markdown file per language
+- use `toolchain/` as a folder with an index plus one markdown file per SDK, runtime, CLI, package manager, or equivalent tool
 - put surface and target adapter setup under `setups/code/<ecosystem>/adapters/`
 - put xUnit, NUnit, MSTest, TUnit, or similar variants under `setups/code/<ecosystem>/testing/`
 - put framework bootstrap guidance under `setups/code/<ecosystem>/frameworks/<surface>/` when the framework is tied to a specific surface
@@ -288,20 +318,21 @@ Curriculum order belongs in [docs/curriculum.md](curriculum.md), not in folder n
 
 Keep shared option catalogs near the top of that file, such as:
 
-- ecosystems
-- framework options by ecosystem and surface or target
-- testing options by ecosystem
-- surface options by ecosystem
-- target options by surface
+- `code/`
+- one section per ecosystem
+- `frameworks/` grouped by surface, then target
+- `languages/`
+- `testing/`
+- `toolchain/`
+- `storage/`
 
 That map should carry:
 
 - current stage
 - project slug
-- status such as `planned`, `in-progress`, or `complete`
 - prerequisites
+- unlocks
 - recommended tutorial
-- suggested output repos
 - notes
 
 Avoid planning dozens of speculative projects far in advance. Add projects when there is genuine intent to build them, and reorder the map as the curriculum becomes clearer.
@@ -351,7 +382,7 @@ Then one possible early path is:
 
 1. write [projects/saying-hello/spec/README.md](../projects/saying-hello/spec/README.md)
 2. add `saying-hello` to [docs/curriculum.md](curriculum.md)
-3. create reusable `.NET` setup docs such as `setups/code/dotnet/toolchain.md`, `setups/code/dotnet/testing/xunit.md`, adapter guides like `setups/code/dotnet/adapters/command-line/all.md` or `setups/code/dotnet/adapters/web/full-stack.md`, and framework guides like `setups/code/dotnet/frameworks/command-line/spectre-console.md` or `setups/code/dotnet/frameworks/web/full-stack/blazor-server.md`
+3. create reusable `.NET` setup docs such as `setups/code/dotnet/languages/csharp.md`, `setups/code/dotnet/toolchain/sdk.md`, `setups/code/dotnet/toolchain/dotnet-cli.md`, `setups/code/dotnet/testing/xunit.md`, adapter guides like `setups/code/dotnet/adapters/command-line/all.md` or `setups/code/dotnet/adapters/web/full-stack.md`, and framework guides like `setups/code/dotnet/frameworks/command-line/spectre-console.md` or `setups/code/dotnet/frameworks/web/full-stack/blazor-server.md`
 4. write [projects/saying-hello/tutorial/README.md](../projects/saying-hello/tutorial/README.md), [projects/saying-hello/tutorial/core.md](../projects/saying-hello/tutorial/core.md), and [projects/saying-hello/tutorial/adapter.md](../projects/saying-hello/tutorial/adapter.md)
 5. build a separate core library repo and test `greet` to the repo's coverage standard
 6. build a separate adapter repo for the chosen surface path

@@ -12,7 +12,7 @@ Create a thin web host that can receive requests, render UI, and delegate projec
 
 ## Use This After
 
-- [Toolchain](../../../toolchain.md)
+- [Toolchain](../../../toolchain/README.md)
 - [Libtest](../../../testing/libtest.md)
 - an existing core library repo for the project logic
 - one guide from [Frameworks](../../../frameworks/README.md) when the chosen stack needs framework-specific bootstrap instructions

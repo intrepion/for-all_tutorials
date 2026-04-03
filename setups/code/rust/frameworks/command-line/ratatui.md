@@ -8,7 +8,7 @@ Reusable Rust command-line framework guidance for adapters that use Ratatui for 
 
 ## Use This After
 
-- [Toolchain](../../toolchain.md)
+- [Toolchain](../../toolchain/README.md)
 - [Libtest](../../testing/libtest.md)
 - [All](../../adapters/command-line/all.md)
 

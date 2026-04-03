@@ -8,7 +8,7 @@ Reusable `.NET` `web/full-stack` framework guidance for adapters that use Blazor
 
 ## Use This After
 
-- [Toolchain](../../../toolchain.md)
+- [Toolchain](../../../toolchain/README.md)
 - one guide from [Testing](../../../testing/README.md)
 - [Full Stack](../../../adapters/web/full-stack.md)
 

@@ -8,7 +8,7 @@ Reusable JavaScript command-line framework guidance for adapters that use Comman
 
 ## Use This After
 
-- [Toolchain](../../toolchain.md)
+- [Toolchain](../../toolchain/README.md)
 - [All](../../adapters/command-line/all.md)
 
 ## Guidance

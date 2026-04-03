@@ -8,7 +8,7 @@ Reusable Python command-line framework guidance for adapters that use Click for 
 
 ## Use This After
 
-- [Toolchain](../../toolchain.md)
+- [Toolchain](../../toolchain/README.md)
 - [All](../../adapters/command-line/all.md)
 
 ## Guidance

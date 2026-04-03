@@ -8,7 +8,7 @@ Reusable Rust `web/full-stack` framework guidance for adapters that use Leptos S
 
 ## Use This After
 
-- [Toolchain](../../../toolchain.md)
+- [Toolchain](../../../toolchain/README.md)
 - [Libtest](../../../testing/libtest.md)
 - [Full Stack](../../../adapters/web/full-stack.md)
 

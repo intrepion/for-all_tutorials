@@ -12,7 +12,7 @@ Use Rust's built-in `libtest` support with `cargo test` for spec-driven, test-dr
 
 ## Use This After
 
-- [Toolchain](../toolchain.md)
+- [Toolchain](../toolchain/README.md)
 
 ## Scope
 

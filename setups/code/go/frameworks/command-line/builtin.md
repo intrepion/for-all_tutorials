@@ -8,7 +8,7 @@ Explicit no-framework choice for Go command-line adapters.
 
 ## Use This After
 
-- [Toolchain](../../toolchain.md)
+- [Toolchain](../../toolchain/README.md)
 - [All](../../adapters/command-line/all.md)
 
 ## Guidance

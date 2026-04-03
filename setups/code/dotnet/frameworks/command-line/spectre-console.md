@@ -8,7 +8,7 @@ Reusable `.NET` command-line framework guidance for adapters that use Spectre Co
 
 ## Use This After
 
-- [Toolchain](../../toolchain.md)
+- [Toolchain](../../toolchain/README.md)
 - one guide from [Testing](../../testing/README.md)
 - [All](../../adapters/command-line/all.md)
 

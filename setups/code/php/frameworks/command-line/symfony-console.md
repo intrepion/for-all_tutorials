@@ -8,7 +8,7 @@ Reusable PHP command-line framework guidance for adapters that use Symfony Conso
 
 ## Use This After
 
-- [Toolchain](../../toolchain.md)
+- [Toolchain](../../toolchain/README.md)
 - [All](../../adapters/command-line/all.md)
 
 ## Guidance

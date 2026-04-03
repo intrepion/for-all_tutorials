@@ -12,7 +12,7 @@ Create a thin command-line adapter that can call a well-tested core library with
 
 ## Use This After
 
-- [Toolchain](../../../toolchain.md)
+- [Toolchain](../../../toolchain/README.md)
 - [Libtest](../../../testing/libtest.md)
 - an existing core library repo for the project logic
 

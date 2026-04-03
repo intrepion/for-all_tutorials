@@ -13,6 +13,6 @@ Framework-specific setup guides for Python tutorials that need more than the bas
 
 Use a framework guide together with:
 
-- [Toolchain](../toolchain.md)
+- [Toolchain](../toolchain/README.md)
 - one guide from [Testing](../testing/README.md) when one exists
 - one guide from [Adapters](../adapters/README.md)

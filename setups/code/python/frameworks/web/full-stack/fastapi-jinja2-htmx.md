@@ -8,7 +8,7 @@ Reusable Python `web/full-stack` framework guidance for adapters that use FastAP
 
 ## Use This After
 
-- [Toolchain](../../../toolchain.md)
+- [Toolchain](../../../toolchain/README.md)
 - one guide from [Testing](../../../testing/README.md) when one exists
 - [Full Stack](../../../adapters/web/full-stack.md)
 

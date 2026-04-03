@@ -26,199 +26,245 @@ This file should stay incremental:
 
 Keep shared option lists here so project entries can stay small.
 
-### Ecosystems
+### [Code](../setups/code/README.md)
 
-- `beam`
-- `dotnet`
-- `go`
-- `java`
-- `javascript`
-- `php`
-- `python`
-- `ruby`
-- `rust`
+#### [beam](../setups/code/beam/README.md)
 
-### Languages By Ecosystem
+##### [Frameworks](../setups/code/beam/frameworks/README.md)
 
-#### `beam`
+###### [command-line](../setups/code/beam/frameworks/command-line/README.md)
 
-- `Elixir`
-- `Erlang`
+- [all](../setups/code/beam/adapters/command-line/all.md): [builtin](../setups/code/beam/frameworks/command-line/builtin.md)
 
-#### `dotnet`
+###### [web](../setups/code/beam/frameworks/web/README.md)
 
-- `C#`
-- `F#`
-- `Visual Basic`
+- [full-stack](../setups/code/beam/adapters/web/full-stack.md): [phoenix-liveview](../setups/code/beam/frameworks/web/full-stack/phoenix-liveview.md)
 
-#### `go`
+##### [Languages](../setups/code/beam/languages/README.md)
 
-- `Go`
+- [Elixir](../setups/code/beam/languages/elixir.md)
+- [Erlang](../setups/code/beam/languages/erlang.md)
 
-#### `java`
+##### [Testing](../setups/code/beam/testing/README.md)
 
-- `Java`
+- no testing-specific guides have been written yet
 
-#### `javascript`
+##### [Toolchain](../setups/code/beam/toolchain/README.md)
 
-- `JavaScript`
-- `TypeScript`
+- [OTP](../setups/code/beam/toolchain/otp.md)
+- [Mix](../setups/code/beam/toolchain/mix.md)
+- [Rebar3](../setups/code/beam/toolchain/rebar3.md)
 
-#### `php`
+#### [dotnet](../setups/code/dotnet/README.md)
 
-- `PHP`
+##### [Frameworks](../setups/code/dotnet/frameworks/README.md)
 
-#### `python`
+###### [command-line](../setups/code/dotnet/frameworks/command-line/README.md)
 
-- `Python`
+- [all](../setups/code/dotnet/adapters/command-line/all.md): [builtin](../setups/code/dotnet/frameworks/command-line/builtin.md), [spectre-console](../setups/code/dotnet/frameworks/command-line/spectre-console.md)
 
-#### `ruby`
+###### [web](../setups/code/dotnet/frameworks/web/README.md)
 
-- `Ruby`
+- [full-stack](../setups/code/dotnet/adapters/web/full-stack.md): [blazor-server](../setups/code/dotnet/frameworks/web/full-stack/blazor-server.md)
 
-#### `rust`
+##### [Languages](../setups/code/dotnet/languages/README.md)
 
-- `Rust`
+- [C#](../setups/code/dotnet/languages/csharp.md)
+- [F#](../setups/code/dotnet/languages/fsharp.md)
+- [Visual Basic](../setups/code/dotnet/languages/visual-basic.md)
 
-### Framework Options By Ecosystem And Surface Or Target
+##### [Testing](../setups/code/dotnet/testing/README.md)
 
-#### `beam`
+- [xunit](../setups/code/dotnet/testing/xunit.md)
+- [nunit](../setups/code/dotnet/testing/nunit.md)
+- [mstest](../setups/code/dotnet/testing/mstest.md)
+- [tunit](../setups/code/dotnet/testing/tunit.md)
 
-- `command-line`: `builtin`
-- `web/full-stack`: `phoenix-liveview`
+##### [Toolchain](../setups/code/dotnet/toolchain/README.md)
 
-#### `dotnet`
+- [.NET SDK](../setups/code/dotnet/toolchain/sdk.md)
+- [dotnet CLI](../setups/code/dotnet/toolchain/dotnet-cli.md)
 
-- `command-line`: `builtin`, `spectre-console`
-- `web/full-stack`: `blazor-server`
+#### [go](../setups/code/go/README.md)
 
-#### `go`
+##### [Frameworks](../setups/code/go/frameworks/README.md)
 
-- `command-line`: `builtin`
-- `web/full-stack`: `echo-templates-htmx`
+###### [command-line](../setups/code/go/frameworks/command-line/README.md)
 
-#### `java`
+- [all](../setups/code/go/adapters/command-line/all.md): [builtin](../setups/code/go/frameworks/command-line/builtin.md)
 
-- `command-line`: `builtin`
-- `web/full-stack`: `quarkus-native-qute`
+###### [web](../setups/code/go/frameworks/web/README.md)
 
-#### `javascript`
+- [full-stack](../setups/code/go/adapters/web/full-stack.md): [echo-templates-htmx](../setups/code/go/frameworks/web/full-stack/echo-templates-htmx.md)
 
-- `command-line`: `builtin`, `commander`
-- `web/full-stack`: `sveltekit-bun-adapter`
+##### [Languages](../setups/code/go/languages/README.md)
 
-#### `php`
+- [Go](../setups/code/go/languages/go.md)
 
-- `command-line`: `builtin`, `symfony-console`
-- `web/full-stack`: `laravel-octane-livewire`
+##### [Testing](../setups/code/go/testing/README.md)
 
-#### `python`
+- no testing-specific guides have been written yet
 
-- `command-line`: `builtin`, `click`, `typer`
-- `web/full-stack`: `fastapi-jinja2-htmx`
+##### [Toolchain](../setups/code/go/toolchain/README.md)
 
-#### `ruby`
+- [Go Toolchain](../setups/code/go/toolchain/go.md)
 
-- `command-line`: `builtin`
-- `web/full-stack`: `rails-hotwire`
+#### [java](../setups/code/java/README.md)
 
-#### `rust`
+##### [Frameworks](../setups/code/java/frameworks/README.md)
 
-- `command-line`: `builtin`, `clap`, `ratatui`
-- `web/full-stack`: `leptos-ssr`
+###### [command-line](../setups/code/java/frameworks/command-line/README.md)
 
-### Testing Options By Ecosystem
+- [all](../setups/code/java/adapters/command-line/all.md): [builtin](../setups/code/java/frameworks/command-line/builtin.md)
 
-#### `beam`
+###### [web](../setups/code/java/frameworks/web/README.md)
 
-- no testing-specific guide has been written yet
+- [full-stack](../setups/code/java/adapters/web/full-stack.md): [quarkus-native-qute](../setups/code/java/frameworks/web/full-stack/quarkus-native-qute.md)
 
-#### `dotnet`
+##### [Languages](../setups/code/java/languages/README.md)
 
-- `xunit`
-- `nunit`
-- `mstest`
-- `tunit`
+- [Java](../setups/code/java/languages/java.md)
 
-#### `go`
+##### [Testing](../setups/code/java/testing/README.md)
 
-- no testing-specific guide has been written yet
+- no testing-specific guides have been written yet
 
-#### `java`
+##### [Toolchain](../setups/code/java/toolchain/README.md)
 
-- no testing-specific guide has been written yet
+- [JDK](../setups/code/java/toolchain/jdk.md)
 
-#### `javascript`
+#### [javascript](../setups/code/javascript/README.md)
 
-- no testing-specific guide has been written yet
+##### [Frameworks](../setups/code/javascript/frameworks/README.md)
 
-#### `php`
+###### [command-line](../setups/code/javascript/frameworks/command-line/README.md)
 
-- no testing-specific guide has been written yet
+- [all](../setups/code/javascript/adapters/command-line/all.md): [builtin](../setups/code/javascript/frameworks/command-line/builtin.md), [commander](../setups/code/javascript/frameworks/command-line/commander.md)
 
-#### `python`
+###### [web](../setups/code/javascript/frameworks/web/README.md)
 
-- no testing-specific guide has been written yet
+- [full-stack](../setups/code/javascript/adapters/web/full-stack.md): [sveltekit-bun-adapter](../setups/code/javascript/frameworks/web/full-stack/sveltekit-bun-adapter.md)
 
-#### `ruby`
+##### [Languages](../setups/code/javascript/languages/README.md)
 
-- no testing-specific guide has been written yet
+- [JavaScript](../setups/code/javascript/languages/javascript.md)
+- [TypeScript](../setups/code/javascript/languages/typescript.md)
 
-#### `rust`
+##### [Testing](../setups/code/javascript/testing/README.md)
 
-- `libtest`
+- no testing-specific guides have been written yet
 
-### Surface Options By Ecosystem
+##### [Toolchain](../setups/code/javascript/toolchain/README.md)
 
-#### `beam`
+- [Node.js](../setups/code/javascript/toolchain/node.md)
+- [Bun](../setups/code/javascript/toolchain/bun.md)
+- [npm](../setups/code/javascript/toolchain/npm.md)
+- [pnpm](../setups/code/javascript/toolchain/pnpm.md)
+- [Yarn](../setups/code/javascript/toolchain/yarn.md)
 
-- `command-line`
-- `web`
+#### [php](../setups/code/php/README.md)
 
-#### `dotnet`
+##### [Frameworks](../setups/code/php/frameworks/README.md)
 
-- `command-line`
-- `web`
+###### [command-line](../setups/code/php/frameworks/command-line/README.md)
 
-#### `go`
+- [all](../setups/code/php/adapters/command-line/all.md): [builtin](../setups/code/php/frameworks/command-line/builtin.md), [symfony-console](../setups/code/php/frameworks/command-line/symfony-console.md)
 
-- `command-line`
-- `web`
+###### [web](../setups/code/php/frameworks/web/README.md)
 
-#### `java`
+- [full-stack](../setups/code/php/adapters/web/full-stack.md): [laravel-octane-livewire](../setups/code/php/frameworks/web/full-stack/laravel-octane-livewire.md)
 
-- `command-line`
-- `web`
+##### [Languages](../setups/code/php/languages/README.md)
 
-#### `javascript`
+- [PHP](../setups/code/php/languages/php.md)
 
-- `command-line`
-- `web`
+##### [Testing](../setups/code/php/testing/README.md)
 
-#### `php`
+- no testing-specific guides have been written yet
 
-- `command-line`
-- `web`
+##### [Toolchain](../setups/code/php/toolchain/README.md)
 
-#### `python`
+- [PHP Runtime](../setups/code/php/toolchain/php.md)
+- [Composer](../setups/code/php/toolchain/composer.md)
 
-- `command-line`
-- `web`
+#### [python](../setups/code/python/README.md)
 
-#### `ruby`
+##### [Frameworks](../setups/code/python/frameworks/README.md)
 
-- `command-line`
-- `web`
+###### [command-line](../setups/code/python/frameworks/command-line/README.md)
 
-#### `rust`
+- [all](../setups/code/python/adapters/command-line/all.md): [builtin](../setups/code/python/frameworks/command-line/builtin.md), [click](../setups/code/python/frameworks/command-line/click.md), [typer](../setups/code/python/frameworks/command-line/typer.md)
 
-- `command-line`
-- `web`
+###### [web](../setups/code/python/frameworks/web/README.md)
 
-### Target Options By Surface
+- [full-stack](../setups/code/python/adapters/web/full-stack.md): [fastapi-jinja2-htmx](../setups/code/python/frameworks/web/full-stack/fastapi-jinja2-htmx.md)
 
-- `command-line`: `all`
-- `web`: `back-end`, `front-end`, `full-stack`
+##### [Languages](../setups/code/python/languages/README.md)
+
+- [Python](../setups/code/python/languages/python.md)
+
+##### [Testing](../setups/code/python/testing/README.md)
+
+- no testing-specific guides have been written yet
+
+##### [Toolchain](../setups/code/python/toolchain/README.md)
+
+- [Python Runtime](../setups/code/python/toolchain/python.md)
+- [pip](../setups/code/python/toolchain/pip.md)
+
+#### [ruby](../setups/code/ruby/README.md)
+
+##### [Frameworks](../setups/code/ruby/frameworks/README.md)
+
+###### [command-line](../setups/code/ruby/frameworks/command-line/README.md)
+
+- [all](../setups/code/ruby/adapters/command-line/all.md): [builtin](../setups/code/ruby/frameworks/command-line/builtin.md)
+
+###### [web](../setups/code/ruby/frameworks/web/README.md)
+
+- [full-stack](../setups/code/ruby/adapters/web/full-stack.md): [rails-hotwire](../setups/code/ruby/frameworks/web/full-stack/rails-hotwire.md)
+
+##### [Languages](../setups/code/ruby/languages/README.md)
+
+- [Ruby](../setups/code/ruby/languages/ruby.md)
+
+##### [Testing](../setups/code/ruby/testing/README.md)
+
+- no testing-specific guides have been written yet
+
+##### [Toolchain](../setups/code/ruby/toolchain/README.md)
+
+- [Ruby Runtime](../setups/code/ruby/toolchain/ruby.md)
+- [Bundler](../setups/code/ruby/toolchain/bundler.md)
+
+#### [rust](../setups/code/rust/README.md)
+
+##### [Frameworks](../setups/code/rust/frameworks/README.md)
+
+###### [command-line](../setups/code/rust/frameworks/command-line/README.md)
+
+- [all](../setups/code/rust/adapters/command-line/all.md): [builtin](../setups/code/rust/frameworks/command-line/builtin.md), [clap](../setups/code/rust/frameworks/command-line/clap.md), [ratatui](../setups/code/rust/frameworks/command-line/ratatui.md)
+
+###### [web](../setups/code/rust/frameworks/web/README.md)
+
+- [full-stack](../setups/code/rust/adapters/web/full-stack.md): [leptos-ssr](../setups/code/rust/frameworks/web/full-stack/leptos-ssr.md)
+
+##### [Languages](../setups/code/rust/languages/README.md)
+
+- [Rust](../setups/code/rust/languages/rust.md)
+
+##### [Testing](../setups/code/rust/testing/README.md)
+
+- [libtest](../setups/code/rust/testing/libtest.md)
+
+##### [Toolchain](../setups/code/rust/toolchain/README.md)
+
+- [rustup](../setups/code/rust/toolchain/rustup.md)
+- [Cargo](../setups/code/rust/toolchain/cargo.md)
+
+### [Storage](../setups/storage/README.md)
+
+- storage setup guides live here as that part of the repo grows
 
 ## Entry Shape
 

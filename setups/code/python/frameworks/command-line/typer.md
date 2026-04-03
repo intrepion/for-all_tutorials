@@ -8,7 +8,7 @@ Reusable Python command-line framework guidance for adapters that use Typer for 
 
 ## Use This After
 
-- [Toolchain](../../toolchain.md)
+- [Toolchain](../../toolchain/README.md)
 - [All](../../adapters/command-line/all.md)
 
 ## Guidance

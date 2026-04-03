@@ -12,7 +12,7 @@ Create a thin console adapter that can call a well-tested core library without m
 
 ## Use This After
 
-- [Toolchain](../../../toolchain.md)
+- [Toolchain](../../../toolchain/README.md)
 - one guide from [Testing](../../../testing/README.md)
 - an existing core library repo for the project logic
 
