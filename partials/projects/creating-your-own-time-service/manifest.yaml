@@ -1,3 +1,20 @@
 project: creating-your-own-time-service
 partial_version: 1
-compiled_outputs: []
+compiled_outputs:
+- id: dotnet-csharp-xunit-core
+  kind: core
+  tutorial_path: tutorials/creating-your-own-time-service/dotnet/csharp/xunit/core/README.md
+  selections:
+    ecosystem: dotnet
+    language: csharp
+    testing: xunit
+  sources:
+  - partials/projects/creating-your-own-time-service/README.md
+  - partials/projects/creating-your-own-time-service/spec/README.md
+  - partials/projects/creating-your-own-time-service/instructions/README.md
+  - partials/projects/creating-your-own-time-service/instructions/core.md
+  - partials/setups/code/dotnet/README.md
+  - partials/setups/code/dotnet/languages/csharp.md
+  - partials/setups/code/dotnet/toolchain/sdk.md
+  - partials/setups/code/dotnet/toolchain/dotnet-cli.md
+  - partials/setups/code/dotnet/testing/xunit.md

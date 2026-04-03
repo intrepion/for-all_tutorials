@@ -7,7 +7,9 @@ source_scope: project-partials
 
 Project-source slices for future compiled tutorials.
 
-Only manifests with non-empty `compiled_outputs` currently generate tutorial output.
+Every project manifest in this folder now declares at least one active compiled tutorial output.
+
+Projects that fit the current command-line/no-storage setup slice also declare an active adapter output.
 
 ## Contents
 

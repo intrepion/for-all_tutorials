@@ -1,3 +1,44 @@
 project: guess-the-number-game
 partial_version: 1
-compiled_outputs: []
+compiled_outputs:
+- id: dotnet-csharp-xunit-core
+  kind: core
+  tutorial_path: tutorials/guess-the-number-game/dotnet/csharp/xunit/core/README.md
+  selections:
+    ecosystem: dotnet
+    language: csharp
+    testing: xunit
+  sources:
+  - partials/projects/guess-the-number-game/README.md
+  - partials/projects/guess-the-number-game/spec/README.md
+  - partials/projects/guess-the-number-game/instructions/README.md
+  - partials/projects/guess-the-number-game/instructions/core.md
+  - partials/setups/code/dotnet/README.md
+  - partials/setups/code/dotnet/languages/csharp.md
+  - partials/setups/code/dotnet/toolchain/sdk.md
+  - partials/setups/code/dotnet/toolchain/dotnet-cli.md
+  - partials/setups/code/dotnet/testing/xunit.md
+- id: dotnet-csharp-xunit-no-storage-command-line-all-no-framework
+  kind: adapter
+  tutorial_path: tutorials/guess-the-number-game/dotnet/csharp/xunit/adapters/no-storage/command-line/all/no-framework/README.md
+  selections:
+    ecosystem: dotnet
+    language: csharp
+    testing: xunit
+    storage: no-storage
+    surface: command-line
+    target: all
+    framework: no-framework
+  sources:
+  - partials/projects/guess-the-number-game/README.md
+  - partials/projects/guess-the-number-game/spec/README.md
+  - partials/projects/guess-the-number-game/instructions/README.md
+  - partials/projects/guess-the-number-game/instructions/adapter.md
+  - partials/setups/storage/README.md
+  - partials/setups/code/dotnet/README.md
+  - partials/setups/code/dotnet/languages/csharp.md
+  - partials/setups/code/dotnet/toolchain/sdk.md
+  - partials/setups/code/dotnet/toolchain/dotnet-cli.md
+  - partials/setups/code/dotnet/testing/xunit.md
+  - partials/setups/code/dotnet/adapters/command-line/all.md
+  - partials/setups/code/dotnet/frameworks/command-line/no-framework.md

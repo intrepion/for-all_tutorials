@@ -1,3 +1,44 @@
 project: self-checkout
 partial_version: 1
-compiled_outputs: []
+compiled_outputs:
+- id: dotnet-csharp-xunit-core
+  kind: core
+  tutorial_path: tutorials/self-checkout/dotnet/csharp/xunit/core/README.md
+  selections:
+    ecosystem: dotnet
+    language: csharp
+    testing: xunit
+  sources:
+  - partials/projects/self-checkout/README.md
+  - partials/projects/self-checkout/spec/README.md
+  - partials/projects/self-checkout/instructions/README.md
+  - partials/projects/self-checkout/instructions/core.md
+  - partials/setups/code/dotnet/README.md
+  - partials/setups/code/dotnet/languages/csharp.md
+  - partials/setups/code/dotnet/toolchain/sdk.md
+  - partials/setups/code/dotnet/toolchain/dotnet-cli.md
+  - partials/setups/code/dotnet/testing/xunit.md
+- id: dotnet-csharp-xunit-no-storage-command-line-all-no-framework
+  kind: adapter
+  tutorial_path: tutorials/self-checkout/dotnet/csharp/xunit/adapters/no-storage/command-line/all/no-framework/README.md
+  selections:
+    ecosystem: dotnet
+    language: csharp
+    testing: xunit
+    storage: no-storage
+    surface: command-line
+    target: all
+    framework: no-framework
+  sources:
+  - partials/projects/self-checkout/README.md
+  - partials/projects/self-checkout/spec/README.md
+  - partials/projects/self-checkout/instructions/README.md
+  - partials/projects/self-checkout/instructions/adapter.md
+  - partials/setups/storage/README.md
+  - partials/setups/code/dotnet/README.md
+  - partials/setups/code/dotnet/languages/csharp.md
+  - partials/setups/code/dotnet/toolchain/sdk.md
+  - partials/setups/code/dotnet/toolchain/dotnet-cli.md
+  - partials/setups/code/dotnet/testing/xunit.md
+  - partials/setups/code/dotnet/adapters/command-line/all.md
+  - partials/setups/code/dotnet/frameworks/command-line/no-framework.md

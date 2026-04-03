@@ -1,3 +1,20 @@
 project: url-shortener
 partial_version: 1
-compiled_outputs: []
+compiled_outputs:
+- id: dotnet-csharp-xunit-core
+  kind: core
+  tutorial_path: tutorials/url-shortener/dotnet/csharp/xunit/core/README.md
+  selections:
+    ecosystem: dotnet
+    language: csharp
+    testing: xunit
+  sources:
+  - partials/projects/url-shortener/README.md
+  - partials/projects/url-shortener/spec/README.md
+  - partials/projects/url-shortener/instructions/README.md
+  - partials/projects/url-shortener/instructions/core.md
+  - partials/setups/code/dotnet/README.md
+  - partials/setups/code/dotnet/languages/csharp.md
+  - partials/setups/code/dotnet/toolchain/sdk.md
+  - partials/setups/code/dotnet/toolchain/dotnet-cli.md
+  - partials/setups/code/dotnet/testing/xunit.md

@@ -245,7 +245,7 @@ At minimum, each manifest should define:
 - the selected stack for each output
 - the source partials that feed each output
 
-Manifests with empty `compiled_outputs` are still valuable because they make the absence of generated outputs explicit instead of accidental.
+The safest rollout pattern is to activate the most complete stack first, prove generation end to end, and then expand adapter variants as more setup partials become available.
 
 ## Generated Tutorials
 
