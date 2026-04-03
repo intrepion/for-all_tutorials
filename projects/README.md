@@ -31,14 +31,17 @@ Project-specific materials, with each project keeping its own overview, spec, an
 - [Months to Pay Off a Credit Card](months-to-pay-off-a-credit-card/README.md)
 - [Multiplication Table](multiplication-table/README.md)
 - [Multistate Sales Tax Calculator](multistate-sales-tax-calculator/README.md)
+- [Name Sorter](name-sorter/README.md)
 - [Numbers to Names](numbers-to-names/README.md)
 - [Password Generator](password-generator/README.md)
 - [Password Strength Indicator](password-strength-indicator/README.md)
 - [Password Validation](password-validation/README.md)
 - [Paint Calculator](paint-calculator/README.md)
+- [Parsing a Data File](parsing-a-data-file/README.md)
 - [Picking a Winner](picking-a-winner/README.md)
 - [Pizza Party](pizza-party/README.md)
 - [Printing Quotes](printing-quotes/README.md)
+- [Product Search](product-search/README.md)
 - [Retirement Calculator](retirement-calculator/README.md)
 - [Saying Hello](saying-hello/README.md)
 - [Self-Checkout](self-checkout/README.md)
@@ -48,6 +51,9 @@ Project-specific materials, with each project keeping its own overview, spec, an
 - [Temperature Converter](temperature-converter/README.md)
 - [Troubleshooting Car Issues](troubleshooting-car-issues/README.md)
 - [Validating Inputs](validating-inputs/README.md)
+- [Website Generator](website-generator/README.md)
+- [Word Frequency Finder](word-frequency-finder/README.md)
+- [Word Finder](word-finder/README.md)
 
 ## Shared Workflow
 

@@ -672,3 +672,69 @@ Project slugs stay stable even if their place in this map changes.
 - `Recommended Tutorial`: [projects/filtering-records/tutorial/README.md](../projects/filtering-records/tutorial/README.md)
 - `Suggested Output Repos`: one core library repo for the chosen ecosystem, language, and test framework, then one adapter repo for the chosen surface implementation
 - `Notes`: start with small dataset, filtering, sorting, and formatting contracts such as `default_employee_records()`, `filter_employee_records_by_search_string(employee_records, search_string)`, `sort_employee_records_by_last_name(employee_records)`, and `format_employee_record_table(employee_records)`, build the core repo first, then add adapter repos that consume that core; this project builds on the earlier record-sorting exercise by filtering the fixed employee dataset against first and last name fields before rendering the canonical sorted table
+
+## Stage 41
+
+### name-sorter
+
+- `Project`: `name-sorter`
+- `Status`: `planned`
+- `Prerequisites`: `sorting-records`
+- `Recommended Tutorial`: [projects/name-sorter/tutorial/README.md](../projects/name-sorter/tutorial/README.md)
+- `Suggested Output Repos`: one core library repo for the chosen ecosystem, language, and test framework, then one adapter repo for the chosen surface implementation
+- `Notes`: start with small parsing, sorting, and formatting contracts such as `parse_name_entries(lines)`, `sort_name_entries(name_entries)`, and `format_sorted_name_report(name_entries)`, build the core repo first, then add adapter repos that consume that core; this project builds on the earlier record-sorting exercise by moving the source and destination into files while keeping alphabetical sorting and report formatting in the core
+
+## Stage 42
+
+### parsing-a-data-file
+
+- `Project`: `parsing-a-data-file`
+- `Status`: `planned`
+- `Prerequisites`: `name-sorter`
+- `Recommended Tutorial`: [projects/parsing-a-data-file/tutorial/README.md](../projects/parsing-a-data-file/tutorial/README.md)
+- `Suggested Output Repos`: one core library repo for the chosen ecosystem, language, and test framework, then one adapter repo for the chosen surface implementation
+- `Notes`: start with small parsing and formatting contracts such as `parse_employee_salary_records(lines)` and `format_employee_salary_table(employee_salary_records)`, build the core repo first, then add adapter repos that consume that core; this project builds on the earlier file-sorting exercise by moving from a simple name list to CSV record parsing and fixed-width table rendering without adding sorting as a new variable
+
+## Stage 43
+
+### website-generator
+
+- `Project`: `website-generator`
+- `Status`: `planned`
+- `Prerequisites`: `parsing-a-data-file`
+- `Recommended Tutorial`: [projects/website-generator/tutorial/README.md](../projects/website-generator/tutorial/README.md)
+- `Suggested Output Repos`: one core library repo for the chosen ecosystem, language, and test framework, then one adapter repo for the chosen surface implementation
+- `Notes`: start with small planning, html-generation, and formatting contracts such as `build_website_skeleton_plan(site_name, author, include_javascript_folder, include_css_folder)`, `render_index_html(site_name, author)`, and `format_creation_report(website_skeleton_plan)`, build the core repo first, then add adapter repos that consume that core; this project builds on the earlier file exercises by moving from parsing existing files to generating a deterministic directory and file skeleton from prompted input
+
+## Stage 44
+
+### product-search
+
+- `Project`: `product-search`
+- `Status`: `planned`
+- `Prerequisites`: `parsing-a-data-file`, `handling-bad-input`
+- `Recommended Tutorial`: [projects/product-search/tutorial/README.md](../projects/product-search/tutorial/README.md)
+- `Suggested Output Repos`: one core library repo for the chosen ecosystem, language, and test framework, then one adapter repo for the chosen surface implementation
+- `Notes`: start with small parsing, lookup, and formatting contracts such as `parse_product_catalog(json_text)`, `find_product_by_exact_name(product_catalog, product_name)`, `format_product_report(product)`, and `format_product_not_found_message()`, build the core repo first, then add adapter repos that consume that core; this project builds on the earlier file-parsing and retry-loop exercises by moving from CSV parsing to JSON inventory lookup while keeping the retry behavior in the adapter
+
+## Stage 45
+
+### word-finder
+
+- `Project`: `word-finder`
+- `Status`: `planned`
+- `Prerequisites`: `website-generator`
+- `Recommended Tutorial`: [projects/word-finder/tutorial/README.md](../projects/word-finder/tutorial/README.md)
+- `Suggested Output Repos`: one core library repo for the chosen ecosystem, language, and test framework, then one adapter repo for the chosen surface implementation
+- `Notes`: start with a small transformation contract such as `replace_exact_word_utilize_with_use(text)`, build the core repo first, then add adapter repos that consume that core; this project builds on the earlier file exercises by moving from generating files to reading one file, transforming its text with a deterministic replacement rule, and writing the result to a new file
+
+## Stage 46
+
+### word-frequency-finder
+
+- `Project`: `word-frequency-finder`
+- `Status`: `planned`
+- `Prerequisites`: `word-finder`
+- `Recommended Tutorial`: [projects/word-frequency-finder/tutorial/README.md](../projects/word-frequency-finder/tutorial/README.md)
+- `Suggested Output Repos`: one core library repo for the chosen ecosystem, language, and test framework, then one adapter repo for the chosen surface implementation
+- `Notes`: start with small tokenization, counting, and formatting contracts such as `split_text_into_words(text)`, `count_word_frequencies(words)`, and `format_word_frequency_histogram(word_frequency_entries)`, build the core repo first, then add adapter repos that consume that core; this project builds on the earlier text-file exercise by moving from one deterministic replacement rule to counting exact word frequencies and rendering a histogram in first-appearance order
