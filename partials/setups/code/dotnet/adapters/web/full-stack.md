@@ -1,6 +1,9 @@
-<!-- breadcrumbs:start -->
-[for-all_tutorials](../../../../../../README.md) / [Setups](../../../../../README.md) / [Code](../../../../README.md) / [dotnet](../../../README.md) / [Adapters](../../README.md) / [Web](../README.md) / full-stack.md
-<!-- breadcrumbs:end -->
+---
+partial_kind: adapter-partial
+ecosystem: dotnet
+surface: web
+target: full-stack
+---
 
 # Full Stack
 
@@ -75,3 +78,4 @@ The `.NET` `web/full-stack` adapter setup is ready when:
 - the web host project is added to the solution
 - the web host depends on the core library
 - the web host can delegate project rules to the core library instead of redefining them
+- any chosen persistence path still keeps project rules in the core library

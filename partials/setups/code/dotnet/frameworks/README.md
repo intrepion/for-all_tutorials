@@ -10,6 +10,7 @@ Framework-specific setup guides for `.NET` tutorials that need more than the bas
 ## Contents
 
 - [Command Line](command-line/README.md)
+- [Web](web/README.md)
 
 Use a framework guide together with:
 

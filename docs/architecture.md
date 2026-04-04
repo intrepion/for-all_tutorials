@@ -78,6 +78,9 @@ for-all_tutorials/
             local-files-yaml.md
             local-files-toml.md
             local-files-xml.md
+          web/
+            README.md
+            database-sqlite.md
         adapters/
           README.md
           command-line/
