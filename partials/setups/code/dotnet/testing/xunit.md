@@ -17,10 +17,12 @@ Create an xUnit test project, attach it to a `.NET` solution, and enable repeata
 Substitute the placeholders with the names and paths from the selected project instructions:
 
 ```bash
-dotnet new xunit --name <test-project-name> --output <test-project-path> --framework <target-framework>
+dotnet new xunit --name <test-project-name> --output <test-project-path>
 dotnet sln <solution-path> add <test-project-path>/<test-project-name>.csproj
 dotnet add <test-project-path>/<test-project-name>.csproj reference <library-project-path>
 ```
+
+If the tutorial needs a non-default target framework, add `--framework <target-framework>` to both the library scaffold command and the `dotnet new xunit` command.
 
 Then replace the template placeholder file such as `UnitTest1.cs` with the test file names declared by the project instructions.
 

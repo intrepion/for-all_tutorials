@@ -20,7 +20,12 @@ fn main() -> Result<(), AppError> {
     let manifest_paths = collect_manifest_paths(&app_root)?;
 
     for manifest_path in manifest_paths {
-        generate_from_manifest(&app_root, &args.output_root, &shared_projects, &manifest_path)?;
+        generate_from_manifest(
+            &app_root,
+            &args.output_root,
+            &shared_projects,
+            &manifest_path,
+        )?;
     }
 
     Ok(())
@@ -39,16 +44,12 @@ impl Args {
         while let Some(arg) = args.next() {
             match arg.as_str() {
                 "--output-root" => {
-                    let path = args.next().ok_or_else(|| {
-                        AppError::message("missing value for --output-root")
-                    })?;
+                    let path = args
+                        .next()
+                        .ok_or_else(|| AppError::message("missing value for --output-root"))?;
                     output_root = absolute_path(app_root, Path::new(&path));
                 }
-                other => {
-                    return Err(AppError::message(format!(
-                        "unknown argument: {other}"
-                    )))
-                }
+                other => return Err(AppError::message(format!("unknown argument: {other}"))),
             }
         }
 
@@ -202,8 +203,9 @@ struct Partial {
 impl Partial {
     fn load(path: &Path) -> Result<Self, AppError> {
         let raw = fs::read_to_string(path)?;
-        let (frontmatter_text, markdown) = split_frontmatter(&raw)
-            .ok_or_else(|| AppError::message(format!("missing frontmatter in {}", path.display())))?;
+        let (frontmatter_text, markdown) = split_frontmatter(&raw).ok_or_else(|| {
+            AppError::message(format!("missing frontmatter in {}", path.display()))
+        })?;
         let meta: Frontmatter = serde_yaml::from_str(frontmatter_text)?;
         let (title, body) = split_title(markdown)
             .ok_or_else(|| AppError::message(format!("missing title in {}", path.display())))?;
@@ -362,19 +364,30 @@ fn build_readme(
     );
     push_section(
         &mut sections,
+        "Recommended .NET Core Scaffold",
+        recommended_dotnet_core_scaffold(project_slug, output),
+    );
+    push_section(
+        &mut sections,
         "Setup Overview",
         ecosystem_root.map(|partial| intro_excerpt(&partial.body)),
     );
 
-    for partial in partials.iter().filter(|partial| partial.meta.partial_kind == PartialKind::LanguagePartial)
+    for partial in partials
+        .iter()
+        .filter(|partial| partial.meta.partial_kind == PartialKind::LanguagePartial)
     {
-        push_subsection(&mut sections, &partial.title, &partial.body, 0);
+        push_subsection(&mut sections, &partial.title, &partial.body, 2);
     }
-    for partial in partials.iter().filter(|partial| partial.meta.partial_kind == PartialKind::ToolchainItem)
+    for partial in partials
+        .iter()
+        .filter(|partial| partial.meta.partial_kind == PartialKind::ToolchainItem)
     {
-        push_subsection(&mut sections, &partial.title, &partial.body, 0);
+        push_subsection(&mut sections, &partial.title, &partial.body, 2);
     }
-    for partial in partials.iter().filter(|partial| partial.meta.partial_kind == PartialKind::TestingPartial)
+    for partial in partials
+        .iter()
+        .filter(|partial| partial.meta.partial_kind == PartialKind::TestingPartial)
     {
         push_subsection(&mut sections, &partial.title, &partial.body, 2);
     }
@@ -391,7 +404,9 @@ fn build_readme(
     {
         push_subsection(&mut sections, &partial.title, &partial.body, 2);
     }
-    for partial in partials.iter().filter(|partial| partial.meta.partial_kind == PartialKind::AdapterPartial)
+    for partial in partials
+        .iter()
+        .filter(|partial| partial.meta.partial_kind == PartialKind::AdapterPartial)
     {
         push_subsection(&mut sections, &partial.title, &partial.body, 2);
     }
@@ -424,6 +439,42 @@ fn build_readme(
     })
 }
 
+fn recommended_dotnet_core_scaffold(project_slug: &str, output: &CompiledOutput) -> Option<String> {
+    if output.kind != OutputKind::Core || output.selections.ecosystem != "dotnet" {
+        return None;
+    }
+
+    let solution_name = pascal_case_slug(project_slug);
+    let library_project_name = solution_name.clone();
+    let test_project_name = format!("{solution_name}.Tests");
+    let solution_file = format!("{solution_name}.sln");
+    let library_project_path = format!("src/{library_project_name}");
+    let test_project_path = format!("tests/{test_project_name}");
+
+    Some(format!(
+        "- Solution name: `{solution_name}`\n\
+         - Solution file: `{solution_file}`\n\
+         - Library project name: `{library_project_name}`\n\
+         - Library project path: `{library_project_path}`\n\
+         - Test project name: `{test_project_name}`\n\
+         - Test project path: `{test_project_path}`\n\n\
+         A good first pass is:\n\n\
+         ```bash\n\
+         dotnet new sln --format sln --name {solution_name}\n\
+         mkdir -p src tests\n\
+         dotnet new classlib --name {library_project_name} --output {library_project_path}\n\
+         dotnet new xunit --name {test_project_name} --output {test_project_path}\n\
+         dotnet sln {solution_file} add {library_project_path}/{library_project_name}.csproj\n\
+         dotnet sln {solution_file} add {test_project_path}/{test_project_name}.csproj\n\
+         dotnet add {test_project_path}/{test_project_name}.csproj reference {library_project_path}/{library_project_name}.csproj\n\
+         ```\n\n\
+         Unless this tutorial explicitly says otherwise, let `dotnet new` use the SDK default target framework.\n\n\
+         After scaffolding, replace the template files:\n\n\
+         - `{library_project_path}/Class1.cs`\n\
+         - `{test_project_path}/UnitTest1.cs`"
+    ))
+}
+
 fn find_partial<'a>(partials: &'a [Partial], kind: PartialKind) -> Result<&'a Partial, AppError> {
     partials
         .iter()
@@ -449,7 +500,12 @@ fn push_section(sections: &mut Vec<RenderedSection>, heading: &str, body: Option
     });
 }
 
-fn push_subsection(sections: &mut Vec<RenderedSection>, heading: &str, body: &str, heading_shift: usize) {
+fn push_subsection(
+    sections: &mut Vec<RenderedSection>,
+    heading: &str,
+    body: &str,
+    heading_shift: usize,
+) {
     let body = if heading_shift == 0 {
         body.to_string()
     } else {
@@ -505,10 +561,23 @@ fn shift_headings(text: &str, amount: usize) -> String {
 fn normalize_text(text: &str) -> String {
     let link_regex = Regex::new(r"\[([^\]]+)\]\(([^)]+)\)").unwrap();
     let collapsed = link_regex.replace_all(text, |captures: &regex::Captures| {
-        let label = captures.get(1).map(|value| value.as_str()).unwrap_or_default();
-        let target = captures.get(2).map(|value| value.as_str()).unwrap_or_default();
-        if target.starts_with("http://") || target.starts_with("https://") || target.starts_with('#') {
-            captures.get(0).map(|value| value.as_str()).unwrap_or_default().to_string()
+        let label = captures
+            .get(1)
+            .map(|value| value.as_str())
+            .unwrap_or_default();
+        let target = captures
+            .get(2)
+            .map(|value| value.as_str())
+            .unwrap_or_default();
+        if target.starts_with("http://")
+            || target.starts_with("https://")
+            || target.starts_with('#')
+        {
+            captures
+                .get(0)
+                .map(|value| value.as_str())
+                .unwrap_or_default()
+                .to_string()
         } else {
             label.to_string()
         }
@@ -581,9 +650,21 @@ fn repo_name(project_slug: &str, output: &CompiledOutput) -> String {
             output.selections.language,
             output.selections.testing,
             output.selections.storage.as_deref().unwrap_or("no-storage"),
-            output.selections.surface.as_deref().unwrap_or("unknown-surface"),
-            output.selections.target.as_deref().unwrap_or("unknown-target"),
-            output.selections.framework.as_deref().unwrap_or("unknown-framework"),
+            output
+                .selections
+                .surface
+                .as_deref()
+                .unwrap_or("unknown-surface"),
+            output
+                .selections
+                .target
+                .as_deref()
+                .unwrap_or("unknown-target"),
+            output
+                .selections
+                .framework
+                .as_deref()
+                .unwrap_or("unknown-framework"),
         )
     }
 }
@@ -607,6 +688,24 @@ fn repo_description(project_title: &str, output: &CompiledOutput) -> String {
             format_selection_value(&output.selections.testing)
         )
     }
+}
+
+fn pascal_case_slug(slug: &str) -> String {
+    slug.split('-')
+        .filter(|part| !part.is_empty())
+        .map(|part| {
+            let mut chars = part.chars();
+            match chars.next() {
+                Some(first) => {
+                    let mut word = first.to_uppercase().to_string();
+                    word.push_str(chars.as_str());
+                    word
+                }
+                None => String::new(),
+            }
+        })
+        .collect::<Vec<_>>()
+        .join("")
 }
 
 fn format_selection_value(value: &str) -> String {

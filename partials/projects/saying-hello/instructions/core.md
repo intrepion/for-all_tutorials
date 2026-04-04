@@ -7,6 +7,16 @@ project: saying-hello
 
 Project-specific core instruction fragment for the `saying-hello` core repo.
 
+### Recommended Concrete Shape
+
+For this project, a good first concrete shape is:
+
+- one production unit named `Greeting`
+- one method named `Greet`
+- one test file and test class named `GreetingTests`
+
+If the scaffold generated placeholder files such as `Class1.cs` or `UnitTest1.cs`, replace them with names that match this shape before you begin the red, green, refactor cycle.
+
 ### 1. Red: Write The First Failing Test
 
 Start with the happiest path:
