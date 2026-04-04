@@ -9,7 +9,7 @@ Project-source slices for future compiled tutorials.
 
 Every project manifest in this folder now declares at least one active compiled tutorial output.
 
-Every project manifest in this folder now also declares at least one active adapter output on a currently supported `.NET/C# xUnit` path.
+Every project manifest in this folder now also declares at least one active adapter output on a currently supported `.NET/C#` path.
 
 ## Contents
 

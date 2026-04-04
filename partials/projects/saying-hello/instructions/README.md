@@ -9,14 +9,21 @@ Source index for the `saying-hello` instruction partials used to assemble future
 
 ## Contents
 
-- [Core Instructions](core.md)
+- [Core Instructions for xUnit](core.md)
+- [Core Instructions for NUnit](core-nunit.md)
+- [Core Instructions for MSTest](core-mstest.md)
+- [Core Instructions for TUnit](core-tunit.md)
 - [Adapter Instructions](adapter.md)
 
 ## Project-Specific Flow
 
 Follow the shared repository-creation and instruction workflow in [Projects](../../README.md#shared-repository-creation) and [Projects](../../README.md#shared-instruction-workflow), then use this project's instruction files:
 
-- core repo: [Core Instructions](core.md)
+- core repo:
+  - [Core Instructions for xUnit](core.md)
+  - [Core Instructions for NUnit](core-nunit.md)
+  - [Core Instructions for MSTest](core-mstest.md)
+  - [Core Instructions for TUnit](core-tunit.md)
 - adapter repo: [Adapter Instructions](adapter.md)
 
 For this project, the core repo should expose `greet`, and the adapter repo should delegate to it without redefining greeting rules.

@@ -523,12 +523,17 @@ fn recommended_dotnet_core_scaffold(project_slug: &str, output: &CompiledOutput)
         return None;
     }
 
+    let (test_template, template_install_command) =
+        dotnet_test_template_short_name(&output.selections.testing);
     let solution_name = pascal_case_slug(project_slug);
     let library_project_name = solution_name.clone();
     let test_project_name = format!("{solution_name}.Tests");
     let solution_file = format!("{solution_name}.sln");
     let library_project_path = format!("src/{library_project_name}");
     let test_project_path = format!("tests/{test_project_name}");
+    let template_install_line = template_install_command
+        .map(|command| format!("{command}\n"))
+        .unwrap_or_default();
 
     Some(format!(
         "- Solution name: `{solution_name}`\n\
@@ -541,8 +546,9 @@ fn recommended_dotnet_core_scaffold(project_slug: &str, output: &CompiledOutput)
          ```bash\n\
          dotnet new sln --format sln --name {solution_name}\n\
          dotnet new gitignore\n\
+         {template_install_line}\
          dotnet new classlib --name {library_project_name} --output {library_project_path}\n\
-         dotnet new xunit --name {test_project_name} --output {test_project_path}\n\
+         dotnet new {test_template} --name {test_project_name} --output {test_project_path}\n\
          dotnet sln {solution_file} add {library_project_path}/{library_project_name}.csproj\n\
          dotnet sln {solution_file} add {test_project_path}/{test_project_name}.csproj\n\
          dotnet add {test_project_path}/{test_project_name}.csproj reference {library_project_path}/{library_project_name}.csproj\n\
@@ -561,6 +567,8 @@ fn recommended_dotnet_command_line_adapter_scaffold(
         return None;
     }
 
+    let (test_template, template_install_command) =
+        dotnet_test_template_short_name(&output.selections.testing);
     let core_repo_name = core_repo_name(project_slug, output);
     let core_library_project_name = pascal_case_slug(project_slug);
     let adapter_name = format!("{}.CommandLine", pascal_case_slug(project_slug));
@@ -572,6 +580,9 @@ fn recommended_dotnet_command_line_adapter_scaffold(
     let core_project_reference_path = format!(
         "../{core_repo_name}/src/{core_library_project_name}/{core_library_project_name}.csproj"
     );
+    let template_install_line = template_install_command
+        .map(|command| format!("{command}\n"))
+        .unwrap_or_default();
 
     Some(format!(
         "- Solution name: `{solution_name}`\n\
@@ -586,14 +597,25 @@ fn recommended_dotnet_command_line_adapter_scaffold(
          ```bash\n\
          dotnet new sln --format sln --name {solution_name}\n\
          dotnet new gitignore\n\
+         {template_install_line}\
          dotnet new console --name {adapter_name} --output {adapter_project_path}\n\
-         dotnet new xunit --name {adapter_test_project_name} --output {adapter_test_project_path}\n\
+         dotnet new {test_template} --name {adapter_test_project_name} --output {adapter_test_project_path}\n\
          dotnet sln {solution_file} add {adapter_project_path}/{adapter_name}.csproj\n\
          dotnet sln {solution_file} add {adapter_test_project_path}/{adapter_test_project_name}.csproj\n\
          dotnet add {adapter_project_path}/{adapter_name}.csproj reference {core_project_reference_path}\n\
          dotnet add {adapter_test_project_path}/{adapter_test_project_name}.csproj reference {adapter_project_path}/{adapter_name}.csproj\n\
          ```"
     ))
+}
+
+fn dotnet_test_template_short_name(testing: &str) -> (&'static str, Option<&'static str>) {
+    match testing {
+        "xunit" => ("xunit", None),
+        "nunit" => ("nunit", None),
+        "mstest" => ("mstest", None),
+        "tunit" => ("TUnit", Some("dotnet new install TUnit.Templates")),
+        _ => ("xunit", None),
+    }
 }
 
 fn find_partial<'a>(partials: &'a [Partial], kind: PartialKind) -> Result<&'a Partial, AppError> {
@@ -835,6 +857,9 @@ fn format_selection_value(value: &str) -> String {
         "dotnet" => ".NET".to_string(),
         "csharp" => "C#".to_string(),
         "xunit" => "xUnit".to_string(),
+        "nunit" => "NUnit".to_string(),
+        "mstest" => "MSTest".to_string(),
+        "tunit" => "TUnit".to_string(),
         other => other
             .split('-')
             .map(|part| {

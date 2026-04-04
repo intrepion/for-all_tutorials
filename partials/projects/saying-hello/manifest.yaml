@@ -3,7 +3,7 @@ partial_version: 1
 compiled_outputs:
   - id: dotnet-csharp-xunit-core
     kind: core
-    tutorial_path: tutorials/saying-hello/dotnet/csharp/xunit/core/README.md
+    tutorial_path: tutorials/saying-hello/dotnet/csharp/core/xunit/README.md
     selections:
       ecosystem: dotnet
       language: csharp
@@ -18,9 +18,60 @@ compiled_outputs:
       - partials/setups/code/dotnet/toolchain/sdk.md
       - partials/setups/code/dotnet/toolchain/dotnet-cli.md
       - partials/setups/code/dotnet/testing/xunit.md
+  - id: dotnet-csharp-nunit-core
+    kind: core
+    tutorial_path: tutorials/saying-hello/dotnet/csharp/core/nunit/README.md
+    selections:
+      ecosystem: dotnet
+      language: csharp
+      testing: nunit
+    sources:
+      - partials/projects/saying-hello/README.md
+      - partials/projects/saying-hello/spec/README.md
+      - partials/projects/saying-hello/instructions/README.md
+      - partials/projects/saying-hello/instructions/core-nunit.md
+      - partials/setups/code/dotnet/README.md
+      - partials/setups/code/dotnet/languages/csharp.md
+      - partials/setups/code/dotnet/toolchain/sdk.md
+      - partials/setups/code/dotnet/toolchain/dotnet-cli.md
+      - partials/setups/code/dotnet/testing/nunit.md
+  - id: dotnet-csharp-mstest-core
+    kind: core
+    tutorial_path: tutorials/saying-hello/dotnet/csharp/core/mstest/README.md
+    selections:
+      ecosystem: dotnet
+      language: csharp
+      testing: mstest
+    sources:
+      - partials/projects/saying-hello/README.md
+      - partials/projects/saying-hello/spec/README.md
+      - partials/projects/saying-hello/instructions/README.md
+      - partials/projects/saying-hello/instructions/core-mstest.md
+      - partials/setups/code/dotnet/README.md
+      - partials/setups/code/dotnet/languages/csharp.md
+      - partials/setups/code/dotnet/toolchain/sdk.md
+      - partials/setups/code/dotnet/toolchain/dotnet-cli.md
+      - partials/setups/code/dotnet/testing/mstest.md
+  - id: dotnet-csharp-tunit-core
+    kind: core
+    tutorial_path: tutorials/saying-hello/dotnet/csharp/core/tunit/README.md
+    selections:
+      ecosystem: dotnet
+      language: csharp
+      testing: tunit
+    sources:
+      - partials/projects/saying-hello/README.md
+      - partials/projects/saying-hello/spec/README.md
+      - partials/projects/saying-hello/instructions/README.md
+      - partials/projects/saying-hello/instructions/core-tunit.md
+      - partials/setups/code/dotnet/README.md
+      - partials/setups/code/dotnet/languages/csharp.md
+      - partials/setups/code/dotnet/toolchain/sdk.md
+      - partials/setups/code/dotnet/toolchain/dotnet-cli.md
+      - partials/setups/code/dotnet/testing/tunit.md
   - id: dotnet-csharp-xunit-no-storage-command-line-all-no-framework
     kind: adapter
-    tutorial_path: tutorials/saying-hello/dotnet/csharp/xunit/adapters/no-storage/command-line/all/no-framework/README.md
+    tutorial_path: tutorials/saying-hello/dotnet/csharp/adapters/no-storage/command-line/all/no-framework/xunit/README.md
     selections:
       ecosystem: dotnet
       language: csharp
@@ -40,5 +91,77 @@ compiled_outputs:
       - partials/setups/code/dotnet/toolchain/sdk.md
       - partials/setups/code/dotnet/toolchain/dotnet-cli.md
       - partials/setups/code/dotnet/testing/xunit.md
+      - partials/setups/code/dotnet/adapters/command-line/all.md
+      - partials/setups/code/dotnet/frameworks/command-line/no-framework.md
+  - id: dotnet-csharp-nunit-no-storage-command-line-all-no-framework
+    kind: adapter
+    tutorial_path: tutorials/saying-hello/dotnet/csharp/adapters/no-storage/command-line/all/no-framework/nunit/README.md
+    selections:
+      ecosystem: dotnet
+      language: csharp
+      testing: nunit
+      storage: no-storage
+      surface: command-line
+      target: all
+      framework: no-framework
+    sources:
+      - partials/projects/saying-hello/README.md
+      - partials/projects/saying-hello/spec/README.md
+      - partials/projects/saying-hello/instructions/README.md
+      - partials/projects/saying-hello/instructions/adapter.md
+      - partials/setups/storage/README.md
+      - partials/setups/code/dotnet/README.md
+      - partials/setups/code/dotnet/languages/csharp.md
+      - partials/setups/code/dotnet/toolchain/sdk.md
+      - partials/setups/code/dotnet/toolchain/dotnet-cli.md
+      - partials/setups/code/dotnet/testing/nunit.md
+      - partials/setups/code/dotnet/adapters/command-line/all.md
+      - partials/setups/code/dotnet/frameworks/command-line/no-framework.md
+  - id: dotnet-csharp-mstest-no-storage-command-line-all-no-framework
+    kind: adapter
+    tutorial_path: tutorials/saying-hello/dotnet/csharp/adapters/no-storage/command-line/all/no-framework/mstest/README.md
+    selections:
+      ecosystem: dotnet
+      language: csharp
+      testing: mstest
+      storage: no-storage
+      surface: command-line
+      target: all
+      framework: no-framework
+    sources:
+      - partials/projects/saying-hello/README.md
+      - partials/projects/saying-hello/spec/README.md
+      - partials/projects/saying-hello/instructions/README.md
+      - partials/projects/saying-hello/instructions/adapter.md
+      - partials/setups/storage/README.md
+      - partials/setups/code/dotnet/README.md
+      - partials/setups/code/dotnet/languages/csharp.md
+      - partials/setups/code/dotnet/toolchain/sdk.md
+      - partials/setups/code/dotnet/toolchain/dotnet-cli.md
+      - partials/setups/code/dotnet/testing/mstest.md
+      - partials/setups/code/dotnet/adapters/command-line/all.md
+      - partials/setups/code/dotnet/frameworks/command-line/no-framework.md
+  - id: dotnet-csharp-tunit-no-storage-command-line-all-no-framework
+    kind: adapter
+    tutorial_path: tutorials/saying-hello/dotnet/csharp/adapters/no-storage/command-line/all/no-framework/tunit/README.md
+    selections:
+      ecosystem: dotnet
+      language: csharp
+      testing: tunit
+      storage: no-storage
+      surface: command-line
+      target: all
+      framework: no-framework
+    sources:
+      - partials/projects/saying-hello/README.md
+      - partials/projects/saying-hello/spec/README.md
+      - partials/projects/saying-hello/instructions/README.md
+      - partials/projects/saying-hello/instructions/adapter.md
+      - partials/setups/storage/README.md
+      - partials/setups/code/dotnet/README.md
+      - partials/setups/code/dotnet/languages/csharp.md
+      - partials/setups/code/dotnet/toolchain/sdk.md
+      - partials/setups/code/dotnet/toolchain/dotnet-cli.md
+      - partials/setups/code/dotnet/testing/tunit.md
       - partials/setups/code/dotnet/adapters/command-line/all.md
       - partials/setups/code/dotnet/frameworks/command-line/no-framework.md

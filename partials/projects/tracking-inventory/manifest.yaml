@@ -3,7 +3,7 @@ partial_version: 1
 compiled_outputs:
 - id: dotnet-csharp-xunit-core
   kind: core
-  tutorial_path: tutorials/tracking-inventory/dotnet/csharp/xunit/core/README.md
+  tutorial_path: tutorials/tracking-inventory/dotnet/csharp/core/xunit/README.md
   selections:
     ecosystem: dotnet
     language: csharp
@@ -20,7 +20,7 @@ compiled_outputs:
   - partials/setups/code/dotnet/testing/xunit.md
 - id: dotnet-csharp-xunit-local-files-json-command-line-all-no-framework
   kind: adapter
-  tutorial_path: tutorials/tracking-inventory/dotnet/csharp/xunit/adapters/local-files-json/command-line/all/no-framework/README.md
+  tutorial_path: tutorials/tracking-inventory/dotnet/csharp/adapters/local-files-json/command-line/all/no-framework/xunit/README.md
   selections:
     ecosystem: dotnet
     language: csharp

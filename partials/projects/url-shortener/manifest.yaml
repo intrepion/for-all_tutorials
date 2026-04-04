@@ -3,7 +3,7 @@ partial_version: 1
 compiled_outputs:
 - id: dotnet-csharp-xunit-core
   kind: core
-  tutorial_path: tutorials/url-shortener/dotnet/csharp/xunit/core/README.md
+  tutorial_path: tutorials/url-shortener/dotnet/csharp/core/xunit/README.md
   selections:
     ecosystem: dotnet
     language: csharp
@@ -20,7 +20,7 @@ compiled_outputs:
   - partials/setups/code/dotnet/testing/xunit.md
 - id: dotnet-csharp-xunit-database-sqlite-web-full-stack-blazor-server
   kind: adapter
-  tutorial_path: tutorials/url-shortener/dotnet/csharp/xunit/adapters/database-sqlite/web/full-stack/blazor-server/README.md
+  tutorial_path: tutorials/url-shortener/dotnet/csharp/adapters/database-sqlite/web/full-stack/blazor-server/xunit/README.md
   selections:
     ecosystem: dotnet
     language: csharp
