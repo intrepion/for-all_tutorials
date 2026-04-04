@@ -24,10 +24,9 @@ Every project manifest now declares at least one active compiled tutorial output
 
 Compatible projects now also declare active `.NET/C# xUnit` adapter outputs on the currently supported surface, storage, and framework slices.
 
-Projects that still require either new setup partials or additional adapter-activation work include:
+The one project that still needs a new storage-slot decision before honest adapter activation is:
 
-- some web full-stack projects
-- some local-file persistence projects
+- `todo-list`, which currently models persisted task data as plain newline-delimited text rather than one of the existing canonical storage slots
 
 ## Contents
 

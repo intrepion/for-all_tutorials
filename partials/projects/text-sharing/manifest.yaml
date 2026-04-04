@@ -18,3 +18,29 @@ compiled_outputs:
   - partials/setups/code/dotnet/toolchain/sdk.md
   - partials/setups/code/dotnet/toolchain/dotnet-cli.md
   - partials/setups/code/dotnet/testing/xunit.md
+- id: dotnet-csharp-xunit-database-sqlite-web-full-stack-blazor-server
+  kind: adapter
+  tutorial_path: tutorials/text-sharing/dotnet/csharp/xunit/adapters/database-sqlite/web/full-stack/blazor-server/README.md
+  selections:
+    ecosystem: dotnet
+    language: csharp
+    testing: xunit
+    storage: database-sqlite
+    surface: web
+    target: full-stack
+    framework: blazor-server
+  sources:
+  - partials/projects/text-sharing/README.md
+  - partials/projects/text-sharing/spec/README.md
+  - partials/projects/text-sharing/instructions/README.md
+  - partials/projects/text-sharing/instructions/adapter.md
+  - partials/setups/storage/README.md
+  - partials/setups/storage/database-sqlite.md
+  - partials/setups/code/dotnet/README.md
+  - partials/setups/code/dotnet/languages/csharp.md
+  - partials/setups/code/dotnet/toolchain/sdk.md
+  - partials/setups/code/dotnet/toolchain/dotnet-cli.md
+  - partials/setups/code/dotnet/testing/xunit.md
+  - partials/setups/code/dotnet/storage/web/database-sqlite.md
+  - partials/setups/code/dotnet/adapters/web/full-stack.md
+  - partials/setups/code/dotnet/frameworks/web/full-stack/blazor-server.md
