@@ -40,10 +40,17 @@ Replace the placeholders with the names used by the project tutorial:
 
 ```bash
 dotnet new sln --format sln --name <solution-name> --output <solution-root>
-dotnet new console --name <adapter-name> --output <solution-root>/src/<adapter-name> --framework <target-framework>
+dotnet new console --name <adapter-name> --output <solution-root>/src/<adapter-name>
+dotnet new xunit --name <adapter-test-project-name> --output <solution-root>/tests/<adapter-test-project-name>
 dotnet sln <solution-root>/<solution-name>.sln add <solution-root>/src/<adapter-name>/<adapter-name>.csproj
-dotnet add <solution-root>/src/<adapter-name>/<adapter-name>.csproj package <core-package-name> --version <core-package-version>
+dotnet sln <solution-root>/<solution-name>.sln add <solution-root>/tests/<adapter-test-project-name>/<adapter-test-project-name>.csproj
+dotnet add <solution-root>/src/<adapter-name>/<adapter-name>.csproj reference <core-library-project-path>
+dotnet add <solution-root>/tests/<adapter-test-project-name>/<adapter-test-project-name>.csproj reference <solution-root>/src/<adapter-name>/<adapter-name>.csproj
 ```
+
+If the tutorial needs a non-default target framework, add `--framework <target-framework>` to both the console and xUnit scaffold commands.
+
+For first local runs, prefer a project reference to a sibling checkout of the core repo. Move to a published package later only if that workflow adds value for the stack you are teaching.
 
 ## Suggested File Shape
 
@@ -54,6 +61,9 @@ dotnet add <solution-root>/src/<adapter-name>/<adapter-name>.csproj package <cor
     <adapter-name>/
       <adapter-name>.csproj
       Program.cs
+  tests/
+    <adapter-test-project-name>/
+      <adapter-test-project-name>.csproj
 ```
 
 The core library repo should stay separate. The adapter repo should depend on it as a real dependency rather than by copying the core source files.

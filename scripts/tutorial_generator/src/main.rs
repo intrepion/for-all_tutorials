@@ -369,6 +369,11 @@ fn build_readme(
     );
     push_section(
         &mut sections,
+        "Recommended .NET Command-Line Adapter Scaffold",
+        recommended_dotnet_command_line_adapter_scaffold(project_slug, output),
+    );
+    push_section(
+        &mut sections,
         "Setup Overview",
         ecosystem_root.map(|partial| intro_excerpt(&partial.body)),
     );
@@ -472,6 +477,56 @@ fn recommended_dotnet_core_scaffold(project_slug: &str, output: &CompiledOutput)
          After scaffolding, replace the template files:\n\n\
          - `{library_project_path}/Class1.cs`\n\
          - `{test_project_path}/UnitTest1.cs`"
+    ))
+}
+
+fn recommended_dotnet_command_line_adapter_scaffold(
+    project_slug: &str,
+    output: &CompiledOutput,
+) -> Option<String> {
+    if output.kind != OutputKind::Adapter
+        || output.selections.ecosystem != "dotnet"
+        || output.selections.surface.as_deref() != Some("command-line")
+    {
+        return None;
+    }
+
+    let core_repo_name = core_repo_name(project_slug, output);
+    let core_library_project_name = pascal_case_slug(project_slug);
+    let adapter_name = format!("{}.CommandLine", pascal_case_slug(project_slug));
+    let adapter_test_project_name = format!("{adapter_name}.Tests");
+    let solution_name = adapter_name.clone();
+    let solution_file = format!("{solution_name}.sln");
+    let adapter_project_path = format!("src/{adapter_name}");
+    let adapter_test_project_path = format!("tests/{adapter_test_project_name}");
+    let core_project_reference_path = format!(
+        "../{core_repo_name}/src/{core_library_project_name}/{core_library_project_name}.csproj"
+    );
+
+    Some(format!(
+        "- Solution name: `{solution_name}`\n\
+         - Solution file: `{solution_file}`\n\
+         - Adapter project name: `{adapter_name}`\n\
+         - Adapter project path: `{adapter_project_path}`\n\
+         - Adapter test project name: `{adapter_test_project_name}`\n\
+         - Adapter test project path: `{adapter_test_project_path}`\n\
+         - Local core repo assumption: sibling checkout at `../{core_repo_name}`\n\
+         - Local core project reference path: `{core_project_reference_path}`\n\n\
+         A good first pass is:\n\n\
+         ```bash\n\
+         dotnet new sln --format sln --name {solution_name}\n\
+         mkdir -p src tests\n\
+         dotnet new console --name {adapter_name} --output {adapter_project_path}\n\
+         dotnet new xunit --name {adapter_test_project_name} --output {adapter_test_project_path}\n\
+         dotnet sln {solution_file} add {adapter_project_path}/{adapter_name}.csproj\n\
+         dotnet sln {solution_file} add {adapter_test_project_path}/{adapter_test_project_name}.csproj\n\
+         dotnet add {adapter_project_path}/{adapter_name}.csproj reference {core_project_reference_path}\n\
+         dotnet add {adapter_test_project_path}/{adapter_test_project_name}.csproj reference {adapter_project_path}/{adapter_name}.csproj\n\
+         ```\n\n\
+         This local-development flow assumes the adapter repo sits next to the matching core repo working copy.\n\n\
+         After scaffolding, replace the template files:\n\n\
+         - `{adapter_project_path}/Program.cs`\n\
+         - `{adapter_test_project_path}/UnitTest1.cs`"
     ))
 }
 
@@ -667,6 +722,16 @@ fn repo_name(project_slug: &str, output: &CompiledOutput) -> String {
                 .unwrap_or("unknown-framework"),
         )
     }
+}
+
+fn core_repo_name(project_slug: &str, output: &CompiledOutput) -> String {
+    format!(
+        "for-all_tutorial_manual_{}_{}_{}_{}_core",
+        project_slug,
+        output.selections.ecosystem,
+        output.selections.language,
+        output.selections.testing
+    )
 }
 
 fn repo_description(project_title: &str, output: &CompiledOutput) -> String {
