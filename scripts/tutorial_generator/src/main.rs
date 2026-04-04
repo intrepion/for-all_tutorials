@@ -105,6 +105,7 @@ fn generate_from_manifest(
                 partials.push(Partial::load(&app_root.join(source))?);
             }
         }
+        append_implicit_partials(&app_root, &mut partials, output)?;
 
         let rendered = build_readme(
             &project_title,
@@ -124,6 +125,20 @@ fn generate_from_manifest(
             fs::create_dir_all(parent)?;
         }
         fs::write(destination, format!("{rendered}\n"))?;
+    }
+
+    Ok(())
+}
+
+fn append_implicit_partials(
+    app_root: &Path,
+    partials: &mut Vec<Partial>,
+    output: &CompiledOutput,
+) -> Result<(), AppError> {
+    if output.kind == OutputKind::Core && output.selections.ecosystem == "dotnet" {
+        partials.push(Partial::load(
+            &app_root.join("partials/setups/code/dotnet/toolchain/github-actions.md"),
+        )?);
     }
 
     Ok(())
@@ -191,6 +206,7 @@ enum PartialKind {
     AdapterPartial,
     FrameworkPartial,
     TestingIndex,
+    CiPartial,
 }
 
 #[derive(Debug)]
@@ -325,6 +341,7 @@ fn build_readme(
     )?;
     let ecosystem_root = find_optional_partial(partials, PartialKind::EcosystemRoot);
     let storage_root = find_optional_partial(partials, PartialKind::StorageRoot);
+    let ci_partial = find_optional_partial(partials, PartialKind::CiPartial);
 
     let mut sections = Vec::new();
     push_section(
@@ -426,6 +443,15 @@ fn build_readme(
         &role_instructions.title,
         Some(role_instructions.body.clone()),
     );
+    if output.kind == OutputKind::Core {
+        if let Some(ci_partial) = ci_partial {
+            push_section(
+                &mut sections,
+                &ci_partial.title,
+                Some(ci_partial.body.clone()),
+            );
+        }
+    }
     push_section(
         &mut sections,
         "Shared Finish Checklist",
@@ -466,7 +492,7 @@ fn recommended_dotnet_core_scaffold(project_slug: &str, output: &CompiledOutput)
          A good first pass is:\n\n\
          ```bash\n\
          dotnet new sln --format sln --name {solution_name}\n\
-         mkdir -p src tests\n\
+         dotnet new gitignore\n\
          dotnet new classlib --name {library_project_name} --output {library_project_path}\n\
          dotnet new xunit --name {test_project_name} --output {test_project_path}\n\
          dotnet sln {solution_file} add {library_project_path}/{library_project_name}.csproj\n\
@@ -515,7 +541,7 @@ fn recommended_dotnet_command_line_adapter_scaffold(
          A good first pass is:\n\n\
          ```bash\n\
          dotnet new sln --format sln --name {solution_name}\n\
-         mkdir -p src tests\n\
+         dotnet new gitignore\n\
          dotnet new console --name {adapter_name} --output {adapter_project_path}\n\
          dotnet new xunit --name {adapter_test_project_name} --output {adapter_test_project_path}\n\
          dotnet sln {solution_file} add {adapter_project_path}/{adapter_name}.csproj\n\

@@ -20,7 +20,7 @@ For a typical core library repo, start with:
 
 ```bash
 dotnet new sln --format sln --name <solution-name>
-mkdir -p src tests
+dotnet new gitignore
 dotnet new classlib --name <library-project-name> --output src/<library-project-name>
 ```
 

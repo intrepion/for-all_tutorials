@@ -43,6 +43,7 @@ Replace the placeholders with the names used by the selected project instruction
 
 ```bash
 dotnet new sln --format sln --name <solution-name> --output <solution-root>
+dotnet new gitignore --output <solution-root>
 dotnet new console --name <adapter-name> --output <solution-root>/src/<adapter-name>
 dotnet new xunit --name <adapter-test-project-name> --output <solution-root>/tests/<adapter-test-project-name>
 dotnet sln <solution-root>/<solution-name>.sln add <solution-root>/src/<adapter-name>/<adapter-name>.csproj

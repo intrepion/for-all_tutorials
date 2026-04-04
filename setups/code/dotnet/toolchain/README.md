@@ -10,3 +10,4 @@ Toolchain guides for the .NET ecosystem.
 
 - [.NET SDK](sdk.md)
 - [dotnet CLI](dotnet-cli.md)
+- [GitHub Actions](github-actions.md)
