@@ -69,6 +69,15 @@ for-all_tutorials/
           README.md
           sdk.md
           dotnet-cli.md
+        storage/
+          README.md
+          command-line/
+            README.md
+            local-files-csv.md
+            local-files-json.md
+            local-files-yaml.md
+            local-files-toml.md
+            local-files-xml.md
         adapters/
           README.md
           command-line/
@@ -287,6 +296,9 @@ setups/code/<ecosystem>/languages/README.md
 setups/code/<ecosystem>/languages/<language>.md
 setups/code/<ecosystem>/toolchain/README.md
 setups/code/<ecosystem>/toolchain/<tool>.md
+setups/code/<ecosystem>/storage/README.md
+setups/code/<ecosystem>/storage/<surface>/README.md
+setups/code/<ecosystem>/storage/<surface>/<storage>.md
 setups/code/<ecosystem>/adapters/README.md
 setups/code/<ecosystem>/adapters/<surface>/README.md
 setups/code/<ecosystem>/adapters/<surface>/<target>.md
@@ -305,11 +317,13 @@ That means:
 - keep one reusable setup area per code ecosystem
 - use `languages/` as a folder with an index plus one markdown file per language
 - use `toolchain/` as a folder with an index plus one markdown file per SDK, runtime, CLI, package manager, or equivalent tool
+- use ecosystem `storage/` guides for stack-specific persistence implementation details layered on top of the shared storage taxonomy
 - put surface and target adapter setup under `setups/code/<ecosystem>/adapters/`
 - put xUnit, NUnit, MSTest, TUnit, or similar variants under `setups/code/<ecosystem>/testing/`
 - put framework bootstrap guidance under `setups/code/<ecosystem>/frameworks/<surface>/` when the framework is tied to a specific surface
 - add a target layer under `frameworks/` when the framework only applies to one target such as `web/full-stack`
-- keep storage and database concerns under `setups/storage/`
+- keep shared storage taxonomy and cross-ecosystem storage meanings under `setups/storage/`
+- keep ecosystem-and-surface-specific storage implementation guidance under `setups/code/<ecosystem>/storage/`
 - keep project instructions and generated tutorials focused on the project contract and project flow
 - keep environment, template, runner, and coverage-command details in setup docs
 

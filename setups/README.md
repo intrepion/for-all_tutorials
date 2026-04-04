@@ -12,9 +12,11 @@ Reusable ecosystem, tooling, testing, and storage setup guides that project tuto
 2. Pick the ecosystem, such as `dotnet` or `rust`.
 3. Use `languages/` for language-specific guides inside that ecosystem.
 4. Use `toolchain/` for SDKs, runtimes, CLIs, package managers, and similar base tools.
-5. Use `testing/` for the test framework you want to use.
-6. Use `adapters/` for the surface and target you are building, such as `command-line/all` or `web/full-stack`.
-7. Use `frameworks/` for optional framework-specific setup layered on top of the chosen adapter.
+5. Use the shared `storage/` taxonomy to choose the storage slot when the adapter persists data.
+6. Use ecosystem `storage/` guides for stack-specific persistence setup when they exist.
+7. Use `testing/` for the test framework you want to use.
+8. Use `adapters/` for the surface and target you are building, such as `command-line/all` or `web/full-stack`.
+9. Use `frameworks/` for optional framework-specific setup layered on top of the chosen adapter.
 
 ## Contents
 

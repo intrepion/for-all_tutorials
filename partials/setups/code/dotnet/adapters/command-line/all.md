@@ -27,12 +27,14 @@ This guide covers:
 - adding the adapter project to its solution
 - adding a dependency on the core library from the adapter
 - keeping the adapter thin
+- pairing the adapter with a stack-specific storage guide when the project persists local data
 
 This guide does not cover:
 
 - project-specific business rules
 - test-framework-specific assertions or templates
 - project-specific command parsing
+- local-file storage mechanics beyond choosing the appropriate storage guide
 - optional command-line framework choices beyond the pilot slice
 
 ## Suggested Scaffold Commands
@@ -58,6 +60,8 @@ dotnet add <solution-root>/src/<adapter-name>/<adapter-name>.csproj package <cor
 ```
 
 The core library repo should stay separate. The adapter repo should depend on it as a real dependency rather than by copying the core source files.
+
+If the chosen project persists local data, pair this guide with one storage guide from [Storage](../../storage/command-line/README.md).
 
 ## Adapter Rule
 

@@ -11,6 +11,7 @@ Setup-source slices for the `.NET` ecosystem within the partials pilot.
 
 - [Languages](languages/README.md)
 - [Toolchain](toolchain/README.md)
+- [Storage](storage/README.md)
 - [Adapters](adapters/README.md)
 - [Testing](testing/README.md)
 - [Frameworks](frameworks/README.md)

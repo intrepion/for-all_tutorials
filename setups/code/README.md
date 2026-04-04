@@ -12,6 +12,7 @@ Use an ecosystem guide to find:
 
 - `languages/` for language-specific guides
 - `toolchain/` for SDKs, runtimes, CLIs, package managers, and similar base tools
+- `storage/` for ecosystem-and-surface-specific persistence guidance layered on top of the shared storage taxonomy
 - `testing/` for test-framework setup
 - `adapters/` for surface and target setup
 - `frameworks/` for optional framework-specific setup when needed
