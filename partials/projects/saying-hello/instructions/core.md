@@ -5,125 +5,296 @@ project: saying-hello
 
 # Core Instructions
 
-Project-specific core instruction fragment for the `saying-hello` core repo.
+### Replace The Template Files
 
-### Use This Concrete Shape
+From the repo root, remove the placeholder files that `dotnet new` created:
 
-For this project, use:
-
-- one production unit named `Greeting`
-- one method named `Greet`
-- one test file and test class named `GreetingTests`
-
-Replace scaffold placeholder files such as `Class1.cs` or `UnitTest1.cs` before you begin the red, green, refactor cycle.
-
-### 1. Red: Write The First Failing Test
-
-Start with the happiest path:
-
-```text
-given name "Ada"
-when greet is called
-then the result is "Hello, Ada!"
+```bash
+rm src/SayingHello/Class1.cs
+rm tests/SayingHello.Tests/UnitTest1.cs
 ```
 
-If `greet` does not exist yet, let the first run fail either at compile time or at test execution time.
+You will replace them with these exact files:
 
-Use this test name:
+- `src/SayingHello/Greeting.cs`
+- `tests/SayingHello.Tests/GreetingTests.cs`
 
-```text
-greet_returns_personalized_greeting_for_non_empty_name
+### 1. Red: Add The First Failing Test
+
+Create `tests/SayingHello.Tests/GreetingTests.cs` with this exact code:
+
+```csharp
+using SayingHello;
+using Xunit;
+
+namespace SayingHello.Tests;
+
+public sealed class GreetingTests
+{
+    [Fact]
+    public void Greet_returns_personalized_greeting_for_non_empty_name()
+    {
+        var result = Greeting.Greet("Ada");
+
+        Assert.Equal("Hello, Ada!", result);
+    }
+}
 ```
 
-### 2. Green: Make The First Test Pass
+Run:
 
-Create the smallest production code that makes the first test pass.
-
-Only implement the first case. Do not jump ahead and implement trimming or empty-input behavior before those tests exist.
-
-### 3. Refactor
-
-Do the smallest cleanup that keeps the first test green.
-
-Do not broaden the behavior yet.
-
-### 4. Red: Add The Trimming Behavior
-
-Write the next failing test:
-
-```text
-given name "  Ada  "
-when greet is called
-then the result is "Hello, Ada!"
+```bash
+dotnet test
 ```
 
-Use this test name:
+This should fail because `Greeting` does not exist yet.
 
-```text
-greet_trims_leading_and_trailing_whitespace
+### 2. Green: Add The Smallest Production Code
+
+Create `src/SayingHello/Greeting.cs` with this exact code:
+
+```csharp
+namespace SayingHello;
+
+public static class Greeting
+{
+    public static string Greet(string name)
+    {
+        return $"Hello, {name}!";
+    }
+}
 ```
 
-### 5. Green: Make The Trimming Test Pass
+Run:
 
-Make the trimming test pass with the smallest safe change.
-
-### 6. Refactor
-
-Clean up the implementation while keeping both tests green.
-
-### 7. Red: Add The Empty-String Behavior
-
-Write the next failing test:
-
-```text
-given name ""
-when greet is called
-then the result is "Hello!"
+```bash
+dotnet test
 ```
 
-Use this test name:
+This should pass.
 
-```text
-greet_returns_generic_greeting_for_empty_string
+### 3. Red: Add The Trimming Test
+
+Replace `tests/SayingHello.Tests/GreetingTests.cs` with this exact code:
+
+```csharp
+using SayingHello;
+using Xunit;
+
+namespace SayingHello.Tests;
+
+public sealed class GreetingTests
+{
+    [Fact]
+    public void Greet_returns_personalized_greeting_for_non_empty_name()
+    {
+        var result = Greeting.Greet("Ada");
+
+        Assert.Equal("Hello, Ada!", result);
+    }
+
+    [Fact]
+    public void Greet_trims_leading_and_trailing_whitespace()
+    {
+        var result = Greeting.Greet("  Ada  ");
+
+        Assert.Equal("Hello, Ada!", result);
+    }
+}
 ```
 
-### 8. Green: Make The Empty-String Test Pass
+Run:
 
-Make it pass.
-
-### 9. Refactor
-
-Clean up the implementation while keeping all tests green.
-
-### 10. Red: Add The Whitespace-Only Behavior
-
-Write the next failing test:
-
-```text
-given name "   "
-when greet is called
-then the result is "Hello!"
+```bash
+dotnet test
 ```
 
-Use this test name:
+This should fail.
 
-```text
-greet_returns_generic_greeting_for_whitespace_only_input
+### 4. Green: Make The Trimming Test Pass
+
+Replace `src/SayingHello/Greeting.cs` with this exact code:
+
+```csharp
+namespace SayingHello;
+
+public static class Greeting
+{
+    public static string Greet(string name)
+    {
+        var trimmedName = name.Trim();
+
+        return $"Hello, {trimmedName}!";
+    }
+}
 ```
 
-### 11. Green: Make The Whitespace-Only Test Pass
+Run:
 
-Make it pass.
+```bash
+dotnet test
+```
 
-### 12. Refactor The Core Logic
+This should pass.
 
-Now that the full behavior is covered, refactor to a small, clear core abstraction.
+### 5. Red: Add The Empty-String Test
 
-The exact shape can vary by stack:
+Replace `tests/SayingHello.Tests/GreetingTests.cs` with this exact code:
 
-- one function
-- one service object
-- one module
-- one static helper
+```csharp
+using SayingHello;
+using Xunit;
 
-The important thing is that the greeting rules live in one small unit that can be tested directly.
+namespace SayingHello.Tests;
+
+public sealed class GreetingTests
+{
+    [Fact]
+    public void Greet_returns_personalized_greeting_for_non_empty_name()
+    {
+        var result = Greeting.Greet("Ada");
+
+        Assert.Equal("Hello, Ada!", result);
+    }
+
+    [Fact]
+    public void Greet_trims_leading_and_trailing_whitespace()
+    {
+        var result = Greeting.Greet("  Ada  ");
+
+        Assert.Equal("Hello, Ada!", result);
+    }
+
+    [Fact]
+    public void Greet_returns_generic_greeting_for_empty_string()
+    {
+        var result = Greeting.Greet("");
+
+        Assert.Equal("Hello!", result);
+    }
+}
+```
+
+Run:
+
+```bash
+dotnet test
+```
+
+This should fail.
+
+### 6. Green: Make The Empty-String Test Pass
+
+Replace `src/SayingHello/Greeting.cs` with this exact code:
+
+```csharp
+namespace SayingHello;
+
+public static class Greeting
+{
+    public static string Greet(string name)
+    {
+        if (name.Length == 0)
+        {
+            return "Hello!";
+        }
+
+        var trimmedName = name.Trim();
+
+        return $"Hello, {trimmedName}!";
+    }
+}
+```
+
+Run:
+
+```bash
+dotnet test
+```
+
+This should pass.
+
+### 7. Red: Add The Whitespace-Only Test
+
+Replace `tests/SayingHello.Tests/GreetingTests.cs` with this exact code:
+
+```csharp
+using SayingHello;
+using Xunit;
+
+namespace SayingHello.Tests;
+
+public sealed class GreetingTests
+{
+    [Fact]
+    public void Greet_returns_personalized_greeting_for_non_empty_name()
+    {
+        var result = Greeting.Greet("Ada");
+
+        Assert.Equal("Hello, Ada!", result);
+    }
+
+    [Fact]
+    public void Greet_trims_leading_and_trailing_whitespace()
+    {
+        var result = Greeting.Greet("  Ada  ");
+
+        Assert.Equal("Hello, Ada!", result);
+    }
+
+    [Fact]
+    public void Greet_returns_generic_greeting_for_empty_string()
+    {
+        var result = Greeting.Greet("");
+
+        Assert.Equal("Hello!", result);
+    }
+
+    [Fact]
+    public void Greet_returns_generic_greeting_for_whitespace_only_input()
+    {
+        var result = Greeting.Greet("   ");
+
+        Assert.Equal("Hello!", result);
+    }
+}
+```
+
+Run:
+
+```bash
+dotnet test
+```
+
+This should fail.
+
+### 8. Green: Finish The Core Behavior
+
+Replace `src/SayingHello/Greeting.cs` with this exact code:
+
+```csharp
+namespace SayingHello;
+
+public static class Greeting
+{
+    public static string Greet(string name)
+    {
+        var trimmedName = name.Trim();
+
+        if (trimmedName.Length == 0)
+        {
+            return "Hello!";
+        }
+
+        return $"Hello, {trimmedName}!";
+    }
+}
+```
+
+Run:
+
+```bash
+dotnet test
+```
+
+This should pass with all four tests green.
