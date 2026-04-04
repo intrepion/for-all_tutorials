@@ -9,20 +9,23 @@ Source material for future compiled tutorials.
 
 Project partials now cover the full curriculum project set.
 
-Setup partials are still in a pilot phase built around this active `.NET/C# xUnit` family of slices:
+The current supported generated tutorial family is:
 
-- `no-storage/command-line/all/no-framework`
-- `no-storage/client/all/no-framework`
-- `no-storage/graphical/all/no-framework`
-- `no-storage/web-service/all/no-framework`
-- `database-firebase/command-line/all/no-framework`
-- `database-sqlite/web/full-stack/blazor-server`
+- core tutorials on `.NET/C# xUnit`
+- adapter tutorials on `.NET/C# xUnit` for:
+  - `no-storage/command-line/all/no-framework`
+  - `no-storage/client/all/no-framework`
+  - `no-storage/graphical/all/no-framework`
+  - `no-storage/web-service/all/no-framework`
+  - `local-files-json/command-line/all/no-framework`
+  - `database-firebase/command-line/all/no-framework`
+  - `database-sqlite/web/full-stack/blazor-server`
 
 Compiled tutorial outputs should be generated from the project manifests in this tree, not authored by hand.
 
 Every project manifest now declares at least one active compiled tutorial output on the current `.NET/C# xUnit` core path.
 
-Compatible projects now also declare active `.NET/C# xUnit` adapter outputs on the currently supported surface, storage, and framework slices.
+Most projects now also declare active `.NET/C# xUnit` adapter outputs on one of those supported storage, surface, target, and framework paths.
 
 The one project that still needs a new storage-slot decision before honest adapter activation is:
 
