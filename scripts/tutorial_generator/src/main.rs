@@ -328,9 +328,7 @@ fn build_readme(
         });
     }
 
-    let project_root = find_partial(partials, PartialKind::ProjectRoot)?;
     let spec = find_partial(partials, PartialKind::ProjectSpec)?;
-    let instructions_index = find_partial(partials, PartialKind::InstructionsIndex)?;
     let role_instructions = find_partial(
         partials,
         if output.kind == OutputKind::Core {
@@ -339,36 +337,10 @@ fn build_readme(
             PartialKind::AdapterInstructions
         },
     )?;
-    let ecosystem_root = find_optional_partial(partials, PartialKind::EcosystemRoot);
     let storage_root = find_optional_partial(partials, PartialKind::StorageRoot);
     let ci_partial = find_optional_partial(partials, PartialKind::CiPartial);
 
     let mut sections = Vec::new();
-    push_section(
-        &mut sections,
-        "Shared Workflow",
-        extract_section(&shared_projects.body, "Shared Workflow"),
-    );
-    push_section(
-        &mut sections,
-        "Shared Output Model",
-        extract_section(&shared_projects.body, "Shared Output Model"),
-    );
-    push_section(
-        &mut sections,
-        "Shared Repository Creation",
-        extract_section(&shared_projects.body, "Shared Repository Creation"),
-    );
-    push_section(
-        &mut sections,
-        "Shared Coverage Policy",
-        extract_section(&shared_projects.body, "Shared Coverage Policy"),
-    );
-    push_section(
-        &mut sections,
-        "Project Purpose",
-        extract_section(&project_root.body, "Purpose"),
-    );
     push_section(
         &mut sections,
         "Project Spec",
@@ -376,43 +348,19 @@ fn build_readme(
     );
     push_section(
         &mut sections,
-        "Project-Specific Flow",
-        extract_section(&instructions_index.body, "Project-Specific Flow"),
+        "Prepare .NET",
+        prepare_dotnet_environment(project_slug, output),
     );
     push_section(
         &mut sections,
-        "Recommended .NET Core Scaffold",
+        "Create the Solution and Projects",
         recommended_dotnet_core_scaffold(project_slug, output),
     );
     push_section(
         &mut sections,
-        "Recommended .NET Command-Line Adapter Scaffold",
+        "Create the Adapter Solution and Projects",
         recommended_dotnet_command_line_adapter_scaffold(project_slug, output),
     );
-    push_section(
-        &mut sections,
-        "Setup Overview",
-        ecosystem_root.map(|partial| intro_excerpt(&partial.body)),
-    );
-
-    for partial in partials
-        .iter()
-        .filter(|partial| partial.meta.partial_kind == PartialKind::LanguagePartial)
-    {
-        push_subsection(&mut sections, &partial.title, &partial.body, 2);
-    }
-    for partial in partials
-        .iter()
-        .filter(|partial| partial.meta.partial_kind == PartialKind::ToolchainItem)
-    {
-        push_subsection(&mut sections, &partial.title, &partial.body, 2);
-    }
-    for partial in partials
-        .iter()
-        .filter(|partial| partial.meta.partial_kind == PartialKind::TestingPartial)
-    {
-        push_subsection(&mut sections, &partial.title, &partial.body, 2);
-    }
     if output.kind == OutputKind::Adapter {
         push_section(
             &mut sections,
@@ -470,6 +418,106 @@ fn build_readme(
     })
 }
 
+fn prepare_dotnet_environment(project_slug: &str, output: &CompiledOutput) -> Option<String> {
+    if output.selections.ecosystem != "dotnet" {
+        return None;
+    }
+
+    let mut body = String::from(
+        "Before you scaffold this repo:\n\n\
+         - from the repo root, verify the CLI is available:\n\n\
+         ```bash\n\
+         dotnet --version\n\
+         ```\n\n\
+         If `dotnet` is not found, install the SDK with the official Microsoft steps for your operating system:\n\n\
+         ### macOS\n\n\
+         1. Open [Install .NET on macOS](https://learn.microsoft.com/en-us/dotnet/core/install/macos).\n\
+         2. Open [Download .NET](https://dotnet.microsoft.com/download/dotnet).\n\
+         3. Choose the latest .NET version and open the SDK download table.\n\
+         4. Pick `Arm64` for Apple Silicon or `x64` for Intel.\n\
+         5. Run the installer package.\n\n\
+         ### Windows\n\n\
+         1. Open [Install .NET on Windows](https://learn.microsoft.com/en-us/dotnet/core/install/windows).\n\
+         2. Open [Download .NET](https://dotnet.microsoft.com/download/dotnet).\n\
+         3. Choose the latest .NET version and open the SDK download table.\n\
+         4. Pick your CPU architecture. If you are unsure, choose `x64`.\n\
+         5. Run the installer.\n\n\
+         ### Linux\n\n\
+         For the most common Linux families, start with Microsoft's distro-specific install page:\n\n\
+         #### [Arch Linux](https://archlinux.org/)\n\n\
+         1. Open [Install .NET on Linux distributions](https://learn.microsoft.com/en-us/dotnet/core/install/linux).\n\
+         2. Choose `Arch Linux`.\n\
+         3. Follow the package-manager steps for `dotnet-sdk`.\n\n\
+         #### [Debian](https://www.debian.org/)\n\n\
+         1. Open [Install .NET on Linux distributions](https://learn.microsoft.com/en-us/dotnet/core/install/linux).\n\
+         2. Choose `Debian`.\n\
+         3. Follow the package-manager steps for `dotnet-sdk`.\n\n\
+         #### [Fedora](https://fedoraproject.org/)\n\n\
+         1. Open [Install .NET on Linux distributions](https://learn.microsoft.com/en-us/dotnet/core/install/linux).\n\
+         2. Choose `Fedora`.\n\
+         3. Follow the package-manager steps for `dotnet-sdk`.\n\n\
+         #### [openSUSE](https://www.opensuse.org/)\n\n\
+         1. Open [Install .NET on Linux distributions](https://learn.microsoft.com/en-us/dotnet/core/install/linux).\n\
+         2. Choose `openSUSE`.\n\
+         3. Follow the package-manager steps for `dotnet-sdk`.\n\n\
+         #### [NixOS](https://nixos.org/)\n\n\
+         1. Open [Install .NET on Linux distributions](https://learn.microsoft.com/en-us/dotnet/core/install/linux).\n\
+         2. Check whether the current Microsoft page links to a maintained `NixOS` path.\n\
+         3. If not, use the `nixpkgs` package instructions from the NixOS project site.\n\n\
+         #### [Alpine Linux](https://alpinelinux.org/)\n\n\
+         1. Open [Install .NET on Linux distributions](https://learn.microsoft.com/en-us/dotnet/core/install/linux).\n\
+         2. Choose `Alpine`.\n\
+         3. Follow the package-manager steps for `dotnet-sdk`.\n\n\
+         For the other Linux distributions and platform projects you mentioned, start with the project site, then follow its package or container guidance for `.NET`:\n\n\
+         - [AerynOS](https://aerynos.com/)\n\
+         - [Puppy Linux](https://puppylinux-woof-ce.github.io/)\n\
+         - [Void Linux](https://voidlinux.org/)\n\
+         - [PCLinuxOS](https://www.pclinuxos.com/)\n\
+         - [Solus](https://getsol.us/)\n\
+         - [ZimaOS](https://www.zimaos.com/)\n\
+         - [KDE Linux](https://kde.org/linux-ready/)\n\
+         - [Gentoo Linux](https://www.gentoo.org/)\n\
+         - [Mageia](https://www.mageia.org/)\n\
+         - [EasyOS](https://easyos.org/)\n\
+         - [GNOME OS](https://os.gnome.org/)\n\
+         - [MocaccinoOS](https://www.mocaccino.org/)\n\
+         - [Slackware Linux](https://www.slackware.com/)\n\
+         - [Tiny Core Linux](https://www.tinycorelinux.net/)\n\
+         - [MagOS Linux](http://magos-linux.ru/)\n\
+         - [KaOS](https://kaosx.us/)\n\
+         - [Talos Linux](https://www.talos.dev/)\n\
+         - [ALT Linux](https://www.altlinux.org/)\n\
+         - [OpenMandriva Lx](https://www.openmandriva.org/)\n\n\
+         ### BSD\n\n\
+         These are not mainstream first-class `.NET` workstation paths, so use the project site and current community guidance:\n\n\
+         - [FreeBSD](https://www.freebsd.org/)\n\
+         - [OpenBSD](https://www.openbsd.org/)\n\n\
+         ### Android\n\n\
+         Use the platform site as your starting point:\n\n\
+         - [Android](https://www.android.com/)\n\n\
+         ### iOS\n\n\
+         Use the platform site as your starting point:\n\n\
+         - [iOS](https://www.apple.com/os/ios/)\n\n\
+         ### ChromeOS\n\n\
+         Use the platform site as your starting point:\n\n\
+         - [ChromeOS](https://www.google.com/chromebook/chrome-os/)\n\n\
+         ### ReactOS\n\n\
+         Use the project site as your starting point:\n\n\
+         - [ReactOS](https://reactos.org/)\n\n\
+         - after installation, open a fresh shell and run `dotnet --version` again\n\
+         - use the SDK default target framework unless this tutorial explicitly tells you to pin a different one",
+    );
+
+    if output.kind == OutputKind::Adapter {
+        body.push_str(&format!(
+            "\n- keep this adapter repo next to the matching core repo working copy so this local reference shape works:\n  `{}`",
+            format!("../{}", core_repo_name(project_slug, output))
+        ));
+    }
+
+    Some(body)
+}
+
 fn recommended_dotnet_core_scaffold(project_slug: &str, output: &CompiledOutput) -> Option<String> {
     if output.kind != OutputKind::Core || output.selections.ecosystem != "dotnet" {
         return None;
@@ -489,7 +537,7 @@ fn recommended_dotnet_core_scaffold(project_slug: &str, output: &CompiledOutput)
          - Library project path: `{library_project_path}`\n\
          - Test project name: `{test_project_name}`\n\
          - Test project path: `{test_project_path}`\n\n\
-         A good first pass is:\n\n\
+         Use these names and paths, then run:\n\n\
          ```bash\n\
          dotnet new sln --format sln --name {solution_name}\n\
          dotnet new gitignore\n\
@@ -498,11 +546,7 @@ fn recommended_dotnet_core_scaffold(project_slug: &str, output: &CompiledOutput)
          dotnet sln {solution_file} add {library_project_path}/{library_project_name}.csproj\n\
          dotnet sln {solution_file} add {test_project_path}/{test_project_name}.csproj\n\
          dotnet add {test_project_path}/{test_project_name}.csproj reference {library_project_path}/{library_project_name}.csproj\n\
-         ```\n\n\
-         Unless this tutorial explicitly says otherwise, let `dotnet new` use the SDK default target framework.\n\n\
-         After scaffolding, replace the template files:\n\n\
-         - `{library_project_path}/Class1.cs`\n\
-         - `{test_project_path}/UnitTest1.cs`"
+         ```"
     ))
 }
 
@@ -538,7 +582,7 @@ fn recommended_dotnet_command_line_adapter_scaffold(
          - Adapter test project path: `{adapter_test_project_path}`\n\
          - Local core repo assumption: sibling checkout at `../{core_repo_name}`\n\
          - Local core project reference path: `{core_project_reference_path}`\n\n\
-         A good first pass is:\n\n\
+         Use these names and paths, then run:\n\n\
          ```bash\n\
          dotnet new sln --format sln --name {solution_name}\n\
          dotnet new gitignore\n\
@@ -548,11 +592,7 @@ fn recommended_dotnet_command_line_adapter_scaffold(
          dotnet sln {solution_file} add {adapter_test_project_path}/{adapter_test_project_name}.csproj\n\
          dotnet add {adapter_project_path}/{adapter_name}.csproj reference {core_project_reference_path}\n\
          dotnet add {adapter_test_project_path}/{adapter_test_project_name}.csproj reference {adapter_project_path}/{adapter_name}.csproj\n\
-         ```\n\n\
-         This local-development flow assumes the adapter repo sits next to the matching core repo working copy.\n\n\
-         After scaffolding, replace the template files:\n\n\
-         - `{adapter_project_path}/Program.cs`\n\
-         - `{adapter_test_project_path}/UnitTest1.cs`"
+         ```"
     ))
 }
 
@@ -614,15 +654,6 @@ fn extract_section(markdown_body: &str, heading: &str) -> Option<String> {
         .find_map(|(index, line)| line.starts_with("## ").then_some(index))
         .unwrap_or(lines.len());
     Some(lines[(start + 1)..end].join("\n").trim().to_string())
-}
-
-fn intro_excerpt(markdown_body: &str) -> String {
-    let lines: Vec<&str> = markdown_body.lines().collect();
-    let cutoff = lines
-        .iter()
-        .position(|line| line.starts_with("## "))
-        .unwrap_or(lines.len());
-    lines[..cutoff].join("\n").trim().to_string()
 }
 
 fn shift_headings(text: &str, amount: usize) -> String {

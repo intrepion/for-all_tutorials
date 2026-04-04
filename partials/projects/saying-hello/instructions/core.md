@@ -7,15 +7,15 @@ project: saying-hello
 
 Project-specific core instruction fragment for the `saying-hello` core repo.
 
-### Recommended Concrete Shape
+### Use This Concrete Shape
 
-For this project, a good first concrete shape is:
+For this project, use:
 
 - one production unit named `Greeting`
 - one method named `Greet`
 - one test file and test class named `GreetingTests`
 
-If the scaffold generated placeholder files such as `Class1.cs` or `UnitTest1.cs`, replace them with names that match this shape before you begin the red, green, refactor cycle.
+Replace scaffold placeholder files such as `Class1.cs` or `UnitTest1.cs` before you begin the red, green, refactor cycle.
 
 ### 1. Red: Write The First Failing Test
 
@@ -27,9 +27,9 @@ when greet is called
 then the result is "Hello, Ada!"
 ```
 
-At this point, `greet` may not exist yet. That is fine. The first run should fail either at compile time or at test execution time.
+If `greet` does not exist yet, let the first run fail either at compile time or at test execution time.
 
-Suggested generic test name:
+Use this test name:
 
 ```text
 greet_returns_personalized_greeting_for_non_empty_name
@@ -39,7 +39,7 @@ greet_returns_personalized_greeting_for_non_empty_name
 
 Create the smallest production code that makes the first test pass.
 
-At this stage, it is acceptable if the code only handles the first case. Do not jump ahead and implement trimming or empty-input behavior before those tests exist.
+Only implement the first case. Do not jump ahead and implement trimming or empty-input behavior before those tests exist.
 
 ### 3. Refactor
 
@@ -57,7 +57,7 @@ when greet is called
 then the result is "Hello, Ada!"
 ```
 
-Suggested generic test name:
+Use this test name:
 
 ```text
 greet_trims_leading_and_trailing_whitespace
@@ -81,7 +81,7 @@ when greet is called
 then the result is "Hello!"
 ```
 
-Suggested generic test name:
+Use this test name:
 
 ```text
 greet_returns_generic_greeting_for_empty_string
@@ -105,7 +105,7 @@ when greet is called
 then the result is "Hello!"
 ```
 
-Suggested generic test name:
+Use this test name:
 
 ```text
 greet_returns_generic_greeting_for_whitespace_only_input
@@ -117,7 +117,7 @@ Make it pass.
 
 ### 12. Refactor The Core Logic
 
-Now that the full behavior is covered, refactor toward a small, clear core abstraction.
+Now that the full behavior is covered, refactor to a small, clear core abstraction.
 
 The exact shape can vary by stack:
 

@@ -18,7 +18,7 @@ This keeps the solution filename predictable as `<solution-name>.sln` instead of
 
 ## Core Scaffold Pattern
 
-For a typical core library repo, start with:
+For a core library repo, run:
 
 ```bash
 dotnet new sln --format sln --name <solution-name>
@@ -26,4 +26,4 @@ dotnet new gitignore
 dotnet new classlib --name <library-project-name> --output src/<library-project-name>
 ```
 
-If the tutorial does not explicitly pin a target framework, let `dotnet new` use the SDK default. If you do pin a framework, use the same value consistently for the library and its test project.
+If the tutorial does not explicitly pin a target framework, use the SDK default. If you do pin a framework, use the same value consistently for the library and its test project.

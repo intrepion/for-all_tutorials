@@ -36,7 +36,7 @@ This guide does not cover:
 
 ## Suggested Scaffold Commands
 
-Replace the placeholders with the names used by the project tutorial:
+Use the project names and paths from the concrete scaffold section in the compiled tutorial:
 
 ```bash
 dotnet new sln --format sln --name <solution-name> --output <solution-root>
@@ -51,7 +51,7 @@ dotnet add <solution-root>/tests/<adapter-test-project-name>/<adapter-test-proje
 
 If the tutorial needs a non-default target framework, add `--framework <target-framework>` to both the console and xUnit scaffold commands.
 
-For first local runs, prefer a project reference to a sibling checkout of the core repo. Move to a published package later only if that workflow adds value for the stack you are teaching.
+For first local runs, use a project reference to a sibling checkout of the core repo. Move to a published package later only if that workflow adds value for the stack you are teaching.
 
 ## Suggested File Shape
 

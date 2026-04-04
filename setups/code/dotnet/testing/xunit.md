@@ -12,7 +12,7 @@ Create an xUnit test project, attach it to a `.NET` solution, and enable repeata
 
 ## Create The Test Project
 
-Substitute the placeholders with the names and paths from the project tutorial:
+Use the exact project names and paths from the compiled tutorial:
 
 ```bash
 dotnet new xunit --name <test-project-name> --output <test-project-path>
