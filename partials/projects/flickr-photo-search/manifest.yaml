@@ -18,3 +18,28 @@ compiled_outputs:
   - partials/setups/code/dotnet/toolchain/sdk.md
   - partials/setups/code/dotnet/toolchain/dotnet-cli.md
   - partials/setups/code/dotnet/testing/xunit.md
+- id: dotnet-csharp-xunit-no-storage-graphical-all-no-framework
+  kind: adapter
+  tutorial_path: tutorials/flickr-photo-search/dotnet/csharp/xunit/adapters/no-storage/graphical/all/no-framework/README.md
+  selections:
+    ecosystem: dotnet
+    language: csharp
+    testing: xunit
+    storage: no-storage
+    surface: graphical
+    target: all
+    framework: no-framework
+  sources:
+  - partials/projects/flickr-photo-search/README.md
+  - partials/projects/flickr-photo-search/spec/README.md
+  - partials/projects/flickr-photo-search/instructions/README.md
+  - partials/projects/flickr-photo-search/instructions/adapter.md
+  - partials/setups/storage/README.md
+  - partials/setups/storage/no-storage.md
+  - partials/setups/code/dotnet/README.md
+  - partials/setups/code/dotnet/languages/csharp.md
+  - partials/setups/code/dotnet/toolchain/sdk.md
+  - partials/setups/code/dotnet/toolchain/dotnet-cli.md
+  - partials/setups/code/dotnet/testing/xunit.md
+  - partials/setups/code/dotnet/adapters/graphical/all.md
+  - partials/setups/code/dotnet/frameworks/graphical/no-framework.md

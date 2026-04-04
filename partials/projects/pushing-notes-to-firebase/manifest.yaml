@@ -18,3 +18,29 @@ compiled_outputs:
   - partials/setups/code/dotnet/toolchain/sdk.md
   - partials/setups/code/dotnet/toolchain/dotnet-cli.md
   - partials/setups/code/dotnet/testing/xunit.md
+- id: dotnet-csharp-xunit-database-firebase-command-line-all-no-framework
+  kind: adapter
+  tutorial_path: tutorials/pushing-notes-to-firebase/dotnet/csharp/xunit/adapters/database-firebase/command-line/all/no-framework/README.md
+  selections:
+    ecosystem: dotnet
+    language: csharp
+    testing: xunit
+    storage: database-firebase
+    surface: command-line
+    target: all
+    framework: no-framework
+  sources:
+  - partials/projects/pushing-notes-to-firebase/README.md
+  - partials/projects/pushing-notes-to-firebase/spec/README.md
+  - partials/projects/pushing-notes-to-firebase/instructions/README.md
+  - partials/projects/pushing-notes-to-firebase/instructions/adapter.md
+  - partials/setups/storage/README.md
+  - partials/setups/storage/database-firebase.md
+  - partials/setups/code/dotnet/README.md
+  - partials/setups/code/dotnet/languages/csharp.md
+  - partials/setups/code/dotnet/toolchain/sdk.md
+  - partials/setups/code/dotnet/toolchain/dotnet-cli.md
+  - partials/setups/code/dotnet/testing/xunit.md
+  - partials/setups/code/dotnet/storage/command-line/database-firebase.md
+  - partials/setups/code/dotnet/adapters/command-line/all.md
+  - partials/setups/code/dotnet/frameworks/command-line/no-framework.md

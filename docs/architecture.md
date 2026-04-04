@@ -73,6 +73,7 @@ for-all_tutorials/
           README.md
           command-line/
             README.md
+            database-firebase.md
             local-files-csv.md
             local-files-json.md
             local-files-yaml.md
@@ -83,12 +84,21 @@ for-all_tutorials/
             database-sqlite.md
         adapters/
           README.md
+          client/
+            README.md
+            all.md
           command-line/
+            README.md
+            all.md
+          graphical/
             README.md
             all.md
           web/
             README.md
             full-stack.md
+          web-service/
+            README.md
+            all.md
         testing/
           README.md
           xunit.md
@@ -97,15 +107,24 @@ for-all_tutorials/
           tunit.md
         frameworks/
           README.md
+          client/
+            README.md
+            no-framework.md
           command-line/
             README.md
             no-framework.md
             spectre-console.md
+          graphical/
+            README.md
+            no-framework.md
           web/
             README.md
             full-stack/
               README.md
               blazor-server.md
+          web-service/
+            README.md
+            no-framework.md
       go/
         ...
       java/
@@ -394,17 +413,23 @@ saying-hello-dotnet-csharp-xunit-no-storage-command-line-all-no-framework
 
 Current surface taxonomy:
 
+- `client`
 - `command-line`
+- `graphical`
 - `web`
+- `web-service`
 - `desktop`
 - `mobile`
 
 Current target taxonomy:
 
+- `client/all`
 - `command-line/all`
+- `graphical/all`
 - `web/back-end`
 - `web/front-end`
 - `web/full-stack`
+- `web-service/all`
 - `desktop/all`
 - `desktop/macos`
 - `desktop/linux`

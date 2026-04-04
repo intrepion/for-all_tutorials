@@ -63,9 +63,21 @@ Keep shared option lists here so project entries can stay small.
 
 - [all](../setups/code/dotnet/adapters/command-line/all.md): [no-framework](../setups/code/dotnet/frameworks/command-line/no-framework.md), [spectre-console](../setups/code/dotnet/frameworks/command-line/spectre-console.md)
 
+###### [client](../setups/code/dotnet/frameworks/client/README.md)
+
+- [all](../setups/code/dotnet/adapters/client/all.md): [no-framework](../setups/code/dotnet/frameworks/client/no-framework.md)
+
+###### [graphical](../setups/code/dotnet/frameworks/graphical/README.md)
+
+- [all](../setups/code/dotnet/adapters/graphical/all.md): [no-framework](../setups/code/dotnet/frameworks/graphical/no-framework.md)
+
 ###### [web](../setups/code/dotnet/frameworks/web/README.md)
 
 - [full-stack](../setups/code/dotnet/adapters/web/full-stack.md): [blazor-server](../setups/code/dotnet/frameworks/web/full-stack/blazor-server.md)
+
+###### [web-service](../setups/code/dotnet/frameworks/web-service/README.md)
+
+- [all](../setups/code/dotnet/adapters/web-service/all.md): [no-framework](../setups/code/dotnet/frameworks/web-service/no-framework.md)
 
 ##### [Languages](../setups/code/dotnet/languages/README.md)
 

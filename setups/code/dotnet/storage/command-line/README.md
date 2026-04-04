@@ -13,6 +13,7 @@ Reusable `.NET` storage setup guides for `command-line` adapters.
 
 ## Contents
 
+- [Database Firebase](database-firebase.md)
 - [Local Files CSV](local-files-csv.md)
 - [Local Files JSON](local-files-json.md)
 - [Local Files YAML](local-files-yaml.md)

@@ -9,7 +9,7 @@ Project-source slices for future compiled tutorials.
 
 Every project manifest in this folder now declares at least one active compiled tutorial output.
 
-Projects that fit the current command-line/no-storage setup slice also declare an active adapter output.
+Projects that fit the currently supported `.NET/C# xUnit` adapter slices also declare active adapter outputs.
 
 ## Contents
 
@@ -76,7 +76,7 @@ Projects that fit the current command-line/no-storage setup slice also declare a
 Every project slice in this folder follows the same high-level pattern:
 
 1. Use the project `spec/README.md` as the source of truth.
-2. Use the project `instructions/README.md`, `instructions/core.md`, and `instructions/adapter.md` as the source fragments for future compiled tutorials.
+2. Use the project `instructions/README.md`, `instructions/core.md`, and the relevant adapter instruction fragment or fragments in `instructions/` as the source material for future compiled tutorials.
 3. Use `partials/setups/` for stack-specific implementation details.
 4. Build the core logic first in a separate core library repo.
 5. Add one or more separate adapter repos only after the core logic is tested.
