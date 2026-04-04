@@ -13,8 +13,8 @@ Build a small project app that introduces:
 
 - collecting repeated task input from the user
 - ending task entry when the user enters a blank task
-- persisting tasks in a permanent local storage location
-- parsing and serializing a stored task list
+- persisting tasks in one permanent local JSON file
+- parsing and serializing a stored JSON task list
 - removing one completed task by exact text
 - formatting the current task list for display
 - test-first parsing, list, and formatting logic in small core functions
@@ -22,12 +22,14 @@ Build a small project app that introduces:
 
 ## Canonical Sample Stored Task Data
 
-For deterministic tests and examples, use stored task data equivalent to this plain-text document:
+For deterministic tests and examples, use stored task data equivalent to this JSON document:
 
-```text
-Learn how to invert binary trees
-Buy milk
-Clean kitchen
+```json
+[
+  "Learn how to invert binary trees",
+  "Buy milk",
+  "Clean kitchen"
+]
 ```
 
 ## Core Logic Contract
@@ -45,8 +47,8 @@ serialize_task_storage(task_list: string[]) -> string
 Canonical behavior:
 
 - `parse_task_storage`:
-  - splits stored task text into one task per line
-  - preserves the exact text of each non-empty line
+  - parses the stored JSON document as an array of task strings
+  - preserves the exact text of each task string
   - preserves source order
 - `append_task`:
   - returns a new list
@@ -63,9 +65,9 @@ Canonical behavior:
   - returns one line per task
   - preserves input order
 - `serialize_task_storage`:
-  - returns one task per line in input order
-  - ends the stored text with a trailing newline when the list is non-empty
-  - returns an empty string for an empty task list
+  - returns a JSON string equivalent to the input task array in order
+  - preserves the exact text of each task string
+  - returns a JSON array for empty or non-empty task lists
 
 Examples:
 
@@ -83,11 +85,13 @@ Examples:
 - `format_task_list(["Learn how to invert binary trees", "Buy milk"])` returns:
   - `Learn how to invert binary trees`
   - `Buy milk`
-- `serialize_task_storage(["Learn how to invert binary trees", "Buy milk"])` returns text equivalent to:
+- `serialize_task_storage(["Learn how to invert binary trees", "Buy milk"])` returns JSON equivalent to:
 
-```text
-Learn how to invert binary trees
-Buy milk
+```json
+[
+  "Learn how to invert binary trees",
+  "Buy milk"
+]
 ```
 
 ## Non-Goals
@@ -113,7 +117,7 @@ For this project, every tutorial run should use a command-line adapter and adapt
 Adapters should:
 
 - use a command-line surface
-- read the existing stored tasks from a permanent local storage location
+- read the existing stored tasks from one permanent local JSON file
 - pass the stored text to `parse_task_storage`
 - prompt repeatedly for chores or tasks
 - stop prompting for new tasks when the user enters a blank task
@@ -124,7 +128,7 @@ Adapters should:
 - prompt for one task to remove
 - pass the current task list and the entered completed task to `remove_task_by_exact_text`
 - persist the final task list by passing it to `serialize_task_storage`
-- write the serialized text back to the same permanent local storage location
+- write the serialized JSON back to the same permanent local JSON file
 
 ## Output Repository Expectations
 
@@ -145,6 +149,5 @@ Minimum test expectations:
 - a test that `remove_task_by_exact_text` removes an exact matching task such as `Buy milk`
 - a test that `remove_task_by_exact_text` preserves the unchanged list for a non-matching task
 - a test that `format_task_list` preserves exact task text and order
-- a test that `serialize_task_storage` preserves exact task text and order
-- tests for every adapter built in the chosen run that prove it reads from permanent local storage, stops task entry on a blank task without storing it, displays the current tasks, removes the chosen completed task, and writes the final serialized task list back to permanent local storage
-
+- a test that `serialize_task_storage` preserves exact task text and order in a JSON array document
+- tests for every adapter built in the chosen run that prove it reads from one permanent local JSON file, stops task entry on a blank task without storing it, displays the current tasks, removes the chosen completed task, and writes the final serialized JSON back to the same file

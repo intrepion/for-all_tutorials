@@ -25,7 +25,7 @@ Compiled tutorial outputs should be generated from the project manifests in this
 
 Every project manifest now declares at least one active compiled tutorial output on the current `.NET/C# xUnit` core path.
 
-Most projects now also declare active `.NET/C# xUnit` adapter outputs on one of those supported storage, surface, target, and framework paths.
+Every project manifest now also declares at least one active `.NET/C# xUnit` adapter output on one of those supported storage, surface, target, and framework paths.
 
 ## Active Generated Paths
 
@@ -36,13 +36,9 @@ Current generated tutorial paths that are real in this repo:
 - `tutorials/<project>/dotnet/csharp/xunit/adapters/no-storage/client/all/no-framework/README.md` for 1 project
 - `tutorials/<project>/dotnet/csharp/xunit/adapters/no-storage/graphical/all/no-framework/README.md` for 1 project
 - `tutorials/<project>/dotnet/csharp/xunit/adapters/no-storage/web-service/all/no-framework/README.md` for 1 project
-- `tutorials/<project>/dotnet/csharp/xunit/adapters/local-files-json/command-line/all/no-framework/README.md` for 1 project
+- `tutorials/<project>/dotnet/csharp/xunit/adapters/local-files-json/command-line/all/no-framework/README.md` for 2 projects
 - `tutorials/<project>/dotnet/csharp/xunit/adapters/database-firebase/command-line/all/no-framework/README.md` for 1 project
 - `tutorials/<project>/dotnet/csharp/xunit/adapters/database-sqlite/web/full-stack/blazor-server/README.md` for 2 projects
-
-The one project that still needs a new storage-slot decision before honest adapter activation is:
-
-- `todo-list`, which currently models persisted task data as plain newline-delimited text rather than one of the existing canonical storage slots
 
 ## Contents
 

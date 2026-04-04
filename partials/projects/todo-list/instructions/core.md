@@ -12,7 +12,7 @@ Project-specific core instruction fragment for the `todo-list` core repo.
 Start with parsing the canonical stored task data:
 
 ```text
-given the canonical stored task text
+given the canonical stored task JSON
 when parse_task_storage is called
 then the returned task list preserves the exact canonical task texts in order
 ```
@@ -79,14 +79,14 @@ and
 ```text
 given a task list
 when serialize_task_storage is called
-then the returned text preserves one task per line in order
+then the returned JSON preserves the task order in a JSON array
 ```
 
 Suggested generic test names:
 
 ```text
 format_task_list_returns_one_line_per_task_in_order
-serialize_task_storage_returns_one_task_per_line_in_order
+serialize_task_storage_returns_a_json_array_in_order
 ```
 
 ### 7. Green: Make The Formatting Tests Pass
@@ -103,5 +103,4 @@ The exact shape can vary by stack:
 - one service object with parse, append, remove, format, and serialize methods
 - one module plus a small immutable task-list type
 
-The important thing is that task parsing, list updates, formatting, and serialization stay small, explicit, and directly testable.
-
+The important thing is that task parsing, list updates, formatting, and JSON serialization stay small, explicit, and directly testable.
