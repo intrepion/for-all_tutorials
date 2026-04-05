@@ -16,10 +16,12 @@ rm tests/SayingHello.Tests/UnitTest1.cs
 rm -f tests/SayingHello.Tests/Test1.cs
 ```
 
-You will replace them with these exact files:
+Create the replacement files now:
 
-- `src/SayingHello/Greeting.cs`
-- `tests/SayingHello.Tests/GreetingTests.cs`
+```bash
+touch src/SayingHello/Greeting.cs
+touch tests/SayingHello.Tests/GreetingTests.cs
+```
 
 ### 1. Red: Add The First Failing Test
 
