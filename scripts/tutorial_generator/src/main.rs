@@ -913,7 +913,7 @@ fn collapse_blank_lines(text: &str) -> String {
 fn repo_name(project_slug: &str, output: &CompiledOutput) -> String {
     if output.kind == OutputKind::Core {
         format!(
-            "for-all_tutorial_manual_{}_{}_{}_{}_core",
+            "for-all_tutorial_manual_{}_{}_{}_core_{}",
             project_slug,
             output.selections.ecosystem,
             output.selections.language,
@@ -925,7 +925,6 @@ fn repo_name(project_slug: &str, output: &CompiledOutput) -> String {
             project_slug,
             output.selections.ecosystem,
             output.selections.language,
-            output.selections.testing,
             output.selections.storage.as_deref().unwrap_or("no-storage"),
             output
                 .selections
@@ -942,13 +941,14 @@ fn repo_name(project_slug: &str, output: &CompiledOutput) -> String {
                 .framework
                 .as_deref()
                 .unwrap_or("unknown-framework"),
+            output.selections.testing,
         )
     }
 }
 
 fn core_repo_name(project_slug: &str, output: &CompiledOutput) -> String {
     format!(
-        "for-all_tutorial_manual_{}_{}_{}_{}_core",
+        "for-all_tutorial_manual_{}_{}_{}_core_{}",
         project_slug,
         output.selections.ecosystem,
         output.selections.language,
