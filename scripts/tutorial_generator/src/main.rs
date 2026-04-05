@@ -7,6 +7,7 @@ use std::fs;
 use std::path::{Path, PathBuf};
 
 const ROOT: &str = env!("CARGO_MANIFEST_DIR");
+const GITHUB_OWNER: &str = "intrepion";
 
 fn main() -> Result<(), AppError> {
     let app_root = Path::new(ROOT)
@@ -140,6 +141,11 @@ fn append_implicit_partials(
             &app_root.join("partials/setups/code/dotnet/toolchain/github-actions.md"),
         )?);
     }
+    if output.selections.ecosystem == "dotnet" {
+        partials.push(Partial::load(
+            &app_root.join("partials/setups/code/dotnet/toolchain/justfile.md"),
+        )?);
+    }
 
     Ok(())
 }
@@ -206,6 +212,7 @@ enum PartialKind {
     AdapterPartial,
     FrameworkPartial,
     TestingIndex,
+    JustfilePartial,
     CiPartial,
 }
 
@@ -338,6 +345,7 @@ fn build_readme(
         },
     )?;
     let storage_root = find_optional_partial(partials, PartialKind::StorageRoot);
+    let justfile_partial = find_optional_partial(partials, PartialKind::JustfilePartial);
     let ci_partial = find_optional_partial(partials, PartialKind::CiPartial);
 
     let mut sections = Vec::new();
@@ -345,6 +353,14 @@ fn build_readme(
         &mut sections,
         "Project Spec",
         Some(shift_headings(&spec.body, 1)),
+    );
+    push_section(
+        &mut sections,
+        "Create Root README",
+        Some(render_root_readme(
+            &repo_name(project_slug, output),
+            &repo_description(project_title, output),
+        )),
     );
     push_section(
         &mut sections,
@@ -360,6 +376,11 @@ fn build_readme(
         &mut sections,
         "Create the Adapter Solution and Projects",
         recommended_dotnet_command_line_adapter_scaffold(project_slug, output),
+    );
+    push_section(
+        &mut sections,
+        "Add Root Justfile",
+        render_dotnet_root_justfile(justfile_partial, project_slug, output),
     );
     if output.kind == OutputKind::Adapter {
         push_section(
@@ -518,6 +539,26 @@ fn prepare_dotnet_environment(project_slug: &str, output: &CompiledOutput) -> Op
     Some(body)
 }
 
+fn render_root_readme(repo_name: &str, repo_description: &str) -> String {
+    let workflow_url = format!(
+        "https://github.com/{GITHUB_OWNER}/{repo_name}/actions/workflows/ci.yml"
+    );
+    let badge_url = format!("{workflow_url}/badge.svg");
+
+    format!(
+        "Create the file:\n\n\
+         ```bash\n\
+         touch README.md\n\
+         ```\n\n\
+         Then put this exact content in `README.md`:\n\n\
+         ```md\n\
+         # {repo_name}\n\
+         {repo_description}\n\n\
+         [![CI]({badge_url})]({workflow_url})\n\
+         ```"
+    )
+}
+
 fn recommended_dotnet_core_scaffold(project_slug: &str, output: &CompiledOutput) -> Option<String> {
     if output.kind != OutputKind::Core || output.selections.ecosystem != "dotnet" {
         return None;
@@ -606,6 +647,108 @@ fn recommended_dotnet_command_line_adapter_scaffold(
          dotnet add {adapter_test_project_path}/{adapter_test_project_name}.csproj reference {adapter_project_path}/{adapter_name}.csproj\n\
          ```"
     ))
+}
+
+fn render_dotnet_root_justfile(
+    justfile_partial: Option<&Partial>,
+    project_slug: &str,
+    output: &CompiledOutput,
+) -> Option<String> {
+    if output.selections.ecosystem != "dotnet" {
+        return None;
+    }
+
+    let test_project_path = dotnet_test_project_csproj_path(project_slug, output)?;
+    let intro = justfile_partial
+        .map(|partial| normalize_text(&partial.body))
+        .filter(|body| !body.is_empty())
+        .unwrap_or_else(|| {
+            "Add a repo-root `justfile` so local developer commands and CI checks use the same entry points."
+                .to_string()
+        });
+
+    let body = if output.selections.testing == "tunit" {
+        format!(
+            "{intro}\n\n\
+             Create the file:\n\n\
+             ```bash\n\
+             touch justfile\n\
+             ```\n\n\
+             Then put this exact content in `justfile`:\n\n\
+             ```just\n\
+             format:\n\
+             \tdotnet format\n\n\
+             check-formatting:\n\
+             \tdotnet format --verify-no-changes\n\n\
+             check-tests:\n\
+             \tdotnet test\n\n\
+             check-code-cover:\n\
+             \tmkdir -p TestResults\n\
+             \tdotnet test {test_project_path} -c Release -- --coverage --coverage-output TestResults/coverage.cobertura.xml --coverage-output-format cobertura\n\
+             \truby -rrexml/document -e 'doc = REXML::Document.new(File.read(\"TestResults/coverage.cobertura.xml\")); rate = doc.root.attributes[\"line-rate\"].to_f * 100; abort(format(\"Line coverage %.2f%% is below 90%%\", rate)) if rate < 90'\n\n\
+             check-branch-cover:\n\
+             \tmkdir -p TestResults\n\
+             \tdotnet test {test_project_path} -c Release -- --coverage --coverage-output TestResults/coverage.cobertura.xml --coverage-output-format cobertura\n\
+             \truby -rrexml/document -e 'doc = REXML::Document.new(File.read(\"TestResults/coverage.cobertura.xml\")); rate = doc.root.attributes[\"branch-rate\"].to_f * 100; abort(format(\"Branch coverage %.2f%% is below 85%%\", rate)) if rate < 85'\n\n\
+             check-all:\n\
+             \tjust check-formatting\n\
+             \tjust check-tests\n\
+             \tjust check-code-cover\n\
+             \tjust check-branch-cover\n\
+             ```\n\n\
+             For `TUnit`, both coverage checks collect one Cobertura report with Microsoft.Testing.Platform, then validate either the line-rate or the branch-rate from that same report."
+        )
+    } else {
+        format!(
+            "{intro}\n\n\
+             Install Coverlet's MSBuild package once for the test project:\n\n\
+             ```bash\n\
+             dotnet add {test_project_path} package coverlet.msbuild\n\
+             ```\n\n\
+             Create the file:\n\n\
+             ```bash\n\
+             touch justfile\n\
+             ```\n\n\
+             Then put this exact content in `justfile`:\n\n\
+             ```just\n\
+             format:\n\
+             \tdotnet format\n\n\
+             check-formatting:\n\
+             \tdotnet format --verify-no-changes\n\n\
+             check-tests:\n\
+             \tdotnet test\n\n\
+             check-code-cover:\n\
+             \tdotnet test {test_project_path} /p:CollectCoverage=true /p:CoverletOutputFormat=cobertura /p:ThresholdType=line /p:Threshold=90 /p:ThresholdStat=total\n\n\
+             check-branch-cover:\n\
+             \tdotnet test {test_project_path} /p:CollectCoverage=true /p:CoverletOutputFormat=cobertura /p:ThresholdType=branch /p:Threshold=85 /p:ThresholdStat=total\n\
+             \n\
+             check-all:\n\
+             \tjust check-formatting\n\
+             \tjust check-tests\n\
+             \tjust check-code-cover\n\
+             \tjust check-branch-cover\n\
+             ```"
+        )
+    };
+
+    Some(body)
+}
+
+fn dotnet_test_project_csproj_path(project_slug: &str, output: &CompiledOutput) -> Option<String> {
+    let solution_name = pascal_case_slug(project_slug);
+
+    if output.kind == OutputKind::Core {
+        let test_project_name = format!("{solution_name}.Tests");
+        return Some(format!("tests/{test_project_name}/{test_project_name}.csproj"));
+    }
+
+    if output.selections.surface.as_deref() == Some("command-line") {
+        let adapter_name = format!("{solution_name}.CommandLine");
+        let test_project_name = format!("{adapter_name}.Tests");
+        return Some(format!("tests/{test_project_name}/{test_project_name}.csproj"));
+    }
+
+    None
 }
 
 fn dotnet_test_template_short_name(testing: &str) -> (&'static str, Option<&'static str>) {
