@@ -307,6 +307,8 @@ struct OutputRepoSpec {
     repo_description: String,
     tutorial_path: String,
     ecosystem: String,
+    project_slug: String,
+    output: CompiledOutput,
 }
 
 fn collect_output_repo_specs(app_root: &Path) -> Result<Vec<OutputRepoSpec>, AppError> {
@@ -328,6 +330,8 @@ fn collect_output_repo_specs(app_root: &Path) -> Result<Vec<OutputRepoSpec>, App
                 repo_description: repo_description(&project_title, output),
                 tutorial_path: output.tutorial_path.clone(),
                 ecosystem: output.selections.ecosystem.clone(),
+                project_slug: manifest.project.clone(),
+                output: output.clone(),
             });
         }
     }
@@ -490,6 +494,15 @@ fn bootstrap_output_repo(
     write_managed_files(&clone_path, &managed_files)?;
     git_add_managed_files(&clone_path, &managed_files)?;
     git_commit_managed_files(&clone_path, false)?;
+
+    if let Some(scaffold_plan) = dotnet_scaffold_bootstrap_plan(&spec.project_slug, &spec.output) {
+        run_dotnet_scaffold_bootstrap_plan(&clone_path, &scaffold_plan)?;
+    }
+
+    if let Some(justfile_plan) = dotnet_root_justfile_plan(&spec.project_slug, &spec.output) {
+        run_dotnet_root_justfile_plan(&clone_path, &justfile_plan)?;
+    }
+
     git_push_branch(&clone_path, sync_branch_name)?;
 
     println!("synced: {repo_full_name}");
@@ -986,6 +999,48 @@ fn switch_to_sync_branch_from_commit(
     }
 }
 
+fn run_command_in_dir(repo_path: &Path, command: &[String]) -> Result<(), AppError> {
+    let (program, args) = command.split_first().ok_or_else(|| {
+        AppError::message(format!(
+            "attempted to run an empty command in {}",
+            repo_path.display()
+        ))
+    })?;
+
+    let status = Command::new(program)
+        .current_dir(repo_path)
+        .args(args)
+        .status()?;
+
+    if status.success() {
+        Ok(())
+    } else {
+        Err(AppError::message(format!(
+            "command failed in {}: {}",
+            repo_path.display(),
+            command.join(" ")
+        )))
+    }
+}
+
+fn git_add_paths(repo_path: &Path, paths: &[String]) -> Result<(), AppError> {
+    let mut command = Command::new("git");
+    command.arg("-C").arg(repo_path).arg("add");
+    for path in paths {
+        command.arg(path);
+    }
+
+    let status = command.status()?;
+    if status.success() {
+        Ok(())
+    } else {
+        Err(AppError::message(format!(
+            "failed to stage selected paths in {}",
+            repo_path.display()
+        )))
+    }
+}
+
 fn git_add_managed_files(repo_path: &Path, managed_files: &[ManagedRepoFile]) -> Result<(), AppError> {
     let mut command = Command::new("git");
     command.arg("-C").arg(repo_path).arg("add");
@@ -1088,7 +1143,7 @@ struct Manifest {
     compiled_outputs: Vec<CompiledOutput>,
 }
 
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Deserialize, Clone)]
 struct CompiledOutput {
     #[allow(dead_code)]
     id: String,
@@ -1098,14 +1153,14 @@ struct CompiledOutput {
     sources: Vec<String>,
 }
 
-#[derive(Debug, Deserialize, PartialEq, Eq)]
+#[derive(Debug, Deserialize, Clone, Copy, PartialEq, Eq)]
 #[serde(rename_all = "lowercase")]
 enum OutputKind {
     Core,
     Adapter,
 }
 
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Deserialize, Clone)]
 struct Selections {
     ecosystem: String,
     language: String,
@@ -1486,6 +1541,246 @@ fn render_root_readme(repo_name: &str, repo_description: &str) -> String {
     )
 }
 
+#[derive(Debug)]
+struct DotnetScaffoldBootstrapPlan {
+    commands: Vec<Vec<String>>,
+    git_add_paths: Vec<String>,
+    commit_message: &'static str,
+}
+
+#[derive(Debug)]
+struct DotnetRootJustfilePlan {
+    pre_commands: Vec<Vec<String>>,
+    contents: String,
+    git_add_paths: Vec<String>,
+    commit_message: &'static str,
+}
+
+fn dotnet_scaffold_bootstrap_plan(
+    project_slug: &str,
+    output: &CompiledOutput,
+) -> Option<DotnetScaffoldBootstrapPlan> {
+    if output.selections.ecosystem != "dotnet" {
+        return None;
+    }
+
+    let (test_template, template_install_command) =
+        dotnet_test_template_short_name(&output.selections.testing);
+
+    if output.kind == OutputKind::Core {
+        let solution_name = pascal_case_slug(project_slug);
+        let library_project_name = solution_name.clone();
+        let test_project_name = format!("{solution_name}.Tests");
+        let solution_file = format!("{solution_name}.sln");
+        let library_project_path = format!("src/{library_project_name}");
+        let test_project_path = format!("tests/{test_project_name}");
+        let mut commands = Vec::new();
+
+        commands.push(vec![
+            "dotnet".to_string(),
+            "new".to_string(),
+            "sln".to_string(),
+            "--format".to_string(),
+            "sln".to_string(),
+            "--name".to_string(),
+            solution_name.clone(),
+        ]);
+
+        if let Some(command) = template_install_command {
+            commands.push(command.split_whitespace().map(str::to_string).collect());
+        }
+
+        commands.push(vec![
+            "dotnet".to_string(),
+            "new".to_string(),
+            "classlib".to_string(),
+            "--name".to_string(),
+            library_project_name.clone(),
+            "--output".to_string(),
+            library_project_path.clone(),
+        ]);
+        commands.push(vec![
+            "dotnet".to_string(),
+            "new".to_string(),
+            test_template.to_string(),
+            "--name".to_string(),
+            test_project_name.clone(),
+            "--output".to_string(),
+            test_project_path.clone(),
+        ]);
+        commands.push(vec![
+            "dotnet".to_string(),
+            "sln".to_string(),
+            solution_file.clone(),
+            "add".to_string(),
+            format!("{library_project_path}/{library_project_name}.csproj"),
+        ]);
+        commands.push(vec![
+            "dotnet".to_string(),
+            "sln".to_string(),
+            solution_file.clone(),
+            "add".to_string(),
+            format!("{test_project_path}/{test_project_name}.csproj"),
+        ]);
+        commands.push(vec![
+            "dotnet".to_string(),
+            "add".to_string(),
+            format!("{test_project_path}/{test_project_name}.csproj"),
+            "reference".to_string(),
+            format!("{library_project_path}/{library_project_name}.csproj"),
+        ]);
+
+        return Some(DotnetScaffoldBootstrapPlan {
+            commands,
+            git_add_paths: vec![solution_file, "src".to_string(), "tests".to_string()],
+            commit_message: "Create the Solution and Projects",
+        });
+    }
+
+    if output.selections.surface.as_deref() == Some("command-line") {
+        let solution_name = format!("{}.CommandLine", pascal_case_slug(project_slug));
+        let adapter_name = solution_name.clone();
+        let adapter_test_project_name = format!("{adapter_name}.Tests");
+        let solution_file = format!("{solution_name}.sln");
+        let adapter_project_path = format!("src/{adapter_name}");
+        let adapter_test_project_path = format!("tests/{adapter_test_project_name}");
+        let core_library_project_name = pascal_case_slug(project_slug);
+        let core_project_reference_path = format!(
+            "../{}/src/{core_library_project_name}/{core_library_project_name}.csproj",
+            core_repo_name(project_slug, output)
+        );
+        let mut commands = Vec::new();
+
+        commands.push(vec![
+            "dotnet".to_string(),
+            "new".to_string(),
+            "sln".to_string(),
+            "--format".to_string(),
+            "sln".to_string(),
+            "--name".to_string(),
+            solution_name.clone(),
+        ]);
+
+        if let Some(command) = template_install_command {
+            commands.push(command.split_whitespace().map(str::to_string).collect());
+        }
+
+        commands.push(vec![
+            "dotnet".to_string(),
+            "new".to_string(),
+            "console".to_string(),
+            "--name".to_string(),
+            adapter_name.clone(),
+            "--output".to_string(),
+            adapter_project_path.clone(),
+        ]);
+        commands.push(vec![
+            "dotnet".to_string(),
+            "new".to_string(),
+            test_template.to_string(),
+            "--name".to_string(),
+            adapter_test_project_name.clone(),
+            "--output".to_string(),
+            adapter_test_project_path.clone(),
+        ]);
+        commands.push(vec![
+            "dotnet".to_string(),
+            "sln".to_string(),
+            solution_file.clone(),
+            "add".to_string(),
+            format!("{adapter_project_path}/{adapter_name}.csproj"),
+        ]);
+        commands.push(vec![
+            "dotnet".to_string(),
+            "sln".to_string(),
+            solution_file.clone(),
+            "add".to_string(),
+            format!("{adapter_test_project_path}/{adapter_test_project_name}.csproj"),
+        ]);
+        commands.push(vec![
+            "dotnet".to_string(),
+            "add".to_string(),
+            format!("{adapter_project_path}/{adapter_name}.csproj"),
+            "reference".to_string(),
+            core_project_reference_path,
+        ]);
+        commands.push(vec![
+            "dotnet".to_string(),
+            "add".to_string(),
+            format!("{adapter_test_project_path}/{adapter_test_project_name}.csproj"),
+            "reference".to_string(),
+            format!("{adapter_project_path}/{adapter_name}.csproj"),
+        ]);
+
+        return Some(DotnetScaffoldBootstrapPlan {
+            commands,
+            git_add_paths: vec![solution_file, "src".to_string(), "tests".to_string()],
+            commit_message: "Create the Adapter Solution and Projects",
+        });
+    }
+
+    None
+}
+
+fn run_dotnet_scaffold_bootstrap_plan(
+    repo_path: &Path,
+    plan: &DotnetScaffoldBootstrapPlan,
+) -> Result<(), AppError> {
+    for command in &plan.commands {
+        run_command_in_dir(repo_path, command)?;
+    }
+
+    git_add_paths(repo_path, &plan.git_add_paths)?;
+    git_commit(repo_path, plan.commit_message)
+}
+
+fn dotnet_root_justfile_plan(
+    project_slug: &str,
+    output: &CompiledOutput,
+) -> Option<DotnetRootJustfilePlan> {
+    if output.selections.ecosystem != "dotnet" {
+        return None;
+    }
+
+    let test_project_path = dotnet_test_project_csproj_path(project_slug, output)?;
+    let justfile_contents = dotnet_root_justfile_contents(&test_project_path, &output.selections.testing);
+
+    if output.selections.testing == "tunit" {
+        return Some(DotnetRootJustfilePlan {
+            pre_commands: Vec::new(),
+            contents: justfile_contents,
+            git_add_paths: vec!["justfile".to_string()],
+            commit_message: "Add Root Justfile",
+        });
+    }
+
+    Some(DotnetRootJustfilePlan {
+        pre_commands: vec![vec![
+            "dotnet".to_string(),
+            "add".to_string(),
+            test_project_path.clone(),
+            "package".to_string(),
+            "coverlet.msbuild".to_string(),
+        ]],
+        contents: justfile_contents,
+        git_add_paths: vec!["justfile".to_string(), test_project_path],
+        commit_message: "Add Root Justfile",
+    })
+}
+
+fn run_dotnet_root_justfile_plan(
+    repo_path: &Path,
+    plan: &DotnetRootJustfilePlan,
+) -> Result<(), AppError> {
+    for command in &plan.pre_commands {
+        run_command_in_dir(repo_path, command)?;
+    }
+
+    fs::write(repo_path.join("justfile"), &plan.contents)?;
+    git_add_paths(repo_path, &plan.git_add_paths)?;
+    git_commit(repo_path, plan.commit_message)
+}
+
 fn recommended_dotnet_core_scaffold(project_slug: &str, output: &CompiledOutput) -> Option<String> {
     if output.kind != OutputKind::Core || output.selections.ecosystem != "dotnet" {
         return None;
@@ -1520,6 +1815,11 @@ fn recommended_dotnet_core_scaffold(project_slug: &str, output: &CompiledOutput)
          dotnet sln {solution_file} add {library_project_path}/{library_project_name}.csproj\n\
          dotnet sln {solution_file} add {test_project_path}/{test_project_name}.csproj\n\
          dotnet add {test_project_path}/{test_project_name}.csproj reference {library_project_path}/{library_project_name}.csproj\n\
+         ```\n\n\
+         After those files exist, make this commit:\n\n\
+         ```bash\n\
+         git add {solution_file} src tests\n\
+         git commit -m \"Create the Solution and Projects\"\n\
          ```"
     ))
 }
@@ -1572,6 +1872,11 @@ fn recommended_dotnet_command_line_adapter_scaffold(
          dotnet sln {solution_file} add {adapter_test_project_path}/{adapter_test_project_name}.csproj\n\
          dotnet add {adapter_project_path}/{adapter_name}.csproj reference {core_project_reference_path}\n\
          dotnet add {adapter_test_project_path}/{adapter_test_project_name}.csproj reference {adapter_project_path}/{adapter_name}.csproj\n\
+         ```\n\n\
+         After those files exist, make this commit:\n\n\
+         ```bash\n\
+         git add {solution_file} src tests\n\
+         git commit -m \"Create the Adapter Solution and Projects\"\n\
          ```"
     ))
 }
@@ -1594,6 +1899,13 @@ fn render_dotnet_root_justfile(
                 .to_string()
         });
 
+    let justfile_contents = dotnet_root_justfile_contents(&test_project_path, &output.selections.testing);
+    let commit_add_paths = if output.selections.testing == "tunit" {
+        "justfile".to_string()
+    } else {
+        format!("justfile {test_project_path}")
+    };
+
     let body = if output.selections.testing == "tunit" {
         format!(
             "{intro}\n\n\
@@ -1603,7 +1915,45 @@ fn render_dotnet_root_justfile(
              ```\n\n\
              Then put this exact content in `justfile`:\n\n\
              ```just\n\
-             format:\n\
+             {justfile_contents}\
+             ```\n\n\
+             For `TUnit`, both coverage checks collect one Cobertura report with Microsoft.Testing.Platform, then validate either the line-rate or the branch-rate from that same report.\n\n\
+             After `justfile` is in place, make this commit:\n\n\
+             ```bash\n\
+             git add {commit_add_paths}\n\
+             git commit -m \"Add Root Justfile\"\n\
+             ```"
+        )
+    } else {
+        format!(
+            "{intro}\n\n\
+             Install Coverlet's MSBuild package once for the test project:\n\n\
+             ```bash\n\
+             dotnet add {test_project_path} package coverlet.msbuild\n\
+             ```\n\n\
+             Create the file:\n\n\
+             ```bash\n\
+             touch justfile\n\
+             ```\n\n\
+             Then put this exact content in `justfile`:\n\n\
+             ```just\n\
+             {justfile_contents}\
+             ```\n\n\
+             After `justfile` is in place, make this commit:\n\n\
+             ```bash\n\
+             git add {commit_add_paths}\n\
+             git commit -m \"Add Root Justfile\"\n\
+             ```"
+        )
+    };
+
+    Some(body)
+}
+
+fn dotnet_root_justfile_contents(test_project_path: &str, testing: &str) -> String {
+    if testing == "tunit" {
+        return format!(
+            "format:\n\
              \tdotnet format\n\n\
              check-formatting:\n\
              \tdotnet format --verify-no-changes\n\n\
@@ -1621,44 +1971,28 @@ fn render_dotnet_root_justfile(
              \tjust check-formatting\n\
              \tjust check-tests\n\
              \tjust check-code-cover\n\
-             \tjust check-branch-cover\n\
-             ```\n\n\
-             For `TUnit`, both coverage checks collect one Cobertura report with Microsoft.Testing.Platform, then validate either the line-rate or the branch-rate from that same report."
-        )
-    } else {
-        format!(
-            "{intro}\n\n\
-             Install Coverlet's MSBuild package once for the test project:\n\n\
-             ```bash\n\
-             dotnet add {test_project_path} package coverlet.msbuild\n\
-             ```\n\n\
-             Create the file:\n\n\
-             ```bash\n\
-             touch justfile\n\
-             ```\n\n\
-             Then put this exact content in `justfile`:\n\n\
-             ```just\n\
-             format:\n\
-             \tdotnet format\n\n\
-             check-formatting:\n\
-             \tdotnet format --verify-no-changes\n\n\
-             check-tests:\n\
-             \tdotnet test\n\n\
-             check-code-cover:\n\
-             \tdotnet test {test_project_path} /p:CollectCoverage=true /p:CoverletOutputFormat=cobertura /p:ThresholdType=line /p:Threshold=90 /p:ThresholdStat=total\n\n\
-             check-branch-cover:\n\
-             \tdotnet test {test_project_path} /p:CollectCoverage=true /p:CoverletOutputFormat=cobertura /p:ThresholdType=branch /p:Threshold=85 /p:ThresholdStat=total\n\
-             \n\
-             check-all:\n\
-             \tjust check-formatting\n\
-             \tjust check-tests\n\
-             \tjust check-code-cover\n\
-             \tjust check-branch-cover\n\
-             ```"
-        )
-    };
+             \tjust check-branch-cover\n"
+        );
+    }
 
-    Some(body)
+    format!(
+        "format:\n\
+         \tdotnet format\n\n\
+         check-formatting:\n\
+         \tdotnet format --verify-no-changes\n\n\
+         check-tests:\n\
+         \tdotnet test\n\n\
+         check-code-cover:\n\
+         \tdotnet test {test_project_path} /p:CollectCoverage=true /p:CoverletOutputFormat=cobertura /p:ThresholdType=line /p:Threshold=90 /p:ThresholdStat=total\n\n\
+         check-branch-cover:\n\
+         \tdotnet test {test_project_path} /p:CollectCoverage=true /p:CoverletOutputFormat=cobertura /p:ThresholdType=branch /p:Threshold=85 /p:ThresholdStat=total\n\
+         \n\
+         check-all:\n\
+         \tjust check-formatting\n\
+         \tjust check-tests\n\
+         \tjust check-code-cover\n\
+         \tjust check-branch-cover\n"
+    )
 }
 
 fn dotnet_test_project_csproj_path(project_slug: &str, output: &CompiledOutput) -> Option<String> {
