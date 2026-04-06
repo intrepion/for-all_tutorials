@@ -5,9 +5,14 @@ use std::env;
 use std::fmt;
 use std::fs;
 use std::path::{Path, PathBuf};
+use std::process::{Command, Stdio};
+use std::thread::sleep;
+use std::time::Duration;
 
 const ROOT: &str = env!("CARGO_MANIFEST_DIR");
 const GITHUB_OWNER: &str = "intrepion";
+const OUTPUT_REPO_PREFIX: &str = "fa_tut";
+const GITHUB_REPO_CREATE_DELAY: Duration = Duration::from_secs(1);
 
 fn main() -> Result<(), AppError> {
     let app_root = Path::new(ROOT)
@@ -17,16 +22,37 @@ fn main() -> Result<(), AppError> {
         .to_path_buf();
 
     let args = Args::parse(&app_root)?;
-    let shared_projects = Partial::load(&app_root.join("partials/projects/README.md"))?;
-    let manifest_paths = collect_manifest_paths(&app_root)?;
-
-    for manifest_path in manifest_paths {
-        generate_from_manifest(
-            &app_root,
-            &args.output_root,
-            &shared_projects,
-            &manifest_path,
-        )?;
+    match &args.command {
+        CommandMode::Generate => {
+            let shared_projects = Partial::load(&app_root.join("partials/projects/README.md"))?;
+            generate_all(&app_root, &args.output_root, &shared_projects)?;
+        }
+        CommandMode::CreateOutputRepos { owner } => {
+            create_output_repos(&app_root, owner)?;
+        }
+        CommandMode::CloneOutputRepos { repos_root, owner } => {
+            clone_output_repos(&app_root, repos_root, owner)?;
+        }
+        CommandMode::BootstrapOutputRepos {
+            repos_root,
+            owner,
+            sync_branch_name,
+        } => {
+            bootstrap_output_repos(
+                &app_root,
+                &args.output_root,
+                repos_root,
+                owner,
+                sync_branch_name.as_deref(),
+            )?;
+        }
+        CommandMode::CleanupOutputRepos {
+            repos_root,
+            owner,
+            apply,
+        } => {
+            cleanup_output_repos(&app_root, repos_root, owner, *apply)?;
+        }
     }
 
     Ok(())
@@ -35,11 +61,42 @@ fn main() -> Result<(), AppError> {
 #[derive(Debug)]
 struct Args {
     output_root: PathBuf,
+    command: CommandMode,
+}
+
+#[derive(Debug)]
+enum CommandMode {
+    Generate,
+    CreateOutputRepos {
+        owner: String,
+    },
+    CloneOutputRepos {
+        repos_root: PathBuf,
+        owner: String,
+    },
+    BootstrapOutputRepos {
+        repos_root: PathBuf,
+        owner: String,
+        sync_branch_name: Option<String>,
+    },
+    CleanupOutputRepos {
+        repos_root: PathBuf,
+        owner: String,
+        apply: bool,
+    },
 }
 
 impl Args {
     fn parse(app_root: &Path) -> Result<Self, AppError> {
         let mut output_root = app_root.join("tutorials");
+        let mut command = CommandMode::Generate;
+        let mut repos_root = app_root
+            .parent()
+            .unwrap_or(app_root)
+            .join("output-repos");
+        let mut owner = GITHUB_OWNER.to_string();
+        let mut apply = false;
+        let mut sync_branch_name = None;
         let mut args = env::args().skip(1);
 
         while let Some(arg) = args.next() {
@@ -50,11 +107,87 @@ impl Args {
                         .ok_or_else(|| AppError::message("missing value for --output-root"))?;
                     output_root = absolute_path(app_root, Path::new(&path));
                 }
+                "--create-output-repos" => {
+                    command = CommandMode::CreateOutputRepos {
+                        owner: owner.clone(),
+                    };
+                }
+                "--clone-output-repos" => {
+                    command = CommandMode::CloneOutputRepos {
+                        repos_root: repos_root.clone(),
+                        owner: owner.clone(),
+                    };
+                }
+                "--bootstrap-output-repos" => {
+                    command = CommandMode::BootstrapOutputRepos {
+                        repos_root: repos_root.clone(),
+                        owner: owner.clone(),
+                        sync_branch_name: sync_branch_name.clone(),
+                    };
+                }
+                "--cleanup-output-repos" => {
+                    command = CommandMode::CleanupOutputRepos {
+                        repos_root: repos_root.clone(),
+                        owner: owner.clone(),
+                        apply,
+                    };
+                }
+                "--repos-root" => {
+                    let path = args
+                        .next()
+                        .ok_or_else(|| AppError::message("missing value for --repos-root"))?;
+                    repos_root = absolute_path(app_root, Path::new(&path));
+                }
+                "--owner" => {
+                    owner = args
+                        .next()
+                        .ok_or_else(|| AppError::message("missing value for --owner"))?;
+                }
+                "--apply" => {
+                    apply = true;
+                }
+                "--sync-branch-name" => {
+                    sync_branch_name = Some(
+                        args.next().ok_or_else(|| {
+                            AppError::message("missing value for --sync-branch-name")
+                        })?,
+                    );
+                }
                 other => return Err(AppError::message(format!("unknown argument: {other}"))),
             }
         }
 
-        Ok(Self { output_root })
+        match command {
+            CommandMode::CreateOutputRepos { .. } => {
+                command = CommandMode::CreateOutputRepos { owner };
+            }
+            CommandMode::CloneOutputRepos { .. } => {
+                command = CommandMode::CloneOutputRepos {
+                    repos_root,
+                    owner,
+                };
+            }
+            CommandMode::BootstrapOutputRepos { .. } => {
+                command = CommandMode::BootstrapOutputRepos {
+                    repos_root,
+                    owner,
+                    sync_branch_name,
+                };
+            }
+            CommandMode::CleanupOutputRepos { .. } => {
+                command = CommandMode::CleanupOutputRepos {
+                    repos_root,
+                    owner,
+                    apply,
+                };
+            }
+            CommandMode::Generate => {}
+        }
+
+        Ok(Self {
+            output_root,
+            command,
+        })
     }
 }
 
@@ -64,6 +197,29 @@ fn absolute_path(base: &Path, path: &Path) -> PathBuf {
     } else {
         base.join(path)
     }
+}
+
+fn default_sync_branch_name() -> String {
+    let output = Command::new("python3")
+        .args([
+            "-c",
+            "from datetime import UTC, datetime; print(datetime.now(UTC).strftime('%Y%m%dT%H%M%S%fZ'))",
+        ])
+        .output();
+
+    if let Ok(output) = output {
+        if output.status.success() {
+            let value = String::from_utf8_lossy(&output.stdout).trim().to_string();
+            if !value.is_empty() {
+                return value;
+            }
+        }
+    }
+
+    let duration = std::time::SystemTime::now()
+        .duration_since(std::time::UNIX_EPOCH)
+        .unwrap_or_default();
+    format!("utc-{}", duration.as_micros())
 }
 
 fn collect_manifest_paths(app_root: &Path) -> Result<Vec<PathBuf>, AppError> {
@@ -83,6 +239,20 @@ fn collect_manifest_paths(app_root: &Path) -> Result<Vec<PathBuf>, AppError> {
 
     manifests.sort();
     Ok(manifests)
+}
+
+fn generate_all(
+    app_root: &Path,
+    output_root: &Path,
+    shared_projects: &Partial,
+) -> Result<(), AppError> {
+    let manifest_paths = collect_manifest_paths(app_root)?;
+
+    for manifest_path in manifest_paths {
+        generate_from_manifest(app_root, output_root, shared_projects, &manifest_path)?;
+    }
+
+    Ok(())
 }
 
 fn generate_from_manifest(
@@ -129,6 +299,768 @@ fn generate_from_manifest(
     }
 
     Ok(())
+}
+
+#[derive(Debug)]
+struct OutputRepoSpec {
+    repo_name: String,
+    repo_description: String,
+    tutorial_path: String,
+    ecosystem: String,
+}
+
+fn collect_output_repo_specs(app_root: &Path) -> Result<Vec<OutputRepoSpec>, AppError> {
+    let manifest_paths = collect_manifest_paths(app_root)?;
+    let mut specs = Vec::new();
+
+    for manifest_path in manifest_paths {
+        let manifest: Manifest = serde_yaml::from_str(&fs::read_to_string(&manifest_path)?)?;
+        let project_root_path = app_root
+            .join("partials/projects")
+            .join(&manifest.project)
+            .join("README.md");
+        let project_root = Partial::load(&project_root_path)?;
+        let project_title = project_root.title.clone();
+
+        for output in &manifest.compiled_outputs {
+            specs.push(OutputRepoSpec {
+                repo_name: repo_name(&manifest.project, output),
+                repo_description: repo_description(&project_title, output),
+                tutorial_path: output.tutorial_path.clone(),
+                ecosystem: output.selections.ecosystem.clone(),
+            });
+        }
+    }
+
+    specs.sort_by(|left, right| left.repo_name.cmp(&right.repo_name));
+    Ok(specs)
+}
+
+fn create_output_repos(app_root: &Path, owner: &str) -> Result<(), AppError> {
+    let specs = collect_output_repo_specs(app_root)?;
+    ensure_github_repos_exist(owner, &specs)
+}
+
+fn clone_output_repos(app_root: &Path, repos_root: &Path, owner: &str) -> Result<(), AppError> {
+    let specs = collect_output_repo_specs(app_root)?;
+    fs::create_dir_all(repos_root)?;
+
+    for spec in &specs {
+        clone_output_repo(repos_root, owner, spec)?;
+    }
+
+    Ok(())
+}
+
+fn bootstrap_output_repos(
+    app_root: &Path,
+    output_root: &Path,
+    repos_root: &Path,
+    owner: &str,
+    sync_branch_name: Option<&str>,
+) -> Result<(), AppError> {
+    let specs = collect_output_repo_specs(app_root)?;
+    let dotnet_ci_workflow = load_dotnet_ci_workflow(app_root)?;
+    let sync_branch_name = sync_branch_name
+        .filter(|value| !value.trim().is_empty())
+        .map(str::to_string)
+        .unwrap_or_else(default_sync_branch_name);
+    println!("sync branch: {sync_branch_name}");
+
+    for spec in &specs {
+        bootstrap_output_repo(
+            output_root,
+            repos_root,
+            owner,
+            spec,
+            &dotnet_ci_workflow,
+            &sync_branch_name,
+        )?;
+    }
+
+    Ok(())
+}
+
+fn cleanup_output_repos(
+    app_root: &Path,
+    repos_root: &Path,
+    owner: &str,
+    apply: bool,
+) -> Result<(), AppError> {
+    let specs = collect_output_repo_specs(app_root)?;
+
+    for spec in specs {
+        cleanup_output_repo(repos_root, owner, &spec, apply)?;
+    }
+
+    Ok(())
+}
+
+fn ensure_github_repos_exist(owner: &str, specs: &[OutputRepoSpec]) -> Result<(), AppError> {
+    let mut created_repo_count = 0usize;
+
+    for spec in specs {
+        let repo_full_name = format!("{owner}/{}", spec.repo_name);
+        if gh_repo_exists(&repo_full_name)? {
+            continue;
+        }
+
+        if created_repo_count > 0 {
+            sleep(GITHUB_REPO_CREATE_DELAY);
+        }
+
+        create_github_repo(&repo_full_name, &spec.repo_description)?;
+        created_repo_count += 1;
+    }
+
+    Ok(())
+}
+
+fn clone_output_repo(
+    repos_root: &Path,
+    owner: &str,
+    spec: &OutputRepoSpec,
+) -> Result<(), AppError> {
+    let repo_full_name = format!("{owner}/{}", spec.repo_name);
+    let clone_path = repos_root.join(&spec.repo_name);
+
+    if clone_path.exists() {
+        ensure_git_repo(&clone_path)?;
+        println!("already cloned: {repo_full_name}");
+        return Ok(());
+    }
+
+    clone_github_repo(&repo_full_name, &clone_path)?;
+    println!("cloned: {repo_full_name}");
+    Ok(())
+}
+
+fn bootstrap_output_repo(
+    output_root: &Path,
+    repos_root: &Path,
+    owner: &str,
+    spec: &OutputRepoSpec,
+    dotnet_ci_workflow: &str,
+    sync_branch_name: &str,
+) -> Result<(), AppError> {
+    let tutorial_source = compiled_output_destination(output_root, &spec.tutorial_path);
+    if !tutorial_source.exists() {
+        return Err(AppError::message(format!(
+            "generated tutorial missing at {}. Run tutorial generation first.",
+            tutorial_source.display()
+        )));
+    }
+
+    let repo_full_name = format!("{owner}/{}", spec.repo_name);
+    let clone_path = repos_root.join(&spec.repo_name);
+    let tutorial_bytes = fs::read(&tutorial_source)?;
+    let managed_files = build_managed_repo_files(
+        owner,
+        &spec.repo_name,
+        &spec.repo_description,
+        &spec.ecosystem,
+        &tutorial_bytes,
+        dotnet_ci_workflow,
+    );
+
+    if !clone_path.exists() {
+        return Err(AppError::message(format!(
+            "local clone missing at {} for {}. Run clone-output-repos first.",
+            clone_path.display(),
+            repo_full_name
+        )));
+    }
+
+    ensure_git_repo(&clone_path)?;
+    ensure_clean_worktree(&clone_path)?;
+    let baseline_commit = ensure_main_license_baseline(&clone_path, owner)?;
+    switch_to_sync_branch_from_commit(&clone_path, sync_branch_name, &baseline_commit)?;
+    let file_changes = planned_file_changes(&clone_path, &managed_files)?;
+
+    if file_changes.is_empty() {
+        println!("up to date: {repo_full_name}");
+        return Ok(());
+    }
+
+    println!("repo: {repo_full_name}");
+    for change in &file_changes {
+        println!("  - {} {}", change.action, change.path);
+    }
+
+    write_managed_files(&clone_path, &managed_files)?;
+    git_add_managed_files(&clone_path, &managed_files)?;
+    git_commit_managed_files(&clone_path, false)?;
+    git_push_branch(&clone_path, sync_branch_name)?;
+
+    println!("synced: {repo_full_name}");
+    Ok(())
+}
+
+fn cleanup_output_repo(
+    repos_root: &Path,
+    owner: &str,
+    spec: &OutputRepoSpec,
+    apply: bool,
+) -> Result<(), AppError> {
+    let repo_full_name = format!("{owner}/{}", spec.repo_name);
+    let clone_path = repos_root.join(&spec.repo_name);
+    let repo_exists = gh_repo_exists(&repo_full_name)?;
+    let clone_exists = clone_path.exists();
+
+    if !apply {
+        println!("repo: {repo_full_name}");
+        if repo_exists {
+            println!("  - would delete GitHub repo");
+        } else {
+            println!("  - GitHub repo already absent");
+        }
+
+        if clone_exists {
+            println!("  - would delete local clone at {}", clone_path.display());
+        } else {
+            println!("  - local clone already absent");
+        }
+
+        return Ok(());
+    }
+
+    if clone_exists {
+        fs::remove_dir_all(&clone_path)?;
+        println!("deleted local clone: {}", clone_path.display());
+    }
+
+    if repo_exists {
+        delete_github_repo(&repo_full_name)?;
+        println!("deleted GitHub repo: {repo_full_name}");
+    }
+
+    if !clone_exists && !repo_exists {
+        println!("already absent: {repo_full_name}");
+    }
+
+    Ok(())
+}
+
+fn compiled_output_destination(output_root: &Path, tutorial_path: &str) -> PathBuf {
+    let relative = tutorial_path
+        .strip_prefix("tutorials/")
+        .unwrap_or(tutorial_path);
+    output_root.join(relative)
+}
+
+fn gh_repo_exists(repo_full_name: &str) -> Result<bool, AppError> {
+    let status = Command::new("gh")
+        .args(["repo", "view", repo_full_name, "--json", "name"])
+        .stdout(Stdio::null())
+        .stderr(Stdio::null())
+        .status()?;
+    Ok(status.success())
+}
+
+#[derive(Debug)]
+struct ManagedRepoFile {
+    relative_path: String,
+    contents: Vec<u8>,
+}
+
+#[derive(Debug)]
+struct PlannedFileChange {
+    action: &'static str,
+    path: String,
+}
+
+fn build_managed_repo_files(
+    owner: &str,
+    repo_name: &str,
+    repo_description: &str,
+    ecosystem: &str,
+    tutorial_bytes: &[u8],
+    dotnet_ci_workflow: &str,
+) -> Vec<ManagedRepoFile> {
+    let mut files = vec![
+        ManagedRepoFile {
+            relative_path: "README.md".to_string(),
+            contents: render_root_readme_content(owner, repo_name, repo_description)
+                .into_bytes(),
+        },
+        ManagedRepoFile {
+            relative_path: "LICENSE".to_string(),
+            contents: mit_license_text(owner).into_bytes(),
+        },
+        ManagedRepoFile {
+            relative_path: ".gitignore".to_string(),
+            contents: starter_gitignore_content(ecosystem).into_bytes(),
+        },
+        ManagedRepoFile {
+            relative_path: "tutorial.md".to_string(),
+            contents: tutorial_bytes.to_vec(),
+        },
+    ];
+
+    if ecosystem == "dotnet" {
+        files.push(ManagedRepoFile {
+            relative_path: ".github/workflows/ci.yml".to_string(),
+            contents: dotnet_ci_workflow.as_bytes().to_vec(),
+        });
+    }
+
+    files
+}
+
+fn build_main_baseline_files(owner: &str) -> Vec<ManagedRepoFile> {
+    vec![ManagedRepoFile {
+        relative_path: "LICENSE".to_string(),
+        contents: mit_license_text(owner).into_bytes(),
+    }]
+}
+
+fn planned_file_changes(
+    repo_path: &Path,
+    managed_files: &[ManagedRepoFile],
+) -> Result<Vec<PlannedFileChange>, AppError> {
+    let mut changes = Vec::new();
+
+    for managed_file in managed_files {
+        let destination = repo_path.join(&managed_file.relative_path);
+        let action = match fs::read(&destination) {
+            Ok(existing) if existing == managed_file.contents => None,
+            Ok(_) => Some("update"),
+            Err(error) if error.kind() == std::io::ErrorKind::NotFound => Some("create"),
+            Err(error) => return Err(AppError::Io(error)),
+        };
+
+        if let Some(action) = action {
+            changes.push(PlannedFileChange {
+                action,
+                path: managed_file.relative_path.clone(),
+            });
+        }
+    }
+
+    Ok(changes)
+}
+
+fn write_managed_files(repo_path: &Path, managed_files: &[ManagedRepoFile]) -> Result<(), AppError> {
+    for managed_file in managed_files {
+        let destination = repo_path.join(&managed_file.relative_path);
+        if let Some(parent) = destination.parent() {
+            fs::create_dir_all(parent)?;
+        }
+        fs::write(destination, &managed_file.contents)?;
+    }
+
+    Ok(())
+}
+
+fn render_root_readme_content(owner: &str, repo_name: &str, repo_description: &str) -> String {
+    let workflow_url = format!("https://github.com/{owner}/{repo_name}/actions/workflows/ci.yml");
+    let badge_url = format!("{workflow_url}/badge.svg");
+
+    format!("# {repo_name}\n{repo_description}\n\n[![CI]({badge_url})]({workflow_url})\n")
+}
+
+fn mit_license_text(owner: &str) -> String {
+    [
+        "MIT License",
+        "",
+        &format!("Copyright (c) 2026 {owner}"),
+        "",
+        "Permission is hereby granted, free of charge, to any person obtaining a copy",
+        "of this software and associated documentation files (the \"Software\"), to deal",
+        "in the Software without restriction, including without limitation the rights",
+        "to use, copy, modify, merge, publish, distribute, sublicense, and/or sell",
+        "copies of the Software, and to permit persons to whom the Software is",
+        "furnished to do so, subject to the following conditions:",
+        "",
+        "The above copyright notice and this permission notice shall be included in all",
+        "copies or substantial portions of the Software.",
+        "",
+        "THE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR",
+        "IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,",
+        "FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE",
+        "AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER",
+        "LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,",
+        "OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE",
+        "SOFTWARE.",
+    ]
+    .join("\n")
+        + "\n"
+}
+
+fn starter_gitignore_content(ecosystem: &str) -> String {
+    match ecosystem {
+        "dotnet" => [
+            "bin/",
+            "obj/",
+            ".vs/",
+            "TestResults/",
+            "*.user",
+            "*.suo",
+            "*.userosscache",
+            "*.sln.docstates",
+            ".DS_Store",
+        ]
+        .join("\n")
+            + "\n",
+        _ => String::from(".DS_Store\n"),
+    }
+}
+
+fn load_dotnet_ci_workflow(app_root: &Path) -> Result<String, AppError> {
+    let partial = Partial::load(&app_root.join("partials/setups/code/dotnet/toolchain/github-actions.md"))?;
+    extract_fenced_code_block(&partial.body, "yaml").ok_or_else(|| {
+        AppError::message("failed to extract YAML workflow from .NET GitHub Actions partial")
+    })
+}
+
+fn extract_fenced_code_block(markdown: &str, info_string: &str) -> Option<String> {
+    let fence = format!("```{info_string}\n");
+    let after_start = markdown.split_once(&fence)?.1;
+    let (block, _) = after_start.split_once("\n```")?;
+    Some(format!("{block}\n"))
+}
+
+fn create_github_repo(repo_full_name: &str, description: &str) -> Result<(), AppError> {
+    let status = Command::new("gh")
+        .args(["repo", "create", repo_full_name, "--public", "--description"])
+        .arg(description)
+        .status()?;
+    if status.success() {
+        Ok(())
+    } else {
+        Err(AppError::message(format!(
+            "failed to create GitHub repo {repo_full_name}"
+        )))
+    }
+}
+
+fn delete_github_repo(repo_full_name: &str) -> Result<(), AppError> {
+    let status = Command::new("gh")
+        .args(["repo", "delete", repo_full_name, "--yes"])
+        .status()?;
+    if status.success() {
+        Ok(())
+    } else {
+        Err(AppError::message(format!(
+            "failed to delete GitHub repo {repo_full_name}"
+        )))
+    }
+}
+
+fn clone_github_repo(repo_full_name: &str, clone_path: &Path) -> Result<(), AppError> {
+    let clone_url = format!("https://github.com/{repo_full_name}.git");
+    let status = Command::new("git")
+        .arg("clone")
+        .arg(&clone_url)
+        .arg(clone_path)
+        .status()?;
+    if status.success() {
+        Ok(())
+    } else {
+        Err(AppError::message(format!(
+            "failed to clone GitHub repo {repo_full_name} from {clone_url} into {}",
+            clone_path.display()
+        )))
+    }
+}
+
+fn ensure_git_repo(repo_path: &Path) -> Result<(), AppError> {
+    let status = Command::new("git")
+        .arg("-C")
+        .arg(repo_path)
+        .args(["rev-parse", "--is-inside-work-tree"])
+        .stdout(Stdio::null())
+        .stderr(Stdio::null())
+        .status()?;
+    if status.success() {
+        Ok(())
+    } else {
+        Err(AppError::message(format!(
+            "{} exists but is not a git repository",
+            repo_path.display()
+        )))
+    }
+}
+
+fn ensure_clean_worktree(repo_path: &Path) -> Result<(), AppError> {
+    let output = Command::new("git")
+        .arg("-C")
+        .arg(repo_path)
+        .args(["status", "--short"])
+        .output()?;
+    if !output.status.success() {
+        return Err(AppError::message(format!(
+            "failed to inspect worktree status for {}",
+            repo_path.display()
+        )));
+    }
+
+    if String::from_utf8_lossy(&output.stdout).trim().is_empty() {
+        Ok(())
+    } else {
+        Err(AppError::message(format!(
+            "{} has uncommitted changes; refusing to continue",
+            repo_path.display()
+        )))
+    }
+}
+
+fn ensure_main_license_baseline(repo_path: &Path, owner: &str) -> Result<String, AppError> {
+    let has_remote_main = Command::new("git")
+        .arg("-C")
+        .arg(repo_path)
+        .args(["ls-remote", "--exit-code", "--heads", "origin", "main"])
+        .stdout(Stdio::null())
+        .stderr(Stdio::null())
+        .status()?
+        .success();
+    let has_local_main = Command::new("git")
+        .arg("-C")
+        .arg(repo_path)
+        .args(["show-ref", "--verify", "--quiet", "refs/heads/main"])
+        .status()?
+        .success();
+
+    if has_remote_main {
+        switch_to_local_main_and_pull_if_present(repo_path, has_local_main)?;
+        return root_commit_of_head(repo_path);
+    }
+
+    if has_local_main {
+        let switch_status = Command::new("git")
+            .arg("-C")
+            .arg(repo_path)
+            .args(["switch", "main"])
+            .status()?;
+        if !switch_status.success() {
+            return Err(AppError::message(format!(
+                "failed to switch to existing main in {}",
+                repo_path.display()
+            )));
+        }
+
+        if !repo_has_head(repo_path)? {
+            create_main_license_baseline(repo_path, owner)?;
+        } else {
+            git_push_main(repo_path)?;
+        }
+        return root_commit_of_head(repo_path);
+    }
+
+    create_main_license_baseline(repo_path, owner)?;
+    root_commit_of_head(repo_path)
+}
+
+fn switch_to_local_main_and_pull_if_present(
+    repo_path: &Path,
+    has_local_main: bool,
+) -> Result<(), AppError> {
+    let switch_status = if has_local_main {
+        Command::new("git")
+            .arg("-C")
+            .arg(repo_path)
+            .args(["switch", "main"])
+            .status()?
+    } else {
+        Command::new("git")
+            .arg("-C")
+            .arg(repo_path)
+            .args(["switch", "-c", "main", "--track", "origin/main"])
+            .status()?
+    };
+    if !switch_status.success() {
+        return Err(AppError::message(format!(
+            "failed to switch to main in {}",
+            repo_path.display()
+        )));
+    }
+
+    let status = Command::new("git")
+        .arg("-C")
+        .arg(repo_path)
+        .args(["pull", "--ff-only", "origin", "main"])
+        .status()?;
+    if status.success() {
+        Ok(())
+    } else {
+        Err(AppError::message(format!(
+            "failed to fast-forward pull main in {}",
+            repo_path.display()
+        )))
+    }
+}
+
+fn create_main_license_baseline(repo_path: &Path, owner: &str) -> Result<(), AppError> {
+    let orphan_status = Command::new("git")
+        .arg("-C")
+        .arg(repo_path)
+        .args(["switch", "--orphan", "main"])
+        .status()?;
+    if !orphan_status.success() {
+        return Err(AppError::message(format!(
+            "failed to create orphan main in {}",
+            repo_path.display()
+        )));
+    }
+
+    clear_repo_worktree(repo_path)?;
+    let baseline_files = build_main_baseline_files(owner);
+    write_managed_files(repo_path, &baseline_files)?;
+    git_add_managed_files(repo_path, &baseline_files)?;
+    git_commit(repo_path, "Add LICENSE")?;
+    git_push_main(repo_path)
+}
+
+fn clear_repo_worktree(repo_path: &Path) -> Result<(), AppError> {
+    for entry in fs::read_dir(repo_path)? {
+        let entry = entry?;
+        let path = entry.path();
+        if path.file_name().is_some_and(|name| name == ".git") {
+            continue;
+        }
+
+        if path.is_dir() {
+            fs::remove_dir_all(path)?;
+        } else {
+            fs::remove_file(path)?;
+        }
+    }
+
+    Ok(())
+}
+
+fn repo_has_head(repo_path: &Path) -> Result<bool, AppError> {
+    Ok(Command::new("git")
+        .arg("-C")
+        .arg(repo_path)
+        .args(["rev-parse", "--verify", "HEAD"])
+        .stdout(Stdio::null())
+        .stderr(Stdio::null())
+        .status()?
+        .success())
+}
+
+fn root_commit_of_head(repo_path: &Path) -> Result<String, AppError> {
+    let output = Command::new("git")
+        .arg("-C")
+        .arg(repo_path)
+        .args(["rev-list", "--max-parents=0", "HEAD"])
+        .output()?;
+    if !output.status.success() {
+        return Err(AppError::message(format!(
+            "failed to resolve root commit in {}",
+            repo_path.display()
+        )));
+    }
+
+    let commit = String::from_utf8_lossy(&output.stdout).trim().to_string();
+    if commit.is_empty() {
+        Err(AppError::message(format!(
+            "root commit was empty in {}",
+            repo_path.display()
+        )))
+    } else {
+        Ok(commit)
+    }
+}
+
+fn switch_to_sync_branch_from_commit(
+    repo_path: &Path,
+    sync_branch_name: &str,
+    base_commit: &str,
+) -> Result<(), AppError> {
+    let status = Command::new("git")
+        .arg("-C")
+        .arg(repo_path)
+        .args(["switch", "-C", sync_branch_name, base_commit])
+        .status()?;
+
+    if status.success() {
+        Ok(())
+    } else {
+        Err(AppError::message(format!(
+            "failed to switch {} to branch {}",
+            repo_path.display(),
+            sync_branch_name
+        )))
+    }
+}
+
+fn git_add_managed_files(repo_path: &Path, managed_files: &[ManagedRepoFile]) -> Result<(), AppError> {
+    let mut command = Command::new("git");
+    command.arg("-C").arg(repo_path).arg("add");
+    for managed_file in managed_files {
+        command.arg(&managed_file.relative_path);
+    }
+
+    let status = command.status()?;
+    if status.success() {
+        Ok(())
+    } else {
+        Err(AppError::message(format!(
+            "failed to stage managed files in {}",
+            repo_path.display()
+        )))
+    }
+}
+
+fn git_commit_managed_files(repo_path: &Path, had_head_before_commit: bool) -> Result<(), AppError> {
+    let commit_message = if had_head_before_commit {
+        "Update generated bootstrap files"
+    } else {
+        "Bootstrap repository from generated tutorial"
+    };
+
+    git_commit(repo_path, commit_message)
+}
+
+fn git_commit(repo_path: &Path, commit_message: &str) -> Result<(), AppError> {
+    let status = Command::new("git")
+        .arg("-C")
+        .arg(repo_path)
+        .args(["commit", "-m", commit_message])
+        .status()?;
+    if status.success() {
+        Ok(())
+    } else {
+        Err(AppError::message(format!(
+            "failed to commit managed files in {}",
+            repo_path.display()
+        )))
+    }
+}
+
+fn git_push_main(repo_path: &Path) -> Result<(), AppError> {
+    let status = Command::new("git")
+        .arg("-C")
+        .arg(repo_path)
+        .args(["push", "-u", "origin", "main"])
+        .status()?;
+    if status.success() {
+        Ok(())
+    } else {
+        Err(AppError::message(format!(
+            "failed to push main from {}",
+            repo_path.display()
+        )))
+    }
+}
+
+fn git_push_branch(repo_path: &Path, branch_name: &str) -> Result<(), AppError> {
+    let status = Command::new("git")
+        .arg("-C")
+        .arg(repo_path)
+        .args(["push", "-u", "origin", branch_name])
+        .status()?;
+    if status.success() {
+        Ok(())
+    } else {
+        Err(AppError::message(format!(
+            "failed to push branch {} from {}",
+            branch_name,
+            repo_path.display()
+        )))
+    }
 }
 
 fn append_implicit_partials(
@@ -540,11 +1472,6 @@ fn prepare_dotnet_environment(project_slug: &str, output: &CompiledOutput) -> Op
 }
 
 fn render_root_readme(repo_name: &str, repo_description: &str) -> String {
-    let workflow_url = format!(
-        "https://github.com/{GITHUB_OWNER}/{repo_name}/actions/workflows/ci.yml"
-    );
-    let badge_url = format!("{workflow_url}/badge.svg");
-
     format!(
         "Create the file:\n\n\
          ```bash\n\
@@ -552,10 +1479,10 @@ fn render_root_readme(repo_name: &str, repo_description: &str) -> String {
          ```\n\n\
          Then put this exact content in `README.md`:\n\n\
          ```md\n\
-         # {repo_name}\n\
-         {repo_description}\n\n\
-         [![CI]({badge_url})]({workflow_url})\n\
+         {}\
          ```"
+        ,
+        render_root_readme_content(GITHUB_OWNER, repo_name, repo_description)
     )
 }
 
@@ -913,47 +1840,81 @@ fn collapse_blank_lines(text: &str) -> String {
 fn repo_name(project_slug: &str, output: &CompiledOutput) -> String {
     if output.kind == OutputKind::Core {
         format!(
-            "for-all_tutorial_manual_{}_{}_{}_core_{}",
+            "{}_{}_{}_{}_core_{}",
+            OUTPUT_REPO_PREFIX,
             project_slug,
-            output.selections.ecosystem,
-            output.selections.language,
-            output.selections.testing
+            repo_name_selection_value(&output.selections.ecosystem),
+            repo_name_selection_value(&output.selections.language),
+            repo_name_selection_value(&output.selections.testing)
         )
     } else {
         format!(
-            "for-all_tutorial_manual_{}_{}_{}_{}_{}_{}_{}_{}",
+            "{}_{}_{}_{}_{}_{}_{}_{}_{}",
+            OUTPUT_REPO_PREFIX,
             project_slug,
-            output.selections.ecosystem,
-            output.selections.language,
-            output.selections.storage.as_deref().unwrap_or("no-storage"),
-            output
-                .selections
-                .surface
-                .as_deref()
-                .unwrap_or("unknown-surface"),
-            output
-                .selections
-                .target
-                .as_deref()
-                .unwrap_or("unknown-target"),
-            output
-                .selections
-                .framework
-                .as_deref()
-                .unwrap_or("unknown-framework"),
-            output.selections.testing,
+            repo_name_selection_value(&output.selections.ecosystem),
+            repo_name_selection_value(&output.selections.language),
+            repo_name_selection_value(output.selections.storage.as_deref().unwrap_or("no-storage")),
+            repo_name_selection_value(
+                output
+                    .selections
+                    .surface
+                    .as_deref()
+                    .unwrap_or("unknown-surface"),
+            ),
+            repo_name_selection_value(
+                output
+                    .selections
+                    .target
+                    .as_deref()
+                    .unwrap_or("unknown-target"),
+            ),
+            repo_name_selection_value(
+                output
+                    .selections
+                    .framework
+                    .as_deref()
+                    .unwrap_or("unknown-framework"),
+            ),
+            repo_name_selection_value(&output.selections.testing),
         )
     }
 }
 
 fn core_repo_name(project_slug: &str, output: &CompiledOutput) -> String {
     format!(
-        "for-all_tutorial_manual_{}_{}_{}_core_{}",
+        "{}_{}_{}_{}_core_{}",
+        OUTPUT_REPO_PREFIX,
         project_slug,
-        output.selections.ecosystem,
-        output.selections.language,
-        output.selections.testing
+        repo_name_selection_value(&output.selections.ecosystem),
+        repo_name_selection_value(&output.selections.language),
+        repo_name_selection_value(&output.selections.testing)
     )
+}
+
+fn repo_name_selection_value(value: &str) -> &str {
+    match value {
+        "no-storage" => "ns",
+        "local-files-csv" => "csv",
+        "local-files-json" => "json",
+        "local-files-yaml" => "yaml",
+        "local-files-toml" => "toml",
+        "local-files-xml" => "xml",
+        "database-firebase" => "firebase",
+        "database-sqlite" => "sqlite",
+        "database-postgres" => "postgres",
+        "database-mysql" => "mysql",
+        "command-line" => "cli",
+        "graphical" => "gui",
+        "web-service" => "svc",
+        "client" => "client",
+        "web" => "web",
+        "all" => "all",
+        "full-stack" => "fullstack",
+        "no-framework" => "nf",
+        "blazor-server" => "blazor",
+        other => other,
+    }
 }
 
 fn repo_description(project_title: &str, output: &CompiledOutput) -> String {
