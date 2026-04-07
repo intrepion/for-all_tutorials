@@ -808,11 +808,57 @@ fn ensure_clean_worktree(repo_path: &Path) -> Result<(), AppError> {
         )));
     }
 
-    if String::from_utf8_lossy(&output.stdout).trim().is_empty() {
+    let status_text = String::from_utf8_lossy(&output.stdout).trim().to_string();
+    if status_text.is_empty() {
+        return Ok(());
+    }
+
+    println!(
+        "resetting dirty output repo {} before bootstrap",
+        repo_path.display()
+    );
+
+    let reset_status = Command::new("git")
+        .arg("-C")
+        .arg(repo_path)
+        .args(["reset", "--hard"])
+        .status()?;
+    if !reset_status.success() {
+        return Err(AppError::message(format!(
+            "failed to hard reset dirty output repo {}",
+            repo_path.display()
+        )));
+    }
+
+    let clean_status = Command::new("git")
+        .arg("-C")
+        .arg(repo_path)
+        .args(["clean", "-fd"])
+        .status()?;
+    if !clean_status.success() {
+        return Err(AppError::message(format!(
+            "failed to remove untracked files in dirty output repo {}",
+            repo_path.display()
+        )));
+    }
+
+    let verify_output = Command::new("git")
+        .arg("-C")
+        .arg(repo_path)
+        .args(["status", "--short"])
+        .output()?;
+    if !verify_output.status.success() {
+        return Err(AppError::message(format!(
+            "failed to verify worktree status for {} after cleanup",
+            repo_path.display()
+        )));
+    }
+
+    if String::from_utf8_lossy(&verify_output.stdout).trim().is_empty() {
         Ok(())
     } else {
         Err(AppError::message(format!(
-            "{} has uncommitted changes; refusing to continue",
+            "{} is still dirty after reset and clean",
             repo_path.display()
         )))
     }
@@ -1551,7 +1597,7 @@ struct DotnetScaffoldBootstrapPlan {
 #[derive(Debug)]
 struct DotnetRootJustfilePlan {
     pre_commands: Vec<Vec<String>>,
-    contents: String,
+    files: Vec<ManagedRepoFile>,
     git_add_paths: Vec<String>,
     commit_message: &'static str,
 }
@@ -1748,8 +1794,17 @@ fn dotnet_root_justfile_plan(
     if output.selections.testing == "tunit" {
         return Some(DotnetRootJustfilePlan {
             pre_commands: Vec::new(),
-            contents: justfile_contents,
-            git_add_paths: vec!["justfile".to_string()],
+            files: vec![
+                ManagedRepoFile {
+                    relative_path: "justfile".to_string(),
+                    contents: justfile_contents.into_bytes(),
+                },
+                ManagedRepoFile {
+                    relative_path: "global.json".to_string(),
+                    contents: dotnet_test_runner_global_json().into_bytes(),
+                },
+            ],
+            git_add_paths: vec!["justfile".to_string(), "global.json".to_string()],
             commit_message: "Add Root Justfile",
         });
     }
@@ -1762,7 +1817,10 @@ fn dotnet_root_justfile_plan(
             "package".to_string(),
             "coverlet.msbuild".to_string(),
         ]],
-        contents: justfile_contents,
+        files: vec![ManagedRepoFile {
+            relative_path: "justfile".to_string(),
+            contents: justfile_contents.into_bytes(),
+        }],
         git_add_paths: vec!["justfile".to_string(), test_project_path],
         commit_message: "Add Root Justfile",
     })
@@ -1776,7 +1834,7 @@ fn run_dotnet_root_justfile_plan(
         run_command_in_dir(repo_path, command)?;
     }
 
-    fs::write(repo_path.join("justfile"), &plan.contents)?;
+    write_managed_files(repo_path, &plan.files)?;
     git_add_paths(repo_path, &plan.git_add_paths)?;
     git_commit(repo_path, plan.commit_message)
 }
@@ -1901,7 +1959,7 @@ fn render_dotnet_root_justfile(
 
     let justfile_contents = dotnet_root_justfile_contents(&test_project_path, &output.selections.testing);
     let commit_add_paths = if output.selections.testing == "tunit" {
-        "justfile".to_string()
+        "justfile global.json".to_string()
     } else {
         format!("justfile {test_project_path}")
     };
@@ -1909,6 +1967,14 @@ fn render_dotnet_root_justfile(
     let body = if output.selections.testing == "tunit" {
         format!(
             "{intro}\n\n\
+             Create a root `global.json` so `dotnet test` uses Microsoft.Testing.Platform with current .NET SDKs:\n\n\
+             ```bash\n\
+             touch global.json\n\
+             ```\n\n\
+             Then put this exact content in `global.json`:\n\n\
+             ```json\n\
+             {}\
+             ```\n\n\
              Create the file:\n\n\
              ```bash\n\
              touch justfile\n\
@@ -1923,6 +1989,8 @@ fn render_dotnet_root_justfile(
              git add {commit_add_paths}\n\
              git commit -m \"Add Root Justfile\"\n\
              ```"
+            ,
+            dotnet_test_runner_global_json()
         )
     } else {
         format!(
@@ -1948,6 +2016,10 @@ fn render_dotnet_root_justfile(
     };
 
     Some(body)
+}
+
+fn dotnet_test_runner_global_json() -> String {
+    "{\n  \"test\": {\n    \"runner\": \"Microsoft.Testing.Platform\"\n  }\n}\n".to_string()
 }
 
 fn dotnet_root_justfile_contents(test_project_path: &str, testing: &str) -> String {

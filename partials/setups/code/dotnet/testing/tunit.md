@@ -25,7 +25,7 @@ dotnet add <test-project-path>/<test-project-name>.csproj reference <library-pro
 
 If the tutorial needs a non-default target framework, update the generated project file after scaffolding.
 
-Then replace the template placeholder file such as `UnitTest1.cs` with the test file names declared by the tutorial.
+Then remove the starter example files that `dotnet new TUnit` generated, such as `BasicTests.cs`, `Calculator.cs`, `DataDrivenTests.cs`, `DependencyInjectionTests.cs`, and `HooksAndLifecycle.cs`, and replace them with the test file names declared by the tutorial.
 
 ## Minimal Test Shape
 

@@ -12,7 +12,11 @@ From the repo root, remove the placeholder files that `dotnet new` created:
 
 ```bash
 rm src/SayingHello/Class1.cs
-rm tests/SayingHello.Tests/UnitTest1.cs
+rm tests/SayingHello.Tests/BasicTests.cs
+rm tests/SayingHello.Tests/Calculator.cs
+rm tests/SayingHello.Tests/DataDrivenTests.cs
+rm tests/SayingHello.Tests/DependencyInjectionTests.cs
+rm tests/SayingHello.Tests/HooksAndLifecycle.cs
 ```
 
 Create the replacement files now:
