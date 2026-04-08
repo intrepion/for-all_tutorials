@@ -510,7 +510,7 @@ fn bootstrap_output_repo(
 ) -> Result<(), AppError> {
     let repo_full_name = format!("{owner}/{}", spec.repo_name);
     let clone_path = repos_root.join(&spec.repo_name);
-    let managed_files = build_managed_repo_files(app_root, owner, spec);
+    let managed_files = build_managed_repo_files(app_root, owner, spec)?;
 
     if !clone_path.exists() {
         return Err(AppError::message(format!(
@@ -611,7 +611,11 @@ struct PlannedFileChange {
     path: String,
 }
 
-fn build_managed_repo_files(app_root: &Path, owner: &str, spec: &OutputRepoSpec) -> Vec<ManagedRepoFile> {
+fn build_managed_repo_files(
+    app_root: &Path,
+    owner: &str,
+    spec: &OutputRepoSpec,
+) -> Result<Vec<ManagedRepoFile>, AppError> {
     let mut files = vec![
         ManagedRepoFile {
             relative_path: "README.md".to_string(),
@@ -627,9 +631,16 @@ fn build_managed_repo_files(app_root: &Path, owner: &str, spec: &OutputRepoSpec)
         },
     ];
 
+    if spec.ecosystem == "dotnet" {
+        files.push(ManagedRepoFile {
+            relative_path: ".github/workflows/ci.yml".to_string(),
+            contents: load_dotnet_ci_workflow(app_root)?.into_bytes(),
+        });
+    }
+
     files.extend(build_output_repo_tutorial_files(app_root, spec));
 
-    files
+    Ok(files)
 }
 
 fn build_main_baseline_files(owner: &str) -> Vec<ManagedRepoFile> {
@@ -684,11 +695,8 @@ fn render_root_readme_content(owner: &str, repo_name: &str, repo_description: &s
     format!("# {repo_name}\n{repo_description}\n\n[![CI]({badge_url})]({workflow_url})\n")
 }
 
-fn render_output_repo_readme_content(_owner: &str, spec: &OutputRepoSpec) -> String {
-    format!(
-        "# {}\n{}\n\nDefault choices for this repo:\n- `.NET`\n- `C#`\n- `xUnit`\n- `NSubstitute`\n- `no-storage`\n- `command-line`\n- `all`\n- `no-framework`\n\nTutorial files:\n- [Spec](tutorial/spec.md)\n- [Contracts](tutorial/contracts.md)\n- [Code](tutorial/code.md)\n- [Adapter](tutorial/adapter.md)\n",
-        spec.repo_name, spec.repo_description
-    )
+fn render_output_repo_readme_content(owner: &str, spec: &OutputRepoSpec) -> String {
+    render_root_readme_content(owner, &spec.repo_name, &spec.repo_description)
 }
 
 fn build_output_repo_tutorial_files(app_root: &Path, spec: &OutputRepoSpec) -> Vec<ManagedRepoFile> {
@@ -711,18 +719,30 @@ fn build_output_repo_tutorial_files(app_root: &Path, spec: &OutputRepoSpec) -> V
         let partial = Partial::load(&contracts_path).expect("contracts partial should exist");
         tutorial_file_markdown(
             "Contracts",
-            &prepend_default_choices(&rewrite_for_single_repo_tutorial(&partial.body)),
+            &format!(
+                "{}\n\n{}",
+                render_output_repo_contracts_scaffold(spec),
+                rewrite_for_single_repo_tutorial(&partial.body)
+            ),
         )
     } else {
-        generic_contracts_tutorial(&spec_partial.body)
+        generic_contracts_tutorial(spec, &spec_partial.body)
     };
 
     vec![
         ManagedRepoFile {
+            relative_path: "tutorial/README.md".to_string(),
+            contents: render_output_repo_tutorial_readme_content(spec).into_bytes(),
+        },
+        ManagedRepoFile {
+            relative_path: "tutorial/setup.md".to_string(),
+            contents: render_output_repo_setup_content(spec).into_bytes(),
+        },
+        ManagedRepoFile {
             relative_path: "tutorial/spec.md".to_string(),
             contents: tutorial_file_markdown(
                 "Spec",
-                &prepend_default_choices(&rewrite_for_single_repo_tutorial(&spec_partial.body)),
+                &rewrite_for_single_repo_tutorial(&spec_partial.body),
             )
             .into_bytes(),
         },
@@ -734,7 +754,11 @@ fn build_output_repo_tutorial_files(app_root: &Path, spec: &OutputRepoSpec) -> V
             relative_path: "tutorial/code.md".to_string(),
             contents: tutorial_file_markdown(
                 "Code",
-                &prepend_default_choices(&rewrite_for_single_repo_tutorial(&code_partial.body)),
+                &format!(
+                    "{}\n\n{}",
+                    render_output_repo_code_scaffold(spec),
+                    rewrite_for_single_repo_tutorial(&code_partial.body)
+                ),
             )
             .into_bytes(),
         },
@@ -742,24 +766,45 @@ fn build_output_repo_tutorial_files(app_root: &Path, spec: &OutputRepoSpec) -> V
             relative_path: "tutorial/adapter.md".to_string(),
             contents: tutorial_file_markdown(
                 "Adapter",
-                &prepend_default_choices(&rewrite_for_single_repo_tutorial(&adapter_partial.body)),
+                &format!(
+                    "{}\n\n{}",
+                    render_output_repo_adapter_scaffold(spec),
+                    rewrite_for_single_repo_tutorial(&adapter_partial.body)
+                ),
             )
             .into_bytes(),
         },
     ]
 }
 
+fn render_output_repo_tutorial_readme_content(spec: &OutputRepoSpec) -> String {
+    format!(
+        "# Tutorial\n\nChoices for this repo:\n\n- Project: `{}`\n- Workspace folder: `workspace/`\n- Ecosystem: `.NET`\n- Language: `C#`\n- Testing: `xUnit`\n- Mocking: `NSubstitute`\n- Storage: `no-storage`\n- Surface: `command-line`\n- Target: `all`\n- Framework: `no-framework`\n\nWork through these files in order:\n\n1. [Spec](spec.md)\n2. [Setup](setup.md)\n3. [Contracts](contracts.md)\n4. [Code](code.md)\n5. [Adapter](adapter.md)\n",
+        spec.project_slug
+    )
+}
+
+fn render_output_repo_setup_content(spec: &OutputRepoSpec) -> String {
+    let solution_name = workspace_solution_name(&spec.project_slug);
+    let contracts_project_name = contracts_project_name(&spec.project_slug);
+    let code_project_name = code_project_name(&spec.project_slug);
+    let code_test_project_name = code_test_project_name(&spec.project_slug);
+    let adapter_project_name = adapter_project_name(&spec.project_slug);
+    let adapter_test_project_name = adapter_test_project_name(&spec.project_slug);
+
+    tutorial_file_markdown(
+        "Setup",
+        &format!(
+            "Keep the repository root for shared files like `README.md`, `LICENSE`, `.gitignore`, `.github/`, and `tutorial/`.\n\nPut all .NET code inside a single `workspace/` folder.\n\nFrom the repository root, run:\n\n```bash\nmkdir -p workspace\ncd workspace\ndotnet new sln --format sln --name {solution_name}\n```\n\nAfter those commands finish, stay in `workspace/` for the rest of this tutorial sequence unless a step explicitly says otherwise.\n\nWhen the full workspace is finished, it should contain these projects:\n\n- `src/{contracts_project_name}`\n- `src/{code_project_name}`\n- `tests/{code_test_project_name}`\n- `src/{adapter_project_name}`\n- `tests/{adapter_test_project_name}`\n\nThe next files assume this layout:\n\n```text\nworkspace/\n  {solution_name}.sln\n  src/\n    {contracts_project_name}/\n    {code_project_name}/\n    {adapter_project_name}/\n  tests/\n    {code_test_project_name}/\n    {adapter_test_project_name}/\n```"
+        ),
+    )
+}
+
 fn tutorial_file_markdown(title: &str, body: &str) -> String {
     format!("# {title}\n\n{}\n", normalize_text(body))
 }
 
-fn prepend_default_choices(body: &str) -> String {
-    format!(
-        "Default choices for this tutorial file:\n\n- Ecosystem: `.NET`\n- Language: `C#`\n- Testing: `xUnit`\n- Mocking: `NSubstitute`\n- Storage: `no-storage`\n- Surface: `command-line`\n- Target: `all`\n- Framework: `no-framework`\n\n{body}"
-    )
-}
-
-fn generic_contracts_tutorial(spec_body: &str) -> String {
+fn generic_contracts_tutorial(spec: &OutputRepoSpec, spec_body: &str) -> String {
     let contract_section = extract_section(spec_body, "Core Logic Contract").unwrap_or_else(|| {
         "Define the shared interfaces, request and response types, enums, and small value objects that both the code layer and adapter layer need.".to_string()
     });
@@ -767,7 +812,8 @@ fn generic_contracts_tutorial(spec_body: &str) -> String {
     tutorial_file_markdown(
         "Contracts",
         &format!(
-            "Default choices for this tutorial file:\n\n- Ecosystem: `.NET`\n- Language: `C#`\n- Testing: `xUnit`\n- Mocking: `NSubstitute`\n- Storage: `no-storage`\n- Surface: `command-line`\n- Target: `all`\n- Framework: `no-framework`\n\nUse this file to define the shared contracts that the code layer implements and the adapter layer depends on.\n\nDo not add tests here. Keep this layer limited to interfaces, request and response types, enums, and small shared value objects.\n\n## Core Logic Contract\n\n{}",
+            "{}\n\nUse this file to define the shared contracts that the code layer implements and the adapter layer depends on.\n\nDo not add tests here. Keep this layer limited to interfaces, request and response types, enums, and small shared value objects.\n\n## Core Logic Contract\n\n{}",
+            render_output_repo_contracts_scaffold(spec),
             normalize_text(&contract_section)
         ),
     )
@@ -776,6 +822,8 @@ fn generic_contracts_tutorial(spec_body: &str) -> String {
 fn rewrite_for_single_repo_tutorial(text: &str) -> String {
     normalize_text(
         &text
+            .replace("From the repo root", "From the workspace root")
+            .replace("from the repo root", "from the workspace root")
             .replace("In a separate adapter repo, ", "In the adapter layer in this repo, ")
             .replace("separate adapter repo", "adapter layer in this repo")
             .replace("adapter repos", "adapter layer")
@@ -783,7 +831,75 @@ fn rewrite_for_single_repo_tutorial(text: &str) -> String {
             .replace("core repos", "code layer")
             .replace("core repo", "code layer in this repo")
             .replace("The core repo owns", "The code layer owns")
-            .replace("the core repo owns", "the code layer owns"),
+            .replace("the core repo owns", "the code layer owns")
+            .replace(
+                "The matching core tutorial is the next step.",
+                "Because `tutorial/code.md` comes before this file, the code layer should already exist before you finish wiring the adapter.",
+            ),
+    )
+}
+
+fn workspace_solution_name(project_slug: &str) -> String {
+    pascal_case_slug(project_slug)
+}
+
+fn contracts_project_name(project_slug: &str) -> String {
+    format!("{}.Contracts", workspace_solution_name(project_slug))
+}
+
+fn code_project_name(project_slug: &str) -> String {
+    workspace_solution_name(project_slug)
+}
+
+fn code_test_project_name(project_slug: &str) -> String {
+    format!("{}.Tests", workspace_solution_name(project_slug))
+}
+
+fn adapter_project_name(project_slug: &str) -> String {
+    format!("{}.CommandLine", workspace_solution_name(project_slug))
+}
+
+fn adapter_test_project_name(project_slug: &str) -> String {
+    format!("{}.Tests", adapter_project_name(project_slug))
+}
+
+fn render_output_repo_contracts_scaffold(spec: &OutputRepoSpec) -> String {
+    let solution_name = workspace_solution_name(&spec.project_slug);
+    let project_name = contracts_project_name(&spec.project_slug);
+    let project_path = format!("src/{project_name}");
+
+    format!(
+        "Create the contracts library inside `workspace/` first.\n\nFrom the workspace root, run:\n\n```bash\ndotnet new classlib --language C# --output {project_path} --name {project_name}\ndotnet sln {solution_name}.sln add {project_path}/{project_name}.csproj\n```\n\nAfter those commands finish, stay in the workspace root and continue with the rest of this file."
+    )
+}
+
+fn render_output_repo_code_scaffold(spec: &OutputRepoSpec) -> String {
+    let solution_name = workspace_solution_name(&spec.project_slug);
+    let library_project_name = code_project_name(&spec.project_slug);
+    let test_project_name = code_test_project_name(&spec.project_slug);
+    let contracts_project_name = contracts_project_name(&spec.project_slug);
+    let library_project_path = format!("src/{library_project_name}");
+    let test_project_path = format!("tests/{test_project_name}");
+    let contracts_project_path = format!("src/{contracts_project_name}/{contracts_project_name}.csproj");
+
+    format!(
+        "Create the code library and its test library inside `workspace/`.\n\nBoth the code library and the code test library should reference the contracts library.\n\nFrom the workspace root, run:\n\n```bash\ndotnet new classlib --language C# --output {library_project_path} --name {library_project_name}\ndotnet new xunit --language C# --output {test_project_path} --name {test_project_name}\ndotnet sln {solution_name}.sln add {library_project_path}/{library_project_name}.csproj\ndotnet sln {solution_name}.sln add {test_project_path}/{test_project_name}.csproj\ndotnet add {library_project_path}/{library_project_name}.csproj reference {contracts_project_path}\ndotnet add {test_project_path}/{test_project_name}.csproj reference {contracts_project_path}\ndotnet add {test_project_path}/{test_project_name}.csproj reference {library_project_path}/{library_project_name}.csproj\n```\n\nAfter those commands finish, stay in the workspace root and continue with the rest of this file."
+    )
+}
+
+fn render_output_repo_adapter_scaffold(spec: &OutputRepoSpec) -> String {
+    let solution_name = workspace_solution_name(&spec.project_slug);
+    let adapter_project_name = adapter_project_name(&spec.project_slug);
+    let adapter_test_project_name = adapter_test_project_name(&spec.project_slug);
+    let contracts_project_name = contracts_project_name(&spec.project_slug);
+    let code_project_name = code_project_name(&spec.project_slug);
+    let adapter_project_path = format!("src/{adapter_project_name}");
+    let adapter_test_project_path = format!("tests/{adapter_test_project_name}");
+    let contracts_project_path = format!("src/{contracts_project_name}/{contracts_project_name}.csproj");
+    let code_project_path = format!("src/{code_project_name}/{code_project_name}.csproj");
+
+    format!(
+        "Create the adapter library and its test library inside `workspace/`.\n\nBoth the adapter library and the adapter test library should reference the contracts library. The adapter library should also reference the code library.\n\nFrom the workspace root, run:\n\n```bash\ndotnet new console --language C# --output {adapter_project_path} --name {adapter_project_name}\ndotnet new xunit --language C# --output {adapter_test_project_path} --name {adapter_test_project_name}\ndotnet sln {solution_name}.sln add {adapter_project_path}/{adapter_project_name}.csproj\ndotnet sln {solution_name}.sln add {adapter_test_project_path}/{adapter_test_project_name}.csproj\ndotnet add {adapter_project_path}/{adapter_project_name}.csproj reference {contracts_project_path}\ndotnet add {adapter_test_project_path}/{adapter_test_project_name}.csproj reference {contracts_project_path}\ndotnet add {adapter_project_path}/{adapter_project_name}.csproj reference {code_project_path}\ndotnet add {adapter_test_project_path}/{adapter_test_project_name}.csproj reference {adapter_project_path}/{adapter_project_name}.csproj\n```\n\nAfter those commands finish, stay in the workspace root and continue with the rest of this file."
     )
 }
 
@@ -815,23 +931,40 @@ fn mit_license_text(owner: &str) -> String {
         + "\n"
 }
 
-fn starter_gitignore_content(ecosystem: &str) -> String {
-    match ecosystem {
-        "dotnet" => [
-            "bin/",
-            "obj/",
-            ".vs/",
-            "TestResults/",
-            "*.user",
-            "*.suo",
-            "*.userosscache",
-            "*.sln.docstates",
-            ".DS_Store",
-        ]
-        .join("\n")
-            + "\n",
-        _ => String::from(".DS_Store\n"),
-    }
+fn starter_gitignore_content(_ecosystem: &str) -> String {
+    format!(
+        "{}{}{}",
+        wrap_gitignore_section(
+            "https://github.com/github/gitignore/blob/main/Global/Linux.gitignore",
+            github_global_linux_gitignore(),
+        ),
+        wrap_gitignore_section(
+            "https://github.com/github/gitignore/blob/main/Global/macOS.gitignore",
+            github_global_macos_gitignore(),
+        ),
+        wrap_gitignore_section(
+            "https://github.com/github/gitignore/blob/main/Global/Windows.gitignore",
+            github_global_windows_gitignore(),
+        ),
+    )
+}
+
+fn wrap_gitignore_section(source_url: &str, contents: &str) -> String {
+    format!(
+        "#### START {source_url}\n\n{contents}\n#### END {source_url}\n\n"
+    )
+}
+
+fn github_global_linux_gitignore() -> &'static str {
+    "*~\n\n# temporary files which can be created if a process still has a handle open of a deleted file\n.fuse_hidden*\n\n# Metadata left by Dolphin file manager, which comes with KDE Plasma\n.directory\n\n# Linux trash folder which might appear on any partition or disk\n.Trash-*\n\n# .nfs files are created when an open file is removed but is still being accessed\n.nfs*\n\n# Log files created by default by the nohup command\nnohup.out\n"
+}
+
+fn github_global_macos_gitignore() -> &'static str {
+    "# General\n.DS_Store\n.localized\n__MACOSX/\n.AppleDouble\n.LSOverride\nIcon[\r]\n\n# Thumbnails\n._*\n\n# Files that might appear in the root of a volume\n.DocumentRevisions-V100\n.fseventsd\n.Spotlight-V100\n.TemporaryItems\n.Trashes\n.VolumeIcon.icns\n.com.apple.timemachine.donotpresent\n\n# Directories potentially created on remote AFP share\n.AppleDB\n.AppleDesktop\nNetwork Trash Folder\nTemporary Items\n.apdisk\n"
+}
+
+fn github_global_windows_gitignore() -> &'static str {
+    "# Windows thumbnail cache files\nThumbs.db\nThumbs.db:encryptable\nehthumbs.db\nehthumbs_vista.db\n\n# Dump file\n*.stackdump\n\n# Folder config file\n[Dd]esktop.ini\n\n# Recycle Bin used on file shares\n$RECYCLE.BIN/\n\n# Windows Installer files\n*.cab\n*.msi\n*.msix\n*.msm\n*.msp\n\n# Windows shortcuts\n*.lnk\n"
 }
 
 #[allow(dead_code)]
