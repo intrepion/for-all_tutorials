@@ -23,10 +23,10 @@ touch src/SayingHello.CommandLine/Program.cs
 touch tests/SayingHello.CommandLine.Tests/CommandLineGreetingTests.cs
 ```
 
-Add Moq to the adapter test project:
+Add NSubstitute to the adapter test project:
 
 ```bash
-dotnet add tests/SayingHello.CommandLine.Tests/SayingHello.CommandLine.Tests.csproj package Moq
+dotnet add tests/SayingHello.CommandLine.Tests/SayingHello.CommandLine.Tests.csproj package NSubstitute
 ```
 
 ### 1. Red: Add The First Failing Adapter Test
@@ -34,7 +34,7 @@ dotnet add tests/SayingHello.CommandLine.Tests/SayingHello.CommandLine.Tests.csp
 Create `tests/SayingHello.CommandLine.Tests/CommandLineGreetingTests.cs` with this exact code:
 
 ```csharp
-using Moq;
+using NSubstitute;
 using SayingHello.CommandLine;
 using SayingHello.Contracts;
 using Xunit;
@@ -46,14 +46,14 @@ public sealed class CommandLineGreetingTests
     [Fact]
     public void Build_message_delegates_to_greeting_service_for_first_argument()
     {
-        var greetingService = new Mock<IGreetingService>();
-        greetingService.Setup(service => service.Greet("Ada")).Returns("Hello, Ada!");
-        var sut = new CommandLineGreeting(greetingService.Object);
+        var greetingService = Substitute.For<IGreetingService>();
+        greetingService.Greet("Ada").Returns("Hello, Ada!");
+        var sut = new CommandLineGreeting(greetingService);
 
         var result = sut.BuildMessage(["Ada"]);
 
         Assert.Equal("Hello, Ada!", result);
-        greetingService.Verify(service => service.Greet("Ada"), Times.Once);
+        greetingService.Received(1).Greet("Ada");
     }
 }
 ```
@@ -121,7 +121,7 @@ This should pass.
 Replace `tests/SayingHello.CommandLine.Tests/CommandLineGreetingTests.cs` with this exact code:
 
 ```csharp
-using Moq;
+using NSubstitute;
 using SayingHello.CommandLine;
 using SayingHello.Contracts;
 using Xunit;
@@ -133,27 +133,27 @@ public sealed class CommandLineGreetingTests
     [Fact]
     public void Build_message_delegates_to_greeting_service_for_first_argument()
     {
-        var greetingService = new Mock<IGreetingService>();
-        greetingService.Setup(service => service.Greet("Ada")).Returns("Hello, Ada!");
-        var sut = new CommandLineGreeting(greetingService.Object);
+        var greetingService = Substitute.For<IGreetingService>();
+        greetingService.Greet("Ada").Returns("Hello, Ada!");
+        var sut = new CommandLineGreeting(greetingService);
 
         var result = sut.BuildMessage(["Ada"]);
 
         Assert.Equal("Hello, Ada!", result);
-        greetingService.Verify(service => service.Greet("Ada"), Times.Once);
+        greetingService.Received(1).Greet("Ada");
     }
 
     [Fact]
     public void Build_message_returns_generic_greeting_when_no_arguments_are_present()
     {
-        var greetingService = new Mock<IGreetingService>();
-        greetingService.Setup(service => service.Greet("")).Returns("Hello!");
-        var sut = new CommandLineGreeting(greetingService.Object);
+        var greetingService = Substitute.For<IGreetingService>();
+        greetingService.Greet("").Returns("Hello!");
+        var sut = new CommandLineGreeting(greetingService);
 
         var result = sut.BuildMessage([]);
 
         Assert.Equal("Hello!", result);
-        greetingService.Verify(service => service.Greet(""), Times.Once);
+        greetingService.Received(1).Greet("");
     }
 }
 ```

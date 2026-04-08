@@ -39,13 +39,7 @@ fn main() -> Result<(), AppError> {
             owner,
             sync_branch_name,
         } => {
-            bootstrap_output_repos(
-                &app_root,
-                &args.output_root,
-                repos_root,
-                owner,
-                sync_branch_name.as_deref(),
-            )?;
+            bootstrap_output_repos(&app_root, repos_root, owner, sync_branch_name.as_deref())?;
         }
         CommandMode::CleanupOutputRepos {
             repos_root,
@@ -308,10 +302,8 @@ fn generate_from_manifest(
 struct OutputRepoSpec {
     repo_name: String,
     repo_description: String,
-    tutorial_path: String,
     ecosystem: String,
     project_slug: String,
-    output: CompiledOutput,
 }
 
 fn collect_output_repo_specs(app_root: &Path) -> Result<Vec<OutputRepoSpec>, AppError> {
@@ -327,18 +319,12 @@ fn collect_output_repo_specs(app_root: &Path) -> Result<Vec<OutputRepoSpec>, App
         let project_root = Partial::load(&project_root_path)?;
         let project_title = project_root.title.clone();
 
-        let outputs = expanded_compiled_outputs(app_root, &manifest);
-
-        for output in &outputs {
-            specs.push(OutputRepoSpec {
-                repo_name: repo_name(&manifest.project, output),
-                repo_description: repo_description(&project_title, output),
-                tutorial_path: output.tutorial_path.clone(),
-                ecosystem: output.selections.ecosystem.clone(),
-                project_slug: manifest.project.clone(),
-                output: output.clone(),
-            });
-        }
+        specs.push(OutputRepoSpec {
+            repo_name: output_repo_name(&manifest.project),
+            repo_description: output_repo_description(&project_title),
+            ecosystem: "dotnet".to_string(),
+            project_slug: manifest.project.clone(),
+        });
     }
 
     specs.sort_by(|left, right| left.repo_name.cmp(&right.repo_name));
@@ -443,13 +429,11 @@ fn clone_output_repos(app_root: &Path, repos_root: &Path, owner: &str) -> Result
 
 fn bootstrap_output_repos(
     app_root: &Path,
-    output_root: &Path,
     repos_root: &Path,
     owner: &str,
     sync_branch_name: Option<&str>,
 ) -> Result<(), AppError> {
     let specs = collect_output_repo_specs(app_root)?;
-    let dotnet_ci_workflow = load_dotnet_ci_workflow(app_root)?;
     let sync_branch_name = sync_branch_name
         .filter(|value| !value.trim().is_empty())
         .map(str::to_string)
@@ -457,14 +441,7 @@ fn bootstrap_output_repos(
     println!("sync branch: {sync_branch_name}");
 
     for spec in &specs {
-        bootstrap_output_repo(
-            output_root,
-            repos_root,
-            owner,
-            spec,
-            &dotnet_ci_workflow,
-            &sync_branch_name,
-        )?;
+        bootstrap_output_repo(app_root, repos_root, owner, spec, &sync_branch_name)?;
     }
 
     Ok(())
@@ -525,33 +502,15 @@ fn clone_output_repo(
 }
 
 fn bootstrap_output_repo(
-    output_root: &Path,
+    app_root: &Path,
     repos_root: &Path,
     owner: &str,
     spec: &OutputRepoSpec,
-    dotnet_ci_workflow: &str,
     sync_branch_name: &str,
 ) -> Result<(), AppError> {
-    let tutorial_source = compiled_output_destination(output_root, &spec.tutorial_path);
-    if !tutorial_source.exists() {
-        return Err(AppError::message(format!(
-            "generated tutorial missing at {}. Run tutorial generation first.",
-            tutorial_source.display()
-        )));
-    }
-
     let repo_full_name = format!("{owner}/{}", spec.repo_name);
     let clone_path = repos_root.join(&spec.repo_name);
-    let tutorial_bytes = fs::read(&tutorial_source)?;
-    let managed_files = build_managed_repo_files(
-        owner,
-        &spec.repo_name,
-        &spec.repo_description,
-        &spec.ecosystem,
-        &spec.output,
-        &tutorial_bytes,
-        dotnet_ci_workflow,
-    );
+    let managed_files = build_managed_repo_files(app_root, owner, spec);
 
     if !clone_path.exists() {
         return Err(AppError::message(format!(
@@ -564,11 +523,7 @@ fn bootstrap_output_repo(
     ensure_git_repo(&clone_path)?;
     ensure_clean_worktree(&clone_path)?;
     let baseline_commit = ensure_main_license_baseline(&clone_path, owner)?;
-    if spec.output.kind == OutputKind::Contracts {
-        switch_to_main(&clone_path)?;
-    } else {
-        switch_to_sync_branch_from_commit(&clone_path, sync_branch_name, &baseline_commit)?;
-    }
+    switch_to_sync_branch_from_commit(&clone_path, sync_branch_name, &baseline_commit)?;
     let file_changes = planned_file_changes(&clone_path, &managed_files)?;
 
     if file_changes.is_empty() {
@@ -584,20 +539,7 @@ fn bootstrap_output_repo(
     write_managed_files(&clone_path, &managed_files)?;
     git_add_managed_files(&clone_path, &managed_files)?;
     git_commit_managed_files(&clone_path, false)?;
-
-    if let Some(scaffold_plan) = dotnet_scaffold_bootstrap_plan(&spec.project_slug, &spec.output) {
-        run_dotnet_scaffold_bootstrap_plan(&clone_path, &scaffold_plan)?;
-    }
-
-    if let Some(justfile_plan) = dotnet_root_justfile_plan(&spec.project_slug, &spec.output) {
-        run_dotnet_root_justfile_plan(&clone_path, &justfile_plan)?;
-    }
-
-    if spec.output.kind == OutputKind::Contracts {
-        git_push_main(&clone_path)?;
-    } else {
-        git_push_branch(&clone_path, sync_branch_name)?;
-    }
+    git_push_branch(&clone_path, sync_branch_name)?;
 
     println!("synced: {repo_full_name}");
     Ok(())
@@ -648,13 +590,6 @@ fn cleanup_output_repo(
     Ok(())
 }
 
-fn compiled_output_destination(output_root: &Path, tutorial_path: &str) -> PathBuf {
-    let relative = tutorial_path
-        .strip_prefix("tutorials/")
-        .unwrap_or(tutorial_path);
-    output_root.join(relative)
-}
-
 fn gh_repo_exists(repo_full_name: &str) -> Result<bool, AppError> {
     let status = Command::new("gh")
         .args(["repo", "view", repo_full_name, "--json", "name"])
@@ -676,20 +611,11 @@ struct PlannedFileChange {
     path: String,
 }
 
-fn build_managed_repo_files(
-    owner: &str,
-    repo_name: &str,
-    repo_description: &str,
-    ecosystem: &str,
-    output: &CompiledOutput,
-    tutorial_bytes: &[u8],
-    dotnet_ci_workflow: &str,
-) -> Vec<ManagedRepoFile> {
+fn build_managed_repo_files(app_root: &Path, owner: &str, spec: &OutputRepoSpec) -> Vec<ManagedRepoFile> {
     let mut files = vec![
         ManagedRepoFile {
             relative_path: "README.md".to_string(),
-            contents: render_root_readme_content(owner, repo_name, repo_description)
-                .into_bytes(),
+            contents: render_output_repo_readme_content(owner, spec).into_bytes(),
         },
         ManagedRepoFile {
             relative_path: "LICENSE".to_string(),
@@ -697,25 +623,11 @@ fn build_managed_repo_files(
         },
         ManagedRepoFile {
             relative_path: ".gitignore".to_string(),
-            contents: starter_gitignore_content(ecosystem).into_bytes(),
-        },
-        ManagedRepoFile {
-            relative_path: "tutorial.md".to_string(),
-            contents: tutorial_bytes.to_vec(),
+            contents: starter_gitignore_content(&spec.ecosystem).into_bytes(),
         },
     ];
 
-    if ecosystem == "dotnet" {
-        let workflow_contents = if output.kind == OutputKind::Contracts {
-            dotnet_contracts_ci_workflow()
-        } else {
-            dotnet_ci_workflow.to_string()
-        };
-        files.push(ManagedRepoFile {
-            relative_path: ".github/workflows/ci.yml".to_string(),
-            contents: workflow_contents.into_bytes(),
-        });
-    }
+    files.extend(build_output_repo_tutorial_files(app_root, spec));
 
     files
 }
@@ -772,6 +684,109 @@ fn render_root_readme_content(owner: &str, repo_name: &str, repo_description: &s
     format!("# {repo_name}\n{repo_description}\n\n[![CI]({badge_url})]({workflow_url})\n")
 }
 
+fn render_output_repo_readme_content(_owner: &str, spec: &OutputRepoSpec) -> String {
+    format!(
+        "# {}\n{}\n\nDefault choices for this repo:\n- `.NET`\n- `C#`\n- `xUnit`\n- `NSubstitute`\n- `no-storage`\n- `command-line`\n- `all`\n- `no-framework`\n\nTutorial files:\n- [Spec](tutorial/spec.md)\n- [Contracts](tutorial/contracts.md)\n- [Code](tutorial/code.md)\n- [Adapter](tutorial/adapter.md)\n",
+        spec.repo_name, spec.repo_description
+    )
+}
+
+fn build_output_repo_tutorial_files(app_root: &Path, spec: &OutputRepoSpec) -> Vec<ManagedRepoFile> {
+    let project_root = app_root.join("partials/projects").join(&spec.project_slug);
+    let spec_partial =
+        Partial::load(&project_root.join("spec/README.md")).expect("spec partial should exist");
+    let code_partial =
+        Partial::load(&project_root.join("instructions/core.md")).expect("core partial should exist");
+
+    let adapter_xunit_path = project_root.join("instructions/adapter-xunit.md");
+    let adapter_partial = if adapter_xunit_path.exists() {
+        Partial::load(&adapter_xunit_path).expect("xUnit adapter partial should exist")
+    } else {
+        Partial::load(&project_root.join("instructions/adapter.md"))
+            .expect("adapter partial should exist")
+    };
+
+    let contracts_path = project_root.join("instructions/contracts.md");
+    let contracts_contents = if contracts_path.exists() {
+        let partial = Partial::load(&contracts_path).expect("contracts partial should exist");
+        tutorial_file_markdown(
+            "Contracts",
+            &prepend_default_choices(&rewrite_for_single_repo_tutorial(&partial.body)),
+        )
+    } else {
+        generic_contracts_tutorial(&spec_partial.body)
+    };
+
+    vec![
+        ManagedRepoFile {
+            relative_path: "tutorial/spec.md".to_string(),
+            contents: tutorial_file_markdown(
+                "Spec",
+                &prepend_default_choices(&rewrite_for_single_repo_tutorial(&spec_partial.body)),
+            )
+            .into_bytes(),
+        },
+        ManagedRepoFile {
+            relative_path: "tutorial/contracts.md".to_string(),
+            contents: contracts_contents.into_bytes(),
+        },
+        ManagedRepoFile {
+            relative_path: "tutorial/code.md".to_string(),
+            contents: tutorial_file_markdown(
+                "Code",
+                &prepend_default_choices(&rewrite_for_single_repo_tutorial(&code_partial.body)),
+            )
+            .into_bytes(),
+        },
+        ManagedRepoFile {
+            relative_path: "tutorial/adapter.md".to_string(),
+            contents: tutorial_file_markdown(
+                "Adapter",
+                &prepend_default_choices(&rewrite_for_single_repo_tutorial(&adapter_partial.body)),
+            )
+            .into_bytes(),
+        },
+    ]
+}
+
+fn tutorial_file_markdown(title: &str, body: &str) -> String {
+    format!("# {title}\n\n{}\n", normalize_text(body))
+}
+
+fn prepend_default_choices(body: &str) -> String {
+    format!(
+        "Default choices for this tutorial file:\n\n- Ecosystem: `.NET`\n- Language: `C#`\n- Testing: `xUnit`\n- Mocking: `NSubstitute`\n- Storage: `no-storage`\n- Surface: `command-line`\n- Target: `all`\n- Framework: `no-framework`\n\n{body}"
+    )
+}
+
+fn generic_contracts_tutorial(spec_body: &str) -> String {
+    let contract_section = extract_section(spec_body, "Core Logic Contract").unwrap_or_else(|| {
+        "Define the shared interfaces, request and response types, enums, and small value objects that both the code layer and adapter layer need.".to_string()
+    });
+
+    tutorial_file_markdown(
+        "Contracts",
+        &format!(
+            "Default choices for this tutorial file:\n\n- Ecosystem: `.NET`\n- Language: `C#`\n- Testing: `xUnit`\n- Mocking: `NSubstitute`\n- Storage: `no-storage`\n- Surface: `command-line`\n- Target: `all`\n- Framework: `no-framework`\n\nUse this file to define the shared contracts that the code layer implements and the adapter layer depends on.\n\nDo not add tests here. Keep this layer limited to interfaces, request and response types, enums, and small shared value objects.\n\n## Core Logic Contract\n\n{}",
+            normalize_text(&contract_section)
+        ),
+    )
+}
+
+fn rewrite_for_single_repo_tutorial(text: &str) -> String {
+    normalize_text(
+        &text
+            .replace("In a separate adapter repo, ", "In the adapter layer in this repo, ")
+            .replace("separate adapter repo", "adapter layer in this repo")
+            .replace("adapter repos", "adapter layer")
+            .replace("adapter repo", "adapter layer in this repo")
+            .replace("core repos", "code layer")
+            .replace("core repo", "code layer in this repo")
+            .replace("The core repo owns", "The code layer owns")
+            .replace("the core repo owns", "the code layer owns"),
+    )
+}
+
 fn mit_license_text(owner: &str) -> String {
     [
         "MIT License",
@@ -819,6 +834,7 @@ fn starter_gitignore_content(ecosystem: &str) -> String {
     }
 }
 
+#[allow(dead_code)]
 fn load_dotnet_ci_workflow(app_root: &Path) -> Result<String, AppError> {
     let partial = Partial::load(&app_root.join("partials/setups/code/dotnet/toolchain/github-actions.md"))?;
     extract_fenced_code_block(&partial.body, "yaml").ok_or_else(|| {
@@ -826,6 +842,7 @@ fn load_dotnet_ci_workflow(app_root: &Path) -> Result<String, AppError> {
     })
 }
 
+#[allow(dead_code)]
 fn dotnet_contracts_ci_workflow() -> String {
     "name: CI
 
@@ -862,6 +879,7 @@ jobs:
     .to_string()
 }
 
+#[allow(dead_code)]
 fn extract_fenced_code_block(markdown: &str, info_string: &str) -> Option<String> {
     let fence = format!("```{info_string}\n");
     let after_start = markdown.split_once(&fence)?.1;
@@ -1181,6 +1199,7 @@ fn switch_to_sync_branch_from_commit(
     }
 }
 
+#[allow(dead_code)]
 fn switch_to_main(repo_path: &Path) -> Result<(), AppError> {
     let status = Command::new("git")
         .arg("-C")
@@ -1198,6 +1217,7 @@ fn switch_to_main(repo_path: &Path) -> Result<(), AppError> {
     }
 }
 
+#[allow(dead_code)]
 fn run_command_in_dir(repo_path: &Path, command: &[String]) -> Result<(), AppError> {
     let (program, args) = command.split_first().ok_or_else(|| {
         AppError::message(format!(
@@ -1222,6 +1242,7 @@ fn run_command_in_dir(repo_path: &Path, command: &[String]) -> Result<(), AppErr
     }
 }
 
+#[allow(dead_code)]
 fn git_add_paths(repo_path: &Path, paths: &[String]) -> Result<(), AppError> {
     let mut command = Command::new("git");
     command.arg("-C").arg(repo_path).arg("add");
@@ -1260,9 +1281,9 @@ fn git_add_managed_files(repo_path: &Path, managed_files: &[ManagedRepoFile]) ->
 
 fn git_commit_managed_files(repo_path: &Path, had_head_before_commit: bool) -> Result<(), AppError> {
     let commit_message = if had_head_before_commit {
-        "Update generated bootstrap files"
+        "Update tutorial workspace files"
     } else {
-        "Bootstrap repository from generated tutorial"
+        "Bootstrap repository with tutorial workspace"
     };
 
     git_commit(repo_path, commit_message)
@@ -1765,6 +1786,7 @@ fn render_root_readme(repo_name: &str, repo_description: &str) -> String {
 }
 
 #[derive(Debug)]
+#[allow(dead_code)]
 struct DotnetScaffoldBootstrapPlan {
     commands: Vec<Vec<String>>,
     git_add_paths: Vec<String>,
@@ -1772,6 +1794,7 @@ struct DotnetScaffoldBootstrapPlan {
 }
 
 #[derive(Debug)]
+#[allow(dead_code)]
 struct DotnetRootJustfilePlan {
     pre_commands: Vec<Vec<String>>,
     files: Vec<ManagedRepoFile>,
@@ -1779,6 +1802,7 @@ struct DotnetRootJustfilePlan {
     commit_message: &'static str,
 }
 
+#[allow(dead_code)]
 fn dotnet_scaffold_bootstrap_plan(
     project_slug: &str,
     output: &CompiledOutput,
@@ -1996,6 +2020,7 @@ fn dotnet_scaffold_bootstrap_plan(
     None
 }
 
+#[allow(dead_code)]
 fn run_dotnet_scaffold_bootstrap_plan(
     repo_path: &Path,
     plan: &DotnetScaffoldBootstrapPlan,
@@ -2008,6 +2033,7 @@ fn run_dotnet_scaffold_bootstrap_plan(
     git_commit(repo_path, plan.commit_message)
 }
 
+#[allow(dead_code)]
 fn dotnet_root_justfile_plan(
     project_slug: &str,
     output: &CompiledOutput,
@@ -2067,6 +2093,7 @@ fn dotnet_root_justfile_plan(
     })
 }
 
+#[allow(dead_code)]
 fn run_dotnet_root_justfile_plan(
     repo_path: &Path,
     plan: &DotnetRootJustfilePlan,
@@ -2564,6 +2591,16 @@ fn collapse_blank_lines(text: &str) -> String {
 
 fn testing_selection(output: &CompiledOutput) -> Option<&str> {
     output.selections.testing.as_deref()
+}
+
+fn output_repo_name(project_slug: &str) -> String {
+    format!("{}_{}", OUTPUT_REPO_PREFIX, project_slug)
+}
+
+fn output_repo_description(project_title: &str) -> String {
+    format!(
+        "Tutorial workspace for the {project_title} project with default .NET/C# command-line choices."
+    )
 }
 
 fn render_matching_core_tutorial_link(project_slug: &str, output: &CompiledOutput) -> String {

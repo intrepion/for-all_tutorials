@@ -55,7 +55,7 @@ clone-output-repos repos_root="../output-repos" owner="intrepion":
       --repos-root "$normalized_repos_root" \
       --owner "$normalized_owner"
 
-bootstrap-output-repos repos_root="../output-repos" owner="intrepion" output_root="tutorials" sync_branch_name="":
+bootstrap-output-repos repos_root="../output-repos" owner="intrepion" sync_branch_name="":
     #!/usr/bin/env bash
     set -euo pipefail
     normalized_repos_root='{{repos_root}}'
@@ -68,11 +68,6 @@ bootstrap-output-repos repos_root="../output-repos" owner="intrepion" output_roo
     normalized_owner="${normalized_owner%\"}"
     normalized_owner="${normalized_owner#owner=}"
 
-    normalized_output_root='{{output_root}}'
-    normalized_output_root="${normalized_output_root#\"}"
-    normalized_output_root="${normalized_output_root%\"}"
-    normalized_output_root="${normalized_output_root#output_root=}"
-
     normalized_sync_branch_name='{{sync_branch_name}}'
     normalized_sync_branch_name="${normalized_sync_branch_name#\"}"
     normalized_sync_branch_name="${normalized_sync_branch_name%\"}"
@@ -84,9 +79,7 @@ bootstrap-output-repos repos_root="../output-repos" owner="intrepion" output_roo
       )"
     fi
 
-    just regenerate "$normalized_output_root"
     cargo run --quiet --manifest-path scripts/tutorial_generator/Cargo.toml -- \
-      --output-root "$normalized_output_root" \
       --bootstrap-output-repos \
       --repos-root "$normalized_repos_root" \
       --owner "$normalized_owner" \
