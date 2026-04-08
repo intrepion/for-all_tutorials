@@ -8,66 +8,34 @@ Reusable `.NET` adapter setup for the `command-line/all` target.
 
 ## Goal
 
-Create a thin console adapter that can call a well-tested core library without moving project rules into the entry point.
+Create a thin console adapter that depends on the shared contracts library without moving project rules into the entry point.
 
 ## Use This After
 
 - [Toolchain](../../../toolchain/README.md)
 - one guide from [Testing](../../../testing/README.md)
-- an existing core library repo for the project logic
+- an existing contracts library repo for the project shape
 
 ## Scope
 
 This guide covers:
 
-- scaffolding a console adapter repo with `dotnet new console`
-- adding the adapter project to its solution
-- adding a dependency on the core library from the adapter
 - keeping the adapter thin
 - pairing the adapter with a stack-specific storage guide when the project persists local data
 
 This guide does not cover:
 
-- project-specific business rules
-- test-framework-specific assertions or templates
 - project-specific command parsing
 - local-file storage mechanics beyond choosing the appropriate storage guide
 - command-line framework choices such as [Spectre Console](../../../frameworks/command-line/spectre-console.md)
 
-## Suggested Scaffold Commands
+## Contracts Dependency Rule
 
-Use the project names and paths from the concrete scaffold section in the compiled tutorial:
+Keep the contracts library repo separate from the adapter repo.
 
-```bash
-dotnet new sln --format sln --name <solution-name> --output <solution-root>
-dotnet new gitignore --output <solution-root>
-dotnet new console --name <adapter-name> --output <solution-root>/src/<adapter-name>
-dotnet new xunit --name <adapter-test-project-name> --output <solution-root>/tests/<adapter-test-project-name>
-dotnet sln <solution-root>/<solution-name>.sln add <solution-root>/src/<adapter-name>/<adapter-name>.csproj
-dotnet sln <solution-root>/<solution-name>.sln add <solution-root>/tests/<adapter-test-project-name>/<adapter-test-project-name>.csproj
-dotnet add <solution-root>/src/<adapter-name>/<adapter-name>.csproj reference <core-library-project-path>
-dotnet add <solution-root>/tests/<adapter-test-project-name>/<adapter-test-project-name>.csproj reference <solution-root>/src/<adapter-name>/<adapter-name>.csproj
-```
+For local development, depend on a sibling checkout of the contracts repo with a real project reference.
 
-If the tutorial needs a non-default target framework, add `--framework <target-framework>` to both the console and xUnit scaffold commands.
-
-For first local runs, use a project reference to a sibling checkout of the core repo. Move to a published package later only if that workflow adds value for the stack you are teaching.
-
-## Suggested File Shape
-
-```text
-<solution-root>/
-  <solution-name>.sln
-  src/
-    <adapter-name>/
-      <adapter-name>.csproj
-      Program.cs
-  tests/
-    <adapter-test-project-name>/
-      <adapter-test-project-name>.csproj
-```
-
-The core library repo should stay separate. The adapter repo should depend on it as a real dependency rather than by copying the core source files.
+If you also want a separately tested runtime implementation, keep that in a matching core repo. Let the project-specific adapter tutorial decide when and how to wire that implementation.
 
 If the chosen project persists local data, pair this guide with one storage guide from [Storage](../../storage/command-line/README.md).
 
@@ -76,7 +44,7 @@ If the chosen project persists local data, pair this guide with one storage guid
 The `Program.cs` entry point should stay thin:
 
 - read input from the command line
-- call the core library
+- call a service that satisfies the contract
 - write the output
 
 Do not duplicate validation or service rules in the adapter if those rules belong in the core project logic.
@@ -87,6 +55,6 @@ The `.NET` `command-line/all` adapter setup is ready when:
 
 - the console project exists
 - the console project is added to the solution
-- the console project depends on the core library
-- the console entry point can delegate to the core library
-- any optional command-line framework still delegates to the core library
+- the console project depends on the contracts library
+- the console entry point can delegate through the contract
+- any optional command-line framework still delegates through the contract

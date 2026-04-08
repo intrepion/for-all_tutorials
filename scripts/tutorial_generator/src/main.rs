@@ -1,6 +1,7 @@
 use askama::Template;
 use regex::Regex;
 use serde::Deserialize;
+use std::collections::BTreeSet;
 use std::env;
 use std::fmt;
 use std::fs;
@@ -269,7 +270,9 @@ fn generate_from_manifest(
     let project_root = Partial::load(&project_root_path)?;
     let project_title = project_root.title.clone();
 
-    for output in &manifest.compiled_outputs {
+    let outputs = expanded_compiled_outputs(app_root, &manifest);
+
+    for output in &outputs {
         let mut partials = Vec::new();
         for source in &output.sources {
             if source.ends_with(".md") {
@@ -324,7 +327,9 @@ fn collect_output_repo_specs(app_root: &Path) -> Result<Vec<OutputRepoSpec>, App
         let project_root = Partial::load(&project_root_path)?;
         let project_title = project_root.title.clone();
 
-        for output in &manifest.compiled_outputs {
+        let outputs = expanded_compiled_outputs(app_root, &manifest);
+
+        for output in &outputs {
             specs.push(OutputRepoSpec {
                 repo_name: repo_name(&manifest.project, output),
                 repo_description: repo_description(&project_title, output),
@@ -338,6 +343,86 @@ fn collect_output_repo_specs(app_root: &Path) -> Result<Vec<OutputRepoSpec>, App
 
     specs.sort_by(|left, right| left.repo_name.cmp(&right.repo_name));
     Ok(specs)
+}
+
+fn expanded_compiled_outputs(app_root: &Path, manifest: &Manifest) -> Vec<CompiledOutput> {
+    let mut outputs = manifest.compiled_outputs.clone();
+    let mut seen_contract_pairs = BTreeSet::new();
+
+    for output in &outputs {
+        if output.kind == OutputKind::Contracts {
+            seen_contract_pairs.insert((
+                output.selections.ecosystem.clone(),
+                output.selections.language.clone(),
+            ));
+        }
+    }
+
+    let mut implied_pairs = BTreeSet::new();
+    for output in &outputs {
+        implied_pairs.insert((
+            output.selections.ecosystem.clone(),
+            output.selections.language.clone(),
+        ));
+    }
+
+    for (ecosystem, language) in implied_pairs {
+        if ecosystem != "dotnet" || seen_contract_pairs.contains(&(ecosystem.clone(), language.clone()))
+        {
+            continue;
+        }
+
+        outputs.insert(
+            0,
+            implicit_contract_output(app_root, manifest, &ecosystem, &language),
+        );
+    }
+
+    outputs
+}
+
+fn implicit_contract_output(
+    app_root: &Path,
+    manifest: &Manifest,
+    ecosystem: &str,
+    language: &str,
+) -> CompiledOutput {
+    let mut sources = vec![
+        format!("partials/projects/{}/README.md", manifest.project),
+        format!("partials/projects/{}/spec/README.md", manifest.project),
+        format!("partials/projects/{}/instructions/README.md", manifest.project),
+        format!("partials/setups/code/{ecosystem}/README.md"),
+        format!("partials/setups/code/{ecosystem}/languages/{language}.md"),
+        format!("partials/setups/code/{ecosystem}/toolchain/sdk.md"),
+        format!("partials/setups/code/{ecosystem}/toolchain/dotnet-cli.md"),
+    ];
+
+    let project_contracts_partial = format!(
+        "partials/projects/{}/instructions/contracts.md",
+        manifest.project
+    );
+    if app_root.join(&project_contracts_partial).exists() {
+        sources.insert(3, project_contracts_partial);
+    }
+
+    CompiledOutput {
+        id: format!("{ecosystem}-{language}-contracts"),
+        kind: OutputKind::Contracts,
+        tutorial_path: format!(
+            "tutorials/{}/{}/{}/contracts/README.md",
+            manifest.project, ecosystem, language
+        ),
+        selections: Selections {
+            ecosystem: ecosystem.to_string(),
+            language: language.to_string(),
+            testing: None,
+            storage: None,
+            surface: None,
+            target: None,
+            framework: None,
+        },
+        sources,
+    }
 }
 
 fn create_output_repos(app_root: &Path, owner: &str) -> Result<(), AppError> {
@@ -463,6 +548,7 @@ fn bootstrap_output_repo(
         &spec.repo_name,
         &spec.repo_description,
         &spec.ecosystem,
+        &spec.output,
         &tutorial_bytes,
         dotnet_ci_workflow,
     );
@@ -478,7 +564,11 @@ fn bootstrap_output_repo(
     ensure_git_repo(&clone_path)?;
     ensure_clean_worktree(&clone_path)?;
     let baseline_commit = ensure_main_license_baseline(&clone_path, owner)?;
-    switch_to_sync_branch_from_commit(&clone_path, sync_branch_name, &baseline_commit)?;
+    if spec.output.kind == OutputKind::Contracts {
+        switch_to_main(&clone_path)?;
+    } else {
+        switch_to_sync_branch_from_commit(&clone_path, sync_branch_name, &baseline_commit)?;
+    }
     let file_changes = planned_file_changes(&clone_path, &managed_files)?;
 
     if file_changes.is_empty() {
@@ -503,7 +593,11 @@ fn bootstrap_output_repo(
         run_dotnet_root_justfile_plan(&clone_path, &justfile_plan)?;
     }
 
-    git_push_branch(&clone_path, sync_branch_name)?;
+    if spec.output.kind == OutputKind::Contracts {
+        git_push_main(&clone_path)?;
+    } else {
+        git_push_branch(&clone_path, sync_branch_name)?;
+    }
 
     println!("synced: {repo_full_name}");
     Ok(())
@@ -587,6 +681,7 @@ fn build_managed_repo_files(
     repo_name: &str,
     repo_description: &str,
     ecosystem: &str,
+    output: &CompiledOutput,
     tutorial_bytes: &[u8],
     dotnet_ci_workflow: &str,
 ) -> Vec<ManagedRepoFile> {
@@ -611,9 +706,14 @@ fn build_managed_repo_files(
     ];
 
     if ecosystem == "dotnet" {
+        let workflow_contents = if output.kind == OutputKind::Contracts {
+            dotnet_contracts_ci_workflow()
+        } else {
+            dotnet_ci_workflow.to_string()
+        };
         files.push(ManagedRepoFile {
             relative_path: ".github/workflows/ci.yml".to_string(),
-            contents: dotnet_ci_workflow.as_bytes().to_vec(),
+            contents: workflow_contents.into_bytes(),
         });
     }
 
@@ -724,6 +824,42 @@ fn load_dotnet_ci_workflow(app_root: &Path) -> Result<String, AppError> {
     extract_fenced_code_block(&partial.body, "yaml").ok_or_else(|| {
         AppError::message("failed to extract YAML workflow from .NET GitHub Actions partial")
     })
+}
+
+fn dotnet_contracts_ci_workflow() -> String {
+    "name: CI
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check out code
+        uses: actions/checkout@v6
+
+      - name: Set up .NET
+        uses: actions/setup-dotnet@v5
+        with:
+          dotnet-version: 10.0.x
+
+      - name: Verify formatting
+        run: dotnet format --verify-no-changes
+
+      - name: Restore
+        run: dotnet restore
+
+      - name: Build
+        run: dotnet build
+"
+    .to_string()
 }
 
 fn extract_fenced_code_block(markdown: &str, info_string: &str) -> Option<String> {
@@ -1045,6 +1181,23 @@ fn switch_to_sync_branch_from_commit(
     }
 }
 
+fn switch_to_main(repo_path: &Path) -> Result<(), AppError> {
+    let status = Command::new("git")
+        .arg("-C")
+        .arg(repo_path)
+        .args(["switch", "main"])
+        .status()?;
+
+    if status.success() {
+        Ok(())
+    } else {
+        Err(AppError::message(format!(
+            "failed to switch {} to main",
+            repo_path.display()
+        )))
+    }
+}
+
 fn run_command_in_dir(repo_path: &Path, command: &[String]) -> Result<(), AppError> {
     let (program, args) = command.split_first().ok_or_else(|| {
         AppError::message(format!(
@@ -1202,6 +1355,7 @@ struct CompiledOutput {
 #[derive(Debug, Deserialize, Clone, Copy, PartialEq, Eq)]
 #[serde(rename_all = "lowercase")]
 enum OutputKind {
+    Contracts,
     Core,
     Adapter,
 }
@@ -1210,7 +1364,8 @@ enum OutputKind {
 struct Selections {
     ecosystem: String,
     language: String,
-    testing: String,
+    #[serde(default)]
+    testing: Option<String>,
     #[serde(default)]
     storage: Option<String>,
     #[serde(default)]
@@ -1234,6 +1389,7 @@ enum PartialKind {
     ProjectRoot,
     ProjectSpec,
     InstructionsIndex,
+    ContractsInstructions,
     CoreInstructions,
     AdapterInstructions,
     EcosystemRoot,
@@ -1324,6 +1480,7 @@ fn build_readme(
     output: &CompiledOutput,
 ) -> Result<ReadmeTemplate, AppError> {
     let role_label = match output.kind {
+        OutputKind::Contracts => "contracts library".to_string(),
         OutputKind::Core => "core library".to_string(),
         OutputKind::Adapter => "adapter".to_string(),
     };
@@ -1337,11 +1494,14 @@ fn build_readme(
             key: "Language".to_string(),
             value: format_selection_value(&output.selections.language),
         },
-        KeyValue {
-            key: "Testing".to_string(),
-            value: format_selection_value(&output.selections.testing),
-        },
     ];
+
+    if let Some(testing) = output.selections.testing.as_deref() {
+        selected_stack.push(KeyValue {
+            key: "Testing".to_string(),
+            value: format_selection_value(testing),
+        });
+    }
 
     if let Some(storage) = &output.selections.storage {
         selected_stack.push(KeyValue {
@@ -1369,14 +1529,18 @@ fn build_readme(
     }
 
     let spec = find_partial(partials, PartialKind::ProjectSpec)?;
-    let role_instructions = find_partial(
-        partials,
-        if output.kind == OutputKind::Core {
-            PartialKind::CoreInstructions
-        } else {
-            PartialKind::AdapterInstructions
-        },
-    )?;
+    let role_instructions = match output.kind {
+        OutputKind::Contracts => find_optional_partial(partials, PartialKind::ContractsInstructions)
+            .map(|partial| (partial.title.clone(), partial.body.clone())),
+        OutputKind::Core => Some({
+            let partial = find_partial(partials, PartialKind::CoreInstructions)?;
+            (partial.title.clone(), partial.body.clone())
+        }),
+        OutputKind::Adapter => Some({
+            let partial = find_partial(partials, PartialKind::AdapterInstructions)?;
+            (partial.title.clone(), partial.body.clone())
+        }),
+    };
     let storage_root = find_optional_partial(partials, PartialKind::StorageRoot);
     let justfile_partial = find_optional_partial(partials, PartialKind::JustfilePartial);
     let ci_partial = find_optional_partial(partials, PartialKind::CiPartial);
@@ -1404,6 +1568,11 @@ fn build_readme(
         &mut sections,
         "Create the Solution and Projects",
         recommended_dotnet_core_scaffold(project_slug, output),
+    );
+    push_section(
+        &mut sections,
+        "Create the Contracts Solution and Project",
+        recommended_dotnet_contracts_scaffold(project_slug, output),
     );
     push_section(
         &mut sections,
@@ -1440,11 +1609,9 @@ fn build_readme(
     {
         push_subsection(&mut sections, &partial.title, &partial.body, 2);
     }
-    push_section(
-        &mut sections,
-        &role_instructions.title,
-        Some(role_instructions.body.clone()),
-    );
+    if let Some((title, body)) = role_instructions {
+        push_section(&mut sections, &title, Some(body));
+    }
     if output.kind == OutputKind::Core {
         if let Some(ci_partial) = ci_partial {
             push_section(
@@ -1454,11 +1621,21 @@ fn build_readme(
             );
         }
     }
-    push_section(
-        &mut sections,
-        "Shared Finish Checklist",
-        extract_section(&shared_projects.body, "Shared Finish Checklist"),
-    );
+    if output.kind != OutputKind::Contracts {
+        push_section(
+            &mut sections,
+            "Shared Finish Checklist",
+            extract_section(&shared_projects.body, "Shared Finish Checklist"),
+        );
+    }
+
+    if output.kind == OutputKind::Adapter {
+        push_section(
+            &mut sections,
+            "Next Step",
+            Some(render_matching_core_tutorial_link(project_slug, output)),
+        );
+    }
 
     Ok(ReadmeTemplate {
         title: project_title.to_string(),
@@ -1562,10 +1739,10 @@ fn prepare_dotnet_environment(project_slug: &str, output: &CompiledOutput) -> Op
          - use the SDK default target framework unless this tutorial explicitly tells you to pin a different one",
     );
 
-    if output.kind == OutputKind::Adapter {
+    if output.kind == OutputKind::Core || output.kind == OutputKind::Adapter {
         body.push_str(&format!(
-            "\n- keep this adapter repo next to the matching core repo working copy so this local reference shape works:\n  `{}`",
-            format!("../{}", core_repo_name(project_slug, output))
+            "\n- keep this repo next to the matching contracts repo working copy so this local reference shape works:\n  `{}`",
+            format!("../{}", contracts_repo_name(project_slug, output))
         ));
     }
 
@@ -1610,8 +1787,47 @@ fn dotnet_scaffold_bootstrap_plan(
         return None;
     }
 
+    if output.kind == OutputKind::Contracts {
+        let solution_name = format!("{}.Contracts", pascal_case_slug(project_slug));
+        let project_name = solution_name.clone();
+        let solution_file = format!("{solution_name}.sln");
+        let project_path = format!("src/{project_name}");
+
+        return Some(DotnetScaffoldBootstrapPlan {
+            commands: vec![
+                vec![
+                    "dotnet".to_string(),
+                    "new".to_string(),
+                    "sln".to_string(),
+                    "--format".to_string(),
+                    "sln".to_string(),
+                    "--name".to_string(),
+                    solution_name.clone(),
+                ],
+                vec![
+                    "dotnet".to_string(),
+                    "new".to_string(),
+                    "classlib".to_string(),
+                    "--name".to_string(),
+                    project_name.clone(),
+                    "--output".to_string(),
+                    project_path.clone(),
+                ],
+                vec![
+                    "dotnet".to_string(),
+                    "sln".to_string(),
+                    solution_file.clone(),
+                    "add".to_string(),
+                    format!("{project_path}/{project_name}.csproj"),
+                ],
+            ],
+            git_add_paths: vec![solution_file, "src".to_string()],
+            commit_message: "Create the Contracts Solution and Project",
+        });
+    }
+
     let (test_template, template_install_command) =
-        dotnet_test_template_short_name(&output.selections.testing);
+        dotnet_test_template_short_name(testing_selection(output)?);
 
     if output.kind == OutputKind::Core {
         let solution_name = pascal_case_slug(project_slug);
@@ -1620,6 +1836,11 @@ fn dotnet_scaffold_bootstrap_plan(
         let solution_file = format!("{solution_name}.sln");
         let library_project_path = format!("src/{library_project_name}");
         let test_project_path = format!("tests/{test_project_name}");
+        let contracts_project_name = format!("{}.Contracts", pascal_case_slug(project_slug));
+        let contracts_project_reference_path = format!(
+            "../{}/src/{contracts_project_name}/{contracts_project_name}.csproj",
+            contracts_repo_name(project_slug, output)
+        );
         let mut commands = Vec::new();
 
         commands.push(vec![
@@ -1671,6 +1892,13 @@ fn dotnet_scaffold_bootstrap_plan(
         commands.push(vec![
             "dotnet".to_string(),
             "add".to_string(),
+            format!("{library_project_path}/{library_project_name}.csproj"),
+            "reference".to_string(),
+            contracts_project_reference_path,
+        ]);
+        commands.push(vec![
+            "dotnet".to_string(),
+            "add".to_string(),
             format!("{test_project_path}/{test_project_name}.csproj"),
             "reference".to_string(),
             format!("{library_project_path}/{library_project_name}.csproj"),
@@ -1690,10 +1918,10 @@ fn dotnet_scaffold_bootstrap_plan(
         let solution_file = format!("{solution_name}.sln");
         let adapter_project_path = format!("src/{adapter_name}");
         let adapter_test_project_path = format!("tests/{adapter_test_project_name}");
-        let core_library_project_name = pascal_case_slug(project_slug);
-        let core_project_reference_path = format!(
-            "../{}/src/{core_library_project_name}/{core_library_project_name}.csproj",
-            core_repo_name(project_slug, output)
+        let contracts_project_name = format!("{}.Contracts", pascal_case_slug(project_slug));
+        let contracts_project_reference_path = format!(
+            "../{}/src/{contracts_project_name}/{contracts_project_name}.csproj",
+            contracts_repo_name(project_slug, output)
         );
         let mut commands = Vec::new();
 
@@ -1748,7 +1976,7 @@ fn dotnet_scaffold_bootstrap_plan(
             "add".to_string(),
             format!("{adapter_project_path}/{adapter_name}.csproj"),
             "reference".to_string(),
-            core_project_reference_path,
+            contracts_project_reference_path,
         ]);
         commands.push(vec![
             "dotnet".to_string(),
@@ -1788,10 +2016,23 @@ fn dotnet_root_justfile_plan(
         return None;
     }
 
-    let test_project_path = dotnet_test_project_csproj_path(project_slug, output)?;
-    let justfile_contents = dotnet_root_justfile_contents(&test_project_path, &output.selections.testing);
+    if output.kind == OutputKind::Contracts {
+        return Some(DotnetRootJustfilePlan {
+            pre_commands: Vec::new(),
+            files: vec![ManagedRepoFile {
+                relative_path: "justfile".to_string(),
+                contents: dotnet_contracts_root_justfile_contents(project_slug).into_bytes(),
+            }],
+            git_add_paths: vec!["justfile".to_string()],
+            commit_message: "Add Root Justfile",
+        });
+    }
 
-    if output.selections.testing == "tunit" {
+    let test_project_path = dotnet_test_project_csproj_path(project_slug, output)?;
+    let testing = testing_selection(output)?;
+    let justfile_contents = dotnet_root_justfile_contents(&test_project_path, testing);
+
+    if testing == "tunit" {
         return Some(DotnetRootJustfilePlan {
             pre_commands: Vec::new(),
             files: vec![
@@ -1845,13 +2086,18 @@ fn recommended_dotnet_core_scaffold(project_slug: &str, output: &CompiledOutput)
     }
 
     let (test_template, template_install_command) =
-        dotnet_test_template_short_name(&output.selections.testing);
+        dotnet_test_template_short_name(testing_selection(output)?);
     let solution_name = pascal_case_slug(project_slug);
     let library_project_name = solution_name.clone();
     let test_project_name = format!("{solution_name}.Tests");
     let solution_file = format!("{solution_name}.sln");
     let library_project_path = format!("src/{library_project_name}");
     let test_project_path = format!("tests/{test_project_name}");
+    let contracts_repo_name = contracts_repo_name(project_slug, output);
+    let contracts_project_name = format!("{solution_name}.Contracts");
+    let contracts_project_reference_path = format!(
+        "../{contracts_repo_name}/src/{contracts_project_name}/{contracts_project_name}.csproj"
+    );
     let template_install_line = template_install_command
         .map(|command| format!("{command}\n"))
         .unwrap_or_default();
@@ -1863,6 +2109,8 @@ fn recommended_dotnet_core_scaffold(project_slug: &str, output: &CompiledOutput)
          - Library project path: `{library_project_path}`\n\
          - Test project name: `{test_project_name}`\n\
          - Test project path: `{test_project_path}`\n\n\
+         - Local contracts repo assumption: sibling checkout at `../{contracts_repo_name}`\n\
+         - Local contracts project reference path: `{contracts_project_reference_path}`\n\n\
          Use these names and paths, then run:\n\n\
          ```bash\n\
          dotnet new sln --format sln --name {solution_name}\n\
@@ -1872,12 +2120,46 @@ fn recommended_dotnet_core_scaffold(project_slug: &str, output: &CompiledOutput)
          dotnet new {test_template} --name {test_project_name} --output {test_project_path}\n\
          dotnet sln {solution_file} add {library_project_path}/{library_project_name}.csproj\n\
          dotnet sln {solution_file} add {test_project_path}/{test_project_name}.csproj\n\
+         dotnet add {library_project_path}/{library_project_name}.csproj reference {contracts_project_reference_path}\n\
          dotnet add {test_project_path}/{test_project_name}.csproj reference {library_project_path}/{library_project_name}.csproj\n\
          ```\n\n\
          After those files exist, make this commit:\n\n\
          ```bash\n\
          git add {solution_file} src tests\n\
          git commit -m \"Create the Solution and Projects\"\n\
+         ```"
+    ))
+}
+
+fn recommended_dotnet_contracts_scaffold(
+    project_slug: &str,
+    output: &CompiledOutput,
+) -> Option<String> {
+    if output.kind != OutputKind::Contracts || output.selections.ecosystem != "dotnet" {
+        return None;
+    }
+
+    let solution_name = format!("{}.Contracts", pascal_case_slug(project_slug));
+    let project_name = solution_name.clone();
+    let solution_file = format!("{solution_name}.sln");
+    let project_path = format!("src/{project_name}");
+
+    Some(format!(
+        "- Solution name: `{solution_name}`\n\
+         - Solution file: `{solution_file}`\n\
+         - Contracts project name: `{project_name}`\n\
+         - Contracts project path: `{project_path}`\n\n\
+         Use these names and paths, then run:\n\n\
+         ```bash\n\
+         dotnet new sln --format sln --name {solution_name}\n\
+         dotnet new gitignore\n\
+         dotnet new classlib --name {project_name} --output {project_path}\n\
+         dotnet sln {solution_file} add {project_path}/{project_name}.csproj\n\
+         ```\n\n\
+         After those files exist, make this commit:\n\n\
+         ```bash\n\
+         git add {solution_file} src\n\
+         git commit -m \"Create the Contracts Solution and Project\"\n\
          ```"
     ))
 }
@@ -1894,17 +2176,17 @@ fn recommended_dotnet_command_line_adapter_scaffold(
     }
 
     let (test_template, template_install_command) =
-        dotnet_test_template_short_name(&output.selections.testing);
-    let core_repo_name = core_repo_name(project_slug, output);
-    let core_library_project_name = pascal_case_slug(project_slug);
+        dotnet_test_template_short_name(testing_selection(output)?);
+    let contracts_repo_name = contracts_repo_name(project_slug, output);
+    let contracts_project_name = format!("{}.Contracts", pascal_case_slug(project_slug));
     let adapter_name = format!("{}.CommandLine", pascal_case_slug(project_slug));
     let adapter_test_project_name = format!("{adapter_name}.Tests");
     let solution_name = adapter_name.clone();
     let solution_file = format!("{solution_name}.sln");
     let adapter_project_path = format!("src/{adapter_name}");
     let adapter_test_project_path = format!("tests/{adapter_test_project_name}");
-    let core_project_reference_path = format!(
-        "../{core_repo_name}/src/{core_library_project_name}/{core_library_project_name}.csproj"
+    let contracts_project_reference_path = format!(
+        "../{contracts_repo_name}/src/{contracts_project_name}/{contracts_project_name}.csproj"
     );
     let template_install_line = template_install_command
         .map(|command| format!("{command}\n"))
@@ -1917,8 +2199,8 @@ fn recommended_dotnet_command_line_adapter_scaffold(
          - Adapter project path: `{adapter_project_path}`\n\
          - Adapter test project name: `{adapter_test_project_name}`\n\
          - Adapter test project path: `{adapter_test_project_path}`\n\
-         - Local core repo assumption: sibling checkout at `../{core_repo_name}`\n\
-         - Local core project reference path: `{core_project_reference_path}`\n\n\
+         - Local contracts repo assumption: sibling checkout at `../{contracts_repo_name}`\n\
+         - Local contracts project reference path: `{contracts_project_reference_path}`\n\n\
          Use these names and paths, then run:\n\n\
          ```bash\n\
          dotnet new sln --format sln --name {solution_name}\n\
@@ -1928,7 +2210,7 @@ fn recommended_dotnet_command_line_adapter_scaffold(
          dotnet new {test_template} --name {adapter_test_project_name} --output {adapter_test_project_path}\n\
          dotnet sln {solution_file} add {adapter_project_path}/{adapter_name}.csproj\n\
          dotnet sln {solution_file} add {adapter_test_project_path}/{adapter_test_project_name}.csproj\n\
-         dotnet add {adapter_project_path}/{adapter_name}.csproj reference {core_project_reference_path}\n\
+         dotnet add {adapter_project_path}/{adapter_name}.csproj reference {contracts_project_reference_path}\n\
          dotnet add {adapter_test_project_path}/{adapter_test_project_name}.csproj reference {adapter_project_path}/{adapter_name}.csproj\n\
          ```\n\n\
          After those files exist, make this commit:\n\n\
@@ -1948,7 +2230,6 @@ fn render_dotnet_root_justfile(
         return None;
     }
 
-    let test_project_path = dotnet_test_project_csproj_path(project_slug, output)?;
     let intro = justfile_partial
         .map(|partial| normalize_text(&partial.body))
         .filter(|body| !body.is_empty())
@@ -1957,14 +2238,36 @@ fn render_dotnet_root_justfile(
                 .to_string()
         });
 
-    let justfile_contents = dotnet_root_justfile_contents(&test_project_path, &output.selections.testing);
-    let commit_add_paths = if output.selections.testing == "tunit" {
+    if output.kind == OutputKind::Contracts {
+        let justfile_contents = dotnet_contracts_root_justfile_contents(project_slug);
+        return Some(format!(
+            "{intro}\n\n\
+             Create the file:\n\n\
+             ```bash\n\
+             touch justfile\n\
+             ```\n\n\
+             Then put this exact content in `justfile`:\n\n\
+             ```just\n\
+             {justfile_contents}\
+             ```\n\n\
+             After `justfile` is in place, make this commit:\n\n\
+             ```bash\n\
+             git add justfile\n\
+             git commit -m \"Add Root Justfile\"\n\
+             ```"
+        ));
+    }
+
+    let test_project_path = dotnet_test_project_csproj_path(project_slug, output)?;
+    let testing = testing_selection(output)?;
+    let justfile_contents = dotnet_root_justfile_contents(&test_project_path, testing);
+    let commit_add_paths = if testing == "tunit" {
         "justfile global.json".to_string()
     } else {
         format!("justfile {test_project_path}")
     };
 
-    let body = if output.selections.testing == "tunit" {
+    let body = if testing == "tunit" {
         format!(
             "{intro}\n\n\
              Create a root `global.json` so `dotnet test` uses Microsoft.Testing.Platform with current .NET SDKs:\n\n\
@@ -2020,6 +2323,22 @@ fn render_dotnet_root_justfile(
 
 fn dotnet_test_runner_global_json() -> String {
     "{\n  \"test\": {\n    \"runner\": \"Microsoft.Testing.Platform\"\n  }\n}\n".to_string()
+}
+
+fn dotnet_contracts_root_justfile_contents(project_slug: &str) -> String {
+    let solution_name = format!("{}.Contracts", pascal_case_slug(project_slug));
+    let solution_file = format!("{solution_name}.sln");
+    format!(
+        "format:\n\
+         \tdotnet format\n\n\
+         check-formatting:\n\
+         \tdotnet format --verify-no-changes\n\n\
+         check-build:\n\
+         \tdotnet build {solution_file}\n\n\
+         check-all:\n\
+         \tjust check-formatting\n\
+         \tjust check-build\n"
+    )
 }
 
 fn dotnet_root_justfile_contents(test_project_path: &str, testing: &str) -> String {
@@ -2243,15 +2562,45 @@ fn collapse_blank_lines(text: &str) -> String {
     result.join("\n")
 }
 
+fn testing_selection(output: &CompiledOutput) -> Option<&str> {
+    output.selections.testing.as_deref()
+}
+
+fn render_matching_core_tutorial_link(project_slug: &str, output: &CompiledOutput) -> String {
+    let testing = testing_selection(output).unwrap_or("xunit");
+    let core_tutorial_path = format!(
+        "tutorials/{project_slug}/{}/{}/core/{testing}/README.md",
+        output.selections.ecosystem, output.selections.language
+    );
+    let core_tutorial_url = format!(
+        "https://github.com/{GITHUB_OWNER}/for-all_tutorials/blob/main/{core_tutorial_path}"
+    );
+
+    format!(
+        "Build the real `IGreetingService` implementation next by following the matching core tutorial: \
+[{}]({}).",
+        format_selection_value(testing),
+        core_tutorial_url
+    )
+}
+
 fn repo_name(project_slug: &str, output: &CompiledOutput) -> String {
-    if output.kind == OutputKind::Core {
+    if output.kind == OutputKind::Contracts {
+        format!(
+            "{}_{}_{}_{}_contracts",
+            OUTPUT_REPO_PREFIX,
+            project_slug,
+            repo_name_selection_value(&output.selections.ecosystem),
+            repo_name_selection_value(&output.selections.language),
+        )
+    } else if output.kind == OutputKind::Core {
         format!(
             "{}_{}_{}_{}_core_{}",
             OUTPUT_REPO_PREFIX,
             project_slug,
             repo_name_selection_value(&output.selections.ecosystem),
             repo_name_selection_value(&output.selections.language),
-            repo_name_selection_value(&output.selections.testing)
+            repo_name_selection_value(testing_selection(output).unwrap_or("xunit"))
         )
     } else {
         format!(
@@ -2282,19 +2631,18 @@ fn repo_name(project_slug: &str, output: &CompiledOutput) -> String {
                     .as_deref()
                     .unwrap_or("unknown-framework"),
             ),
-            repo_name_selection_value(&output.selections.testing),
+            repo_name_selection_value(testing_selection(output).unwrap_or("xunit")),
         )
     }
 }
 
-fn core_repo_name(project_slug: &str, output: &CompiledOutput) -> String {
+fn contracts_repo_name(project_slug: &str, output: &CompiledOutput) -> String {
     format!(
-        "{}_{}_{}_{}_core_{}",
+        "{}_{}_{}_{}_contracts",
         OUTPUT_REPO_PREFIX,
         project_slug,
         repo_name_selection_value(&output.selections.ecosystem),
         repo_name_selection_value(&output.selections.language),
-        repo_name_selection_value(&output.selections.testing)
     )
 }
 
@@ -2324,22 +2672,28 @@ fn repo_name_selection_value(value: &str) -> &str {
 }
 
 fn repo_description(project_title: &str, output: &CompiledOutput) -> String {
-    if output.kind == OutputKind::Core {
+    if output.kind == OutputKind::Contracts {
+        format!(
+            "Generated contracts library for the {project_title} tutorial in {}/{}.",
+            format_selection_value(&output.selections.ecosystem),
+            format_selection_value(&output.selections.language),
+        )
+    } else if output.kind == OutputKind::Core {
         format!(
             "Manual spec-driven, test-driven core library for the {project_title} tutorial in {}/{} with {}.",
             format_selection_value(&output.selections.ecosystem),
             format_selection_value(&output.selections.language),
-            format_selection_value(&output.selections.testing)
+            format_selection_value(testing_selection(output).unwrap_or("xunit"))
         )
     } else {
         format!(
-            "Manual {}/{} {} adapter for the {project_title} tutorial in {}/{} with {}, consuming a separately tested core library.",
+            "Manual {}/{} {} adapter for the {project_title} tutorial in {}/{} with {}, consuming a shared contracts library.",
             format_selection_value(output.selections.surface.as_deref().unwrap_or("surface")),
             format_selection_value(output.selections.target.as_deref().unwrap_or("target")),
             format_selection_value(output.selections.framework.as_deref().unwrap_or("framework")),
             format_selection_value(&output.selections.ecosystem),
             format_selection_value(&output.selections.language),
-            format_selection_value(&output.selections.testing)
+            format_selection_value(testing_selection(output).unwrap_or("xunit"))
         )
     }
 }

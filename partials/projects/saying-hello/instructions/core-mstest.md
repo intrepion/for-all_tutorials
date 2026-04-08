@@ -18,13 +18,13 @@ rm tests/SayingHello.Tests/Test1.cs
 Create the replacement files now:
 
 ```bash
-touch src/SayingHello/Greeting.cs
-touch tests/SayingHello.Tests/GreetingTests.cs
+touch src/SayingHello/GreetingService.cs
+touch tests/SayingHello.Tests/GreetingServiceTests.cs
 ```
 
 ### 1. Red: Add The First Failing Test
 
-Create `tests/SayingHello.Tests/GreetingTests.cs` with this exact code:
+Create `tests/SayingHello.Tests/GreetingServiceTests.cs` with this exact code:
 
 ```csharp
 using Microsoft.VisualStudio.TestTools.UnitTesting;
@@ -33,12 +33,14 @@ using SayingHello;
 namespace SayingHello.Tests;
 
 [TestClass]
-public sealed class GreetingTests
+public sealed class GreetingServiceTests
 {
     [TestMethod]
     public void Greet_returns_personalized_greeting_for_non_empty_name()
     {
-        var result = Greeting.Greet("Ada");
+        var sut = new GreetingService();
+
+        var result = sut.Greet("Ada");
 
         Assert.AreEqual("Hello, Ada!", result);
     }
@@ -51,18 +53,20 @@ Run:
 dotnet test
 ```
 
-This should fail because `Greeting` does not exist yet.
+This should fail because `GreetingService` does not exist yet.
 
 ### 2. Green: Add The Smallest Production Code
 
-Create `src/SayingHello/Greeting.cs` with this exact code:
+Create `src/SayingHello/GreetingService.cs` with this exact code:
 
 ```csharp
+using SayingHello.Contracts;
+
 namespace SayingHello;
 
-public static class Greeting
+public sealed class GreetingService : IGreetingService
 {
-    public static string Greet(string name)
+    public string Greet(string name)
     {
         return $"Hello, {name}!";
     }
@@ -79,7 +83,7 @@ This should pass.
 
 ### 3. Red: Add The Trimming Test
 
-Replace `tests/SayingHello.Tests/GreetingTests.cs` with this exact code:
+Replace `tests/SayingHello.Tests/GreetingServiceTests.cs` with this exact code:
 
 ```csharp
 using Microsoft.VisualStudio.TestTools.UnitTesting;
@@ -88,12 +92,14 @@ using SayingHello;
 namespace SayingHello.Tests;
 
 [TestClass]
-public sealed class GreetingTests
+public sealed class GreetingServiceTests
 {
     [TestMethod]
     public void Greet_returns_personalized_greeting_for_non_empty_name()
     {
-        var result = Greeting.Greet("Ada");
+        var sut = new GreetingService();
+
+        var result = sut.Greet("Ada");
 
         Assert.AreEqual("Hello, Ada!", result);
     }
@@ -101,7 +107,9 @@ public sealed class GreetingTests
     [TestMethod]
     public void Greet_trims_leading_and_trailing_whitespace()
     {
-        var result = Greeting.Greet("  Ada  ");
+        var sut = new GreetingService();
+
+        var result = sut.Greet("  Ada  ");
 
         Assert.AreEqual("Hello, Ada!", result);
     }
@@ -118,14 +126,16 @@ This should fail.
 
 ### 4. Green: Make The Trimming Test Pass
 
-Replace `src/SayingHello/Greeting.cs` with this exact code:
+Replace `src/SayingHello/GreetingService.cs` with this exact code:
 
 ```csharp
+using SayingHello.Contracts;
+
 namespace SayingHello;
 
-public static class Greeting
+public sealed class GreetingService : IGreetingService
 {
-    public static string Greet(string name)
+    public string Greet(string name)
     {
         var trimmedName = name.Trim();
 
@@ -144,7 +154,7 @@ This should pass.
 
 ### 5. Red: Add The Empty-String Test
 
-Replace `tests/SayingHello.Tests/GreetingTests.cs` with this exact code:
+Replace `tests/SayingHello.Tests/GreetingServiceTests.cs` with this exact code:
 
 ```csharp
 using Microsoft.VisualStudio.TestTools.UnitTesting;
@@ -153,12 +163,14 @@ using SayingHello;
 namespace SayingHello.Tests;
 
 [TestClass]
-public sealed class GreetingTests
+public sealed class GreetingServiceTests
 {
     [TestMethod]
     public void Greet_returns_personalized_greeting_for_non_empty_name()
     {
-        var result = Greeting.Greet("Ada");
+        var sut = new GreetingService();
+
+        var result = sut.Greet("Ada");
 
         Assert.AreEqual("Hello, Ada!", result);
     }
@@ -166,7 +178,9 @@ public sealed class GreetingTests
     [TestMethod]
     public void Greet_trims_leading_and_trailing_whitespace()
     {
-        var result = Greeting.Greet("  Ada  ");
+        var sut = new GreetingService();
+
+        var result = sut.Greet("  Ada  ");
 
         Assert.AreEqual("Hello, Ada!", result);
     }
@@ -174,7 +188,9 @@ public sealed class GreetingTests
     [TestMethod]
     public void Greet_returns_generic_greeting_for_empty_string()
     {
-        var result = Greeting.Greet("");
+        var sut = new GreetingService();
+
+        var result = sut.Greet("");
 
         Assert.AreEqual("Hello!", result);
     }
@@ -191,14 +207,16 @@ This should fail.
 
 ### 6. Green: Make The Empty-String Test Pass
 
-Replace `src/SayingHello/Greeting.cs` with this exact code:
+Replace `src/SayingHello/GreetingService.cs` with this exact code:
 
 ```csharp
+using SayingHello.Contracts;
+
 namespace SayingHello;
 
-public static class Greeting
+public sealed class GreetingService : IGreetingService
 {
-    public static string Greet(string name)
+    public string Greet(string name)
     {
         if (name.Length == 0)
         {
@@ -222,7 +240,7 @@ This should pass.
 
 ### 7. Red: Add The Whitespace-Only Test
 
-Replace `tests/SayingHello.Tests/GreetingTests.cs` with this exact code:
+Replace `tests/SayingHello.Tests/GreetingServiceTests.cs` with this exact code:
 
 ```csharp
 using Microsoft.VisualStudio.TestTools.UnitTesting;
@@ -231,12 +249,14 @@ using SayingHello;
 namespace SayingHello.Tests;
 
 [TestClass]
-public sealed class GreetingTests
+public sealed class GreetingServiceTests
 {
     [TestMethod]
     public void Greet_returns_personalized_greeting_for_non_empty_name()
     {
-        var result = Greeting.Greet("Ada");
+        var sut = new GreetingService();
+
+        var result = sut.Greet("Ada");
 
         Assert.AreEqual("Hello, Ada!", result);
     }
@@ -244,7 +264,9 @@ public sealed class GreetingTests
     [TestMethod]
     public void Greet_trims_leading_and_trailing_whitespace()
     {
-        var result = Greeting.Greet("  Ada  ");
+        var sut = new GreetingService();
+
+        var result = sut.Greet("  Ada  ");
 
         Assert.AreEqual("Hello, Ada!", result);
     }
@@ -252,7 +274,9 @@ public sealed class GreetingTests
     [TestMethod]
     public void Greet_returns_generic_greeting_for_empty_string()
     {
-        var result = Greeting.Greet("");
+        var sut = new GreetingService();
+
+        var result = sut.Greet("");
 
         Assert.AreEqual("Hello!", result);
     }
@@ -260,7 +284,9 @@ public sealed class GreetingTests
     [TestMethod]
     public void Greet_returns_generic_greeting_for_whitespace_only_input()
     {
-        var result = Greeting.Greet("   ");
+        var sut = new GreetingService();
+
+        var result = sut.Greet("   ");
 
         Assert.AreEqual("Hello!", result);
     }
@@ -277,14 +303,16 @@ This should fail.
 
 ### 8. Green: Finish The Core Behavior
 
-Replace `src/SayingHello/Greeting.cs` with this exact code:
+Replace `src/SayingHello/GreetingService.cs` with this exact code:
 
 ```csharp
+using SayingHello.Contracts;
+
 namespace SayingHello;
 
-public static class Greeting
+public sealed class GreetingService : IGreetingService
 {
-    public static string Greet(string name)
+    public string Greet(string name)
     {
         var trimmedName = name.Trim();
 

@@ -84,7 +84,7 @@ compiled_outputs:
       - partials/projects/saying-hello/README.md
       - partials/projects/saying-hello/spec/README.md
       - partials/projects/saying-hello/instructions/README.md
-      - partials/projects/saying-hello/instructions/adapter.md
+      - partials/projects/saying-hello/instructions/adapter-xunit.md
       - partials/setups/storage/README.md
       - partials/setups/code/dotnet/README.md
       - partials/setups/code/dotnet/languages/csharp.md
@@ -108,7 +108,7 @@ compiled_outputs:
       - partials/projects/saying-hello/README.md
       - partials/projects/saying-hello/spec/README.md
       - partials/projects/saying-hello/instructions/README.md
-      - partials/projects/saying-hello/instructions/adapter.md
+      - partials/projects/saying-hello/instructions/adapter-nunit.md
       - partials/setups/storage/README.md
       - partials/setups/code/dotnet/README.md
       - partials/setups/code/dotnet/languages/csharp.md
@@ -132,7 +132,7 @@ compiled_outputs:
       - partials/projects/saying-hello/README.md
       - partials/projects/saying-hello/spec/README.md
       - partials/projects/saying-hello/instructions/README.md
-      - partials/projects/saying-hello/instructions/adapter.md
+      - partials/projects/saying-hello/instructions/adapter-mstest.md
       - partials/setups/storage/README.md
       - partials/setups/code/dotnet/README.md
       - partials/setups/code/dotnet/languages/csharp.md
@@ -156,7 +156,7 @@ compiled_outputs:
       - partials/projects/saying-hello/README.md
       - partials/projects/saying-hello/spec/README.md
       - partials/projects/saying-hello/instructions/README.md
-      - partials/projects/saying-hello/instructions/adapter.md
+      - partials/projects/saying-hello/instructions/adapter-tunit.md
       - partials/setups/storage/README.md
       - partials/setups/code/dotnet/README.md
       - partials/setups/code/dotnet/languages/csharp.md
