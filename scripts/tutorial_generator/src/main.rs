@@ -38,8 +38,15 @@ fn main() -> Result<(), AppError> {
             repos_root,
             owner,
             sync_branch_name,
+            project,
         } => {
-            bootstrap_output_repos(&app_root, repos_root, owner, sync_branch_name.as_deref())?;
+            bootstrap_output_repos(
+                &app_root,
+                repos_root,
+                owner,
+                sync_branch_name.as_deref(),
+                project.as_deref(),
+            )?;
         }
         CommandMode::CleanupOutputRepos {
             repos_root,
@@ -73,6 +80,7 @@ enum CommandMode {
         repos_root: PathBuf,
         owner: String,
         sync_branch_name: Option<String>,
+        project: Option<String>,
     },
     CleanupOutputRepos {
         repos_root: PathBuf,
@@ -92,6 +100,7 @@ impl Args {
         let mut owner = GITHUB_OWNER.to_string();
         let mut apply = false;
         let mut sync_branch_name = None;
+        let mut project = None;
         let mut args = env::args().skip(1);
 
         while let Some(arg) = args.next() {
@@ -118,6 +127,7 @@ impl Args {
                         repos_root: repos_root.clone(),
                         owner: owner.clone(),
                         sync_branch_name: sync_branch_name.clone(),
+                        project: project.clone(),
                     };
                 }
                 "--cleanup-output-repos" => {
@@ -148,6 +158,12 @@ impl Args {
                         })?,
                     );
                 }
+                "--project" => {
+                    project = Some(
+                        args.next()
+                            .ok_or_else(|| AppError::message("missing value for --project"))?,
+                    );
+                }
                 other => return Err(AppError::message(format!("unknown argument: {other}"))),
             }
         }
@@ -167,6 +183,7 @@ impl Args {
                     repos_root,
                     owner,
                     sync_branch_name,
+                    project,
                 };
             }
             CommandMode::CleanupOutputRepos { .. } => {
@@ -307,11 +324,23 @@ struct OutputRepoSpec {
 }
 
 fn collect_output_repo_specs(app_root: &Path) -> Result<Vec<OutputRepoSpec>, AppError> {
+    collect_output_repo_specs_for_project(app_root, None)
+}
+
+fn collect_output_repo_specs_for_project(
+    app_root: &Path,
+    project_filter: Option<&str>,
+) -> Result<Vec<OutputRepoSpec>, AppError> {
     let manifest_paths = collect_manifest_paths(app_root)?;
     let mut specs = Vec::new();
 
     for manifest_path in manifest_paths {
         let manifest: Manifest = serde_yaml::from_str(&fs::read_to_string(&manifest_path)?)?;
+        if let Some(project_filter) = project_filter {
+            if manifest.project != project_filter {
+                continue;
+            }
+        }
         let project_root_path = app_root
             .join("partials/projects")
             .join(&manifest.project)
@@ -432,8 +461,9 @@ fn bootstrap_output_repos(
     repos_root: &Path,
     owner: &str,
     sync_branch_name: Option<&str>,
+    project_filter: Option<&str>,
 ) -> Result<(), AppError> {
-    let specs = collect_output_repo_specs(app_root)?;
+    let specs = collect_output_repo_specs_for_project(app_root, project_filter)?;
     let sync_branch_name = sync_branch_name
         .filter(|value| !value.trim().is_empty())
         .map(str::to_string)
@@ -622,6 +652,10 @@ fn build_managed_repo_files(
             contents: render_output_repo_readme_content(owner, spec).into_bytes(),
         },
         ManagedRepoFile {
+            relative_path: "justfile".to_string(),
+            contents: render_output_repo_root_justfile_content(spec).into_bytes(),
+        },
+        ManagedRepoFile {
             relative_path: "LICENSE".to_string(),
             contents: mit_license_text(owner).into_bytes(),
         },
@@ -697,6 +731,24 @@ fn render_root_readme_content(owner: &str, repo_name: &str, repo_description: &s
 
 fn render_output_repo_readme_content(owner: &str, spec: &OutputRepoSpec) -> String {
     render_root_readme_content(owner, &spec.repo_name, &spec.repo_description)
+}
+
+fn render_output_repo_root_justfile_content(spec: &OutputRepoSpec) -> String {
+    let solution_name = workspace_solution_name(&spec.project_slug);
+    format!(
+        "set shell := [\"bash\", \"-eu\", \"-c\"]\n\n\
+         workspace := \"workspace\"\n\
+         solution := \"{solution_name}.sln\"\n\n\
+         format:\n\
+         \tcd {{workspace}} && dotnet format {{solution}}\n\n\
+         check-formatting:\n\
+         \tcd {{workspace}} && dotnet format {{solution}} --verify-no-changes\n\n\
+         check-tests:\n\
+         \tcd {{workspace}} && dotnet test {{solution}}\n\n\
+         check-all:\n\
+         \tjust check-formatting\n\
+         \tjust check-tests\n"
+    )
 }
 
 fn build_output_repo_tutorial_files(app_root: &Path, spec: &OutputRepoSpec) -> Vec<ManagedRepoFile> {
@@ -795,7 +847,7 @@ fn render_output_repo_setup_content(spec: &OutputRepoSpec) -> String {
     tutorial_file_markdown(
         "Setup",
         &format!(
-            "Keep the repository root for shared files like `README.md`, `LICENSE`, `.gitignore`, `.github/`, and `tutorial/`.\n\nPut all .NET code inside a single `workspace/` folder.\n\nFrom the repository root, run:\n\n```bash\nmkdir -p workspace\ncd workspace\ndotnet new sln --format sln --name {solution_name}\n```\n\nAfter those commands finish, stay in `workspace/` for the rest of this tutorial sequence unless a step explicitly says otherwise.\n\nWhen the full workspace is finished, it should contain these projects:\n\n- `src/{contracts_project_name}`\n- `src/{code_project_name}`\n- `tests/{code_test_project_name}`\n- `src/{adapter_project_name}`\n- `tests/{adapter_test_project_name}`\n\nThe next files assume this layout:\n\n```text\nworkspace/\n  {solution_name}.sln\n  src/\n    {contracts_project_name}/\n    {code_project_name}/\n    {adapter_project_name}/\n  tests/\n    {code_test_project_name}/\n    {adapter_test_project_name}/\n```"
+            "Keep the repository root for shared files like `README.md`, `LICENSE`, `.gitignore`, `.github/`, and `tutorial/`.\n\nPut all .NET code inside a single `workspace/` folder.\n\nFrom the repository root, run:\n\n```bash\nmkdir -p workspace\ncd workspace\ndotnet new sln --format sln --name {solution_name}\ndotnet new gitignore\n```\n\nAfter those commands finish, stay in `workspace/` for the rest of this tutorial sequence unless a step explicitly says otherwise.\n\nThis gives you:\n\n- a root-level `.gitignore` for operating-system noise and editor leftovers\n- a `workspace/.gitignore` for standard `.NET` build output and local tooling files\n\nWhen the full workspace is finished, it should contain these projects:\n\n- `src/{contracts_project_name}`\n- `src/{code_project_name}`\n- `tests/{code_test_project_name}`\n- `src/{adapter_project_name}`\n- `tests/{adapter_test_project_name}`\n\nThe next files assume this layout:\n\n```text\nworkspace/\n  .gitignore\n  {solution_name}.sln\n  src/\n    {contracts_project_name}/\n    {code_project_name}/\n    {adapter_project_name}/\n  tests/\n    {code_test_project_name}/\n    {adapter_test_project_name}/\n```"
         ),
     )
 }

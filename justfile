@@ -55,7 +55,7 @@ clone-output-repos repos_root="../output-repos" owner="intrepion":
       --repos-root "$normalized_repos_root" \
       --owner "$normalized_owner"
 
-bootstrap-output-repos repos_root="../output-repos" owner="intrepion" sync_branch_name="":
+bootstrap-output-repos repos_root="../output-repos" owner="intrepion" sync_branch_name="" project="saying-hello":
     #!/usr/bin/env bash
     set -euo pipefail
     normalized_repos_root='{{repos_root}}'
@@ -73,6 +73,11 @@ bootstrap-output-repos repos_root="../output-repos" owner="intrepion" sync_branc
     normalized_sync_branch_name="${normalized_sync_branch_name%\"}"
     normalized_sync_branch_name="${normalized_sync_branch_name#sync_branch_name=}"
 
+    normalized_project='{{project}}'
+    normalized_project="${normalized_project#\"}"
+    normalized_project="${normalized_project%\"}"
+    normalized_project="${normalized_project#project=}"
+
     if [ -z "$normalized_sync_branch_name" ] && command -v python3 >/dev/null 2>&1; then
       normalized_sync_branch_name="$(
         python3 -c 'from datetime import UTC, datetime; print(datetime.now(UTC).strftime("%Y%m%dT%H%M%S%fZ"))'
@@ -83,7 +88,8 @@ bootstrap-output-repos repos_root="../output-repos" owner="intrepion" sync_branc
       --bootstrap-output-repos \
       --repos-root "$normalized_repos_root" \
       --owner "$normalized_owner" \
-      --sync-branch-name "$normalized_sync_branch_name"
+      --sync-branch-name "$normalized_sync_branch_name" \
+      --project "$normalized_project"
 
 cleanup-output-repos apply="false" repos_root="../output-repos" owner="intrepion":
     #!/usr/bin/env bash
