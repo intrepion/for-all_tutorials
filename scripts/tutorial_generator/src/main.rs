@@ -754,33 +754,41 @@ fn render_output_repo_root_justfile_content(spec: &OutputRepoSpec) -> String {
 fn render_output_repo_ci_workflow_content(spec: &OutputRepoSpec) -> String {
     let solution_name = workspace_solution_name(&spec.project_slug);
     format!(
-        "name: CI\n\n\
-         on:\n\
-           push:\n\
-             branches:\n\
-               - main\n\
-           pull_request:\n\
-             branches:\n\
-               - main\n\n\
-         jobs:\n\
-           test:\n\
-             runs-on: ubuntu-latest\n\n\
-             steps:\n\
-               - name: Check out code\n\
-                 uses: actions/checkout@v6\n\n\
-               - name: Set up .NET\n\
-                 uses: actions/setup-dotnet@v5\n\
-                 with:\n\
-                   dotnet-version: 10.0.x\n\n\
-               - name: Verify formatting\n\
-                 working-directory: workspace\n\
-                 run: dotnet format {solution_name}.sln --verify-no-changes\n\n\
-               - name: Restore\n\
-                 working-directory: workspace\n\
-                 run: dotnet restore {solution_name}.sln\n\n\
-               - name: Test\n\
-                 working-directory: workspace\n\
-                 run: dotnet test {solution_name}.sln\n"
+        r#"name: CI
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check out code
+        uses: actions/checkout@v6
+
+      - name: Set up .NET
+        uses: actions/setup-dotnet@v5
+        with:
+          dotnet-version: 10.0.x
+
+      - name: Verify formatting
+        working-directory: workspace
+        run: dotnet format {solution_name}.sln --verify-no-changes
+
+      - name: Restore
+        working-directory: workspace
+        run: dotnet restore {solution_name}.sln
+
+      - name: Test
+        working-directory: workspace
+        run: dotnet test {solution_name}.sln
+"#
     )
 }
 
@@ -880,7 +888,7 @@ fn render_output_repo_setup_content(spec: &OutputRepoSpec) -> String {
     tutorial_file_markdown(
         "Setup",
         &format!(
-            "Keep the repository root for shared files like `README.md`, `LICENSE`, `.gitignore`, `.github/`, and `tutorial/`.\n\nPut all .NET code inside a single `workspace/` folder.\n\nFrom the repository root, run:\n\n```bash\nmkdir -p workspace\ncd workspace\ndotnet new sln --format sln --name {solution_name}\ndotnet new gitignore\n```\n\nAfter those commands finish, stay in `workspace/` for the rest of this tutorial sequence unless a step explicitly says otherwise.\n\nThis gives you:\n\n- a root-level `.gitignore` for operating-system noise and editor leftovers\n- a `workspace/.gitignore` for standard `.NET` build output and local tooling files\n\nWhen the full workspace is finished, it should contain these projects:\n\n- `src/{contracts_project_name}`\n- `src/{code_project_name}`\n- `tests/{code_test_project_name}`\n- `src/{adapter_project_name}`\n- `tests/{adapter_test_project_name}`\n\nThe next files assume this layout:\n\n```text\nworkspace/\n  .gitignore\n  {solution_name}.sln\n  src/\n    {contracts_project_name}/\n    {code_project_name}/\n    {adapter_project_name}/\n  tests/\n    {code_test_project_name}/\n    {adapter_test_project_name}/\n```"
+            "Keep the repository root for shared files like `README.md`, `LICENSE`, `.gitignore`, `.github/`, and `tutorial/`.\n\nPut all .NET code inside a single `workspace/` folder.\n\nFrom the repository root, run:\n\n```bash\nmkdir -p workspace\ndotnet new sln --format sln --name {solution_name} --output workspace\ndotnet new gitignore --output workspace\n```\n\nAfter those commands finish, stay in the repository root for the rest of this tutorial sequence unless a step explicitly says otherwise.\n\nThis gives you:\n\n- a root-level `.gitignore` for operating-system noise and editor leftovers\n- a `workspace/.gitignore` for standard `.NET` build output and local tooling files\n\nWhen the full workspace is finished, it should contain these projects:\n\n- `workspace/src/{contracts_project_name}`\n- `workspace/src/{code_project_name}`\n- `workspace/tests/{code_test_project_name}`\n- `workspace/src/{adapter_project_name}`\n- `workspace/tests/{adapter_test_project_name}`\n\nThe next files assume this layout:\n\n```text\nworkspace/\n  .gitignore\n  {solution_name}.sln\n  src/\n    {contracts_project_name}/\n    {code_project_name}/\n    {adapter_project_name}/\n  tests/\n    {code_test_project_name}/\n    {adapter_test_project_name}/\n```"
         ),
     )
 }
@@ -907,8 +915,6 @@ fn generic_contracts_tutorial(spec: &OutputRepoSpec, spec_body: &str) -> String 
 fn rewrite_for_single_repo_tutorial(text: &str) -> String {
     normalize_text(
         &text
-            .replace("From the repo root", "From the workspace root")
-            .replace("from the repo root", "from the workspace root")
             .replace("In a separate adapter repo, ", "In the adapter layer in this repo, ")
             .replace("separate adapter repo", "adapter layer in this repo")
             .replace("adapter repos", "adapter layer")
@@ -920,7 +926,9 @@ fn rewrite_for_single_repo_tutorial(text: &str) -> String {
             .replace(
                 "The matching core tutorial is the next step.",
                 "Because `tutorial/code.md` comes before this file, the code layer should already exist before you finish wiring the adapter.",
-            ),
+            )
+            .replace("src/", "workspace/src/")
+            .replace("tests/", "workspace/tests/"),
     )
 }
 
@@ -951,10 +959,10 @@ fn adapter_test_project_name(project_slug: &str) -> String {
 fn render_output_repo_contracts_scaffold(spec: &OutputRepoSpec) -> String {
     let solution_name = workspace_solution_name(&spec.project_slug);
     let project_name = contracts_project_name(&spec.project_slug);
-    let project_path = format!("src/{project_name}");
+    let project_path = format!("workspace/src/{project_name}");
 
     format!(
-        "Create the contracts library inside `workspace/` first.\n\nFrom the workspace root, run:\n\n```bash\ndotnet new classlib --language C# --output {project_path} --name {project_name}\ndotnet sln {solution_name}.sln add {project_path}/{project_name}.csproj\n```\n\nAfter those commands finish, stay in the workspace root and continue with the rest of this file."
+        "Create the contracts library inside `workspace/` first.\n\nFrom the repository root, run:\n\n```bash\ndotnet new classlib --language C# --output {project_path} --name {project_name}\ndotnet sln workspace/{solution_name}.sln add {project_path}/{project_name}.csproj\n```\n\nAfter those commands finish, stay in the repository root and continue with the rest of this file."
     )
 }
 
@@ -963,12 +971,13 @@ fn render_output_repo_code_scaffold(spec: &OutputRepoSpec) -> String {
     let library_project_name = code_project_name(&spec.project_slug);
     let test_project_name = code_test_project_name(&spec.project_slug);
     let contracts_project_name = contracts_project_name(&spec.project_slug);
-    let library_project_path = format!("src/{library_project_name}");
-    let test_project_path = format!("tests/{test_project_name}");
-    let contracts_project_path = format!("src/{contracts_project_name}/{contracts_project_name}.csproj");
+    let library_project_path = format!("workspace/src/{library_project_name}");
+    let test_project_path = format!("workspace/tests/{test_project_name}");
+    let contracts_project_path =
+        format!("workspace/src/{contracts_project_name}/{contracts_project_name}.csproj");
 
     format!(
-        "Create the code library and its test library inside `workspace/`.\n\nBoth the code library and the code test library should reference the contracts library.\n\nFrom the workspace root, run:\n\n```bash\ndotnet new classlib --language C# --output {library_project_path} --name {library_project_name}\ndotnet new xunit --language C# --output {test_project_path} --name {test_project_name}\ndotnet sln {solution_name}.sln add {library_project_path}/{library_project_name}.csproj\ndotnet sln {solution_name}.sln add {test_project_path}/{test_project_name}.csproj\ndotnet add {library_project_path}/{library_project_name}.csproj reference {contracts_project_path}\ndotnet add {test_project_path}/{test_project_name}.csproj reference {contracts_project_path}\ndotnet add {test_project_path}/{test_project_name}.csproj reference {library_project_path}/{library_project_name}.csproj\n```\n\nAfter those commands finish, stay in the workspace root and continue with the rest of this file."
+        "Create the code library and its test library inside `workspace/`.\n\nBoth the code library and the code test library should reference the contracts library.\n\nFrom the repository root, run:\n\n```bash\ndotnet new classlib --language C# --output {library_project_path} --name {library_project_name}\ndotnet new xunit --language C# --output {test_project_path} --name {test_project_name}\ndotnet sln workspace/{solution_name}.sln add {library_project_path}/{library_project_name}.csproj\ndotnet sln workspace/{solution_name}.sln add {test_project_path}/{test_project_name}.csproj\ndotnet add {library_project_path}/{library_project_name}.csproj reference {contracts_project_path}\ndotnet add {test_project_path}/{test_project_name}.csproj reference {contracts_project_path}\ndotnet add {test_project_path}/{test_project_name}.csproj reference {library_project_path}/{library_project_name}.csproj\n```\n\nAfter those commands finish, stay in the repository root and continue with the rest of this file."
     )
 }
 
@@ -978,13 +987,14 @@ fn render_output_repo_adapter_scaffold(spec: &OutputRepoSpec) -> String {
     let adapter_test_project_name = adapter_test_project_name(&spec.project_slug);
     let contracts_project_name = contracts_project_name(&spec.project_slug);
     let code_project_name = code_project_name(&spec.project_slug);
-    let adapter_project_path = format!("src/{adapter_project_name}");
-    let adapter_test_project_path = format!("tests/{adapter_test_project_name}");
-    let contracts_project_path = format!("src/{contracts_project_name}/{contracts_project_name}.csproj");
-    let code_project_path = format!("src/{code_project_name}/{code_project_name}.csproj");
+    let adapter_project_path = format!("workspace/src/{adapter_project_name}");
+    let adapter_test_project_path = format!("workspace/tests/{adapter_test_project_name}");
+    let contracts_project_path =
+        format!("workspace/src/{contracts_project_name}/{contracts_project_name}.csproj");
+    let code_project_path = format!("workspace/src/{code_project_name}/{code_project_name}.csproj");
 
     format!(
-        "Create the adapter library and its test library inside `workspace/`.\n\nBoth the adapter library and the adapter test library should reference the contracts library. The adapter library should also reference the code library.\n\nFrom the workspace root, run:\n\n```bash\ndotnet new console --language C# --output {adapter_project_path} --name {adapter_project_name}\ndotnet new xunit --language C# --output {adapter_test_project_path} --name {adapter_test_project_name}\ndotnet sln {solution_name}.sln add {adapter_project_path}/{adapter_project_name}.csproj\ndotnet sln {solution_name}.sln add {adapter_test_project_path}/{adapter_test_project_name}.csproj\ndotnet add {adapter_project_path}/{adapter_project_name}.csproj reference {contracts_project_path}\ndotnet add {adapter_test_project_path}/{adapter_test_project_name}.csproj reference {contracts_project_path}\ndotnet add {adapter_project_path}/{adapter_project_name}.csproj reference {code_project_path}\ndotnet add {adapter_test_project_path}/{adapter_test_project_name}.csproj reference {adapter_project_path}/{adapter_project_name}.csproj\n```\n\nAfter those commands finish, stay in the workspace root and continue with the rest of this file."
+        "Create the adapter library and its test library inside `workspace/`.\n\nBoth the adapter library and the adapter test library should reference the contracts library. The adapter library should also reference the code library.\n\nFrom the repository root, run:\n\n```bash\ndotnet new console --language C# --output {adapter_project_path} --name {adapter_project_name}\ndotnet new xunit --language C# --output {adapter_test_project_path} --name {adapter_test_project_name}\ndotnet sln workspace/{solution_name}.sln add {adapter_project_path}/{adapter_project_name}.csproj\ndotnet sln workspace/{solution_name}.sln add {adapter_test_project_path}/{adapter_test_project_name}.csproj\ndotnet add {adapter_project_path}/{adapter_project_name}.csproj reference {contracts_project_path}\ndotnet add {adapter_test_project_path}/{adapter_test_project_name}.csproj reference {contracts_project_path}\ndotnet add {adapter_project_path}/{adapter_project_name}.csproj reference {code_project_path}\ndotnet add {adapter_test_project_path}/{adapter_test_project_name}.csproj reference {adapter_project_path}/{adapter_project_name}.csproj\n```\n\nAfter those commands finish, stay in the repository root and continue with the rest of this file."
     )
 }
 
