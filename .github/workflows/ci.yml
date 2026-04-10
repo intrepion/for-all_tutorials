@@ -25,6 +25,9 @@ jobs:
       - name: Test generator
         run: cargo test --manifest-path scripts/tutorial_generator/Cargo.toml
 
+      - name: Generate tutorials
+        run: cargo run --quiet --manifest-path scripts/tutorial_generator/Cargo.toml -- --output-root tutorials
+
       - name: Verify generated tutorials
         shell: bash
         run: |
