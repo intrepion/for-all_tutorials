@@ -668,7 +668,7 @@ fn build_managed_repo_files(
     if spec.ecosystem == "dotnet" {
         files.push(ManagedRepoFile {
             relative_path: ".github/workflows/ci.yml".to_string(),
-            contents: load_dotnet_ci_workflow(app_root)?.into_bytes(),
+            contents: render_output_repo_ci_workflow_content(spec).into_bytes(),
         });
     }
 
@@ -740,14 +740,47 @@ fn render_output_repo_root_justfile_content(spec: &OutputRepoSpec) -> String {
          workspace := \"workspace\"\n\
          solution := \"{solution_name}.sln\"\n\n\
          format:\n\
-         \tcd {{workspace}} && dotnet format {{solution}}\n\n\
+         \tcd {{{{workspace}}}} && dotnet format {{{{solution}}}}\n\n\
          check-formatting:\n\
-         \tcd {{workspace}} && dotnet format {{solution}} --verify-no-changes\n\n\
+         \tcd {{{{workspace}}}} && dotnet format {{{{solution}}}} --verify-no-changes\n\n\
          check-tests:\n\
-         \tcd {{workspace}} && dotnet test {{solution}}\n\n\
+         \tcd {{{{workspace}}}} && dotnet test {{{{solution}}}}\n\n\
          check-all:\n\
          \tjust check-formatting\n\
          \tjust check-tests\n"
+    )
+}
+
+fn render_output_repo_ci_workflow_content(spec: &OutputRepoSpec) -> String {
+    let solution_name = workspace_solution_name(&spec.project_slug);
+    format!(
+        "name: CI\n\n\
+         on:\n\
+           push:\n\
+             branches:\n\
+               - main\n\
+           pull_request:\n\
+             branches:\n\
+               - main\n\n\
+         jobs:\n\
+           test:\n\
+             runs-on: ubuntu-latest\n\n\
+             steps:\n\
+               - name: Check out code\n\
+                 uses: actions/checkout@v6\n\n\
+               - name: Set up .NET\n\
+                 uses: actions/setup-dotnet@v5\n\
+                 with:\n\
+                   dotnet-version: 10.0.x\n\n\
+               - name: Verify formatting\n\
+                 working-directory: workspace\n\
+                 run: dotnet format {solution_name}.sln --verify-no-changes\n\n\
+               - name: Restore\n\
+                 working-directory: workspace\n\
+                 run: dotnet restore {solution_name}.sln\n\n\
+               - name: Test\n\
+                 working-directory: workspace\n\
+                 run: dotnet test {solution_name}.sln\n"
     )
 }
 
