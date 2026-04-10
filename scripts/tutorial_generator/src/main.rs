@@ -854,7 +854,7 @@ fn build_output_repo_tutorial_files(app_root: &Path, spec: &OutputRepoSpec) -> V
                 &format!(
                     "{}\n\n{}",
                     render_output_repo_code_scaffold(spec),
-                    rewrite_for_single_repo_tutorial(&code_partial.body)
+                    rewrite_output_repo_code_body(&rewrite_for_single_repo_tutorial(&code_partial.body))
                 ),
             )
             .into_bytes(),
@@ -871,12 +871,16 @@ fn build_output_repo_tutorial_files(app_root: &Path, spec: &OutputRepoSpec) -> V
             )
             .into_bytes(),
         },
+        ManagedRepoFile {
+            relative_path: "tutorial/finish.md".to_string(),
+            contents: render_output_repo_finish_content(spec).into_bytes(),
+        },
     ]
 }
 
 fn render_output_repo_tutorial_readme_content(spec: &OutputRepoSpec) -> String {
     format!(
-        "# Tutorial\n\nChoices for this repo:\n\n- Project: `{}`\n- Workspace folder: `workspace/`\n- Ecosystem: `.NET`\n- Language: `C#`\n- Testing: `xUnit`\n- Mocking: `NSubstitute`\n- Storage: `no-storage`\n- Surface: `command-line`\n- Target: `all`\n- Framework: `no-framework`\n\nWork through these files in order:\n\n1. [Spec](spec.md)\n2. [Setup](setup.md)\n3. [Contracts](contracts.md)\n4. [Code](code.md)\n5. [Adapter](adapter.md)\n",
+        "# Tutorial\n\nChoices for this repo:\n\n- Project: `{}`\n- Workspace folder: `workspace/`\n- Ecosystem: `.NET`\n- Language: `C#`\n- Testing: `xUnit`\n- Mocking: `NSubstitute`\n- Storage: `no-storage`\n- Surface: `command-line`\n- Target: `all`\n- Framework: `no-framework`\n\nWork through these files in order:\n\n1. [Spec](spec.md)\n2. [Setup](setup.md)\n3. [Contracts](contracts.md)\n4. [Code](code.md)\n5. [Adapter](adapter.md)\n6. [Finish](finish.md)\n",
         spec.project_slug
     )
 }
@@ -942,10 +946,58 @@ fn rewrite_output_repo_adapter_body(text: &str) -> String {
         "```csharp\nusing SayingHello;\nusing SayingHello.CommandLine;\n\nvar greetingService = new GreetingService();\nvar adapter = new CommandLineGreeting(greetingService);\n\nConsole.WriteLine(adapter.BuildMessage(args));\n```",
     );
 
-    with_real_program.replace(
-        "### 5. Stop At The Contract Boundary\n\nRun:\n\n```bash\ndotnet test\n```\n\nThis should pass with both adapter tests green.\n\nLeave the placeholder `NotImplementedGreetingService` in `Program.cs` for now. The matching core tutorial is the next step.",
-        "### 5. Run The Working Application\n\nRun:\n\n```bash\ndotnet test\njust run Ada\n```\n\nThis should keep the adapter tests green and print `Hello, Ada!` from the real command-line application.",
-    )
+    let checkpointed = rewrite_output_repo_test_checkpoints(&with_real_program);
+    let stop_section_re =
+        Regex::new(r"(?s)\n### 5\. Stop At The Contract Boundary.*\z").expect("valid adapter strip regex");
+    stop_section_re.replace(&checkpointed, "").to_string()
+}
+
+fn rewrite_output_repo_code_body(text: &str) -> String {
+    rewrite_output_repo_test_checkpoints(text)
+}
+
+fn rewrite_output_repo_test_checkpoints(text: &str) -> String {
+    let heading_re = Regex::new(r"(?m)^### (?P<title>.+)$").expect("valid heading regex");
+    let mut rewritten = String::new();
+    let mut last_index = 0usize;
+    let matches: Vec<_> = heading_re.captures_iter(text).collect();
+
+    for (index, capture) in matches.iter().enumerate() {
+        let whole_match = capture.get(0).expect("heading match");
+        let title = capture
+            .name("title")
+            .expect("heading title")
+            .as_str()
+            .replace('"', "\\\"");
+        let section_start = whole_match.start();
+        let section_end = matches
+            .get(index + 1)
+            .and_then(|next| next.get(0))
+            .map(|next| next.start())
+            .unwrap_or(text.len());
+
+        rewritten.push_str(&text[last_index..section_start]);
+        let section_text = &text[section_start..section_end];
+        let replacement = format!(
+            "Run:\n\n```bash\njust check-tests\ngit add -A\ngit commit -m \"{title}\"\n```"
+        );
+        rewritten.push_str(&section_text.replace("Run:\n\n```bash\ndotnet test\n```", &replacement));
+        last_index = section_end;
+    }
+
+    rewritten.push_str(&text[last_index..]);
+    rewritten
+}
+
+fn render_output_repo_finish_content(spec: &OutputRepoSpec) -> String {
+    let body = if spec.project_slug == "saying-hello" {
+        "From the repository root, use the generated root `justfile` to run the finished command-line application.\n\nTry these commands:\n\n```bash\njust run\njust run Ada\n```\n\nFor `saying-hello`, the expected behavior is:\n\n- `just run` prints `Hello!`\n- `just run Ada` prints `Hello, Ada!`"
+            .to_string()
+    } else {
+        "From the repository root, use the generated root `justfile` to run the finished command-line application.\n\nTry these commands:\n\n```bash\njust run\njust run <your-arguments>\n```".to_string()
+    };
+
+    tutorial_file_markdown("Finish", &body)
 }
 
 fn workspace_solution_name(project_slug: &str) -> String {
@@ -978,7 +1030,7 @@ fn render_output_repo_contracts_scaffold(spec: &OutputRepoSpec) -> String {
     let project_path = format!("workspace/src/{project_name}");
 
     format!(
-        "Create the contracts library inside `workspace/` first.\n\nFrom the repository root, run:\n\n```bash\ndotnet new classlib --language C# --output {project_path} --name {project_name}\ndotnet sln workspace/{solution_name}.sln add {project_path}/{project_name}.csproj\n```\n\nAfter those commands finish, stay in the repository root and continue with the rest of this file."
+        "From the repository root, run:\n\n```bash\ndotnet new classlib --language C# --output {project_path} --name {project_name}\ndotnet sln workspace/{solution_name}.sln add {project_path}/{project_name}.csproj\n```"
     )
 }
 
@@ -993,7 +1045,7 @@ fn render_output_repo_code_scaffold(spec: &OutputRepoSpec) -> String {
         format!("workspace/src/{contracts_project_name}/{contracts_project_name}.csproj");
 
     format!(
-        "Create the code library and its test library inside `workspace/`.\n\nBoth the code library and the code test library should reference the contracts library.\n\nFrom the repository root, run:\n\n```bash\ndotnet new classlib --language C# --output {library_project_path} --name {library_project_name}\ndotnet new xunit --language C# --output {test_project_path} --name {test_project_name}\ndotnet sln workspace/{solution_name}.sln add {library_project_path}/{library_project_name}.csproj\ndotnet sln workspace/{solution_name}.sln add {test_project_path}/{test_project_name}.csproj\ndotnet add {library_project_path}/{library_project_name}.csproj reference {contracts_project_path}\ndotnet add {test_project_path}/{test_project_name}.csproj reference {contracts_project_path}\ndotnet add {test_project_path}/{test_project_name}.csproj reference {library_project_path}/{library_project_name}.csproj\n```\n\nAfter those commands finish, stay in the repository root and continue with the rest of this file."
+        "Both the code library and the code test library should reference the contracts library.\n\nFrom the repository root, run:\n\n```bash\ndotnet new classlib --language C# --output {library_project_path} --name {library_project_name}\ndotnet new xunit --language C# --output {test_project_path} --name {test_project_name}\ndotnet sln workspace/{solution_name}.sln add {library_project_path}/{library_project_name}.csproj\ndotnet sln workspace/{solution_name}.sln add {test_project_path}/{test_project_name}.csproj\ndotnet add {library_project_path}/{library_project_name}.csproj reference {contracts_project_path}\ndotnet add {test_project_path}/{test_project_name}.csproj reference {contracts_project_path}\ndotnet add {test_project_path}/{test_project_name}.csproj reference {library_project_path}/{library_project_name}.csproj\n```"
     )
 }
 
@@ -1010,7 +1062,7 @@ fn render_output_repo_adapter_scaffold(spec: &OutputRepoSpec) -> String {
     let code_project_path = format!("workspace/src/{code_project_name}/{code_project_name}.csproj");
 
     format!(
-        "Create the adapter library and its test library inside `workspace/`.\n\nBoth the adapter library and the adapter test library should reference the contracts library. The adapter library should also reference the code library.\n\nFrom the repository root, run:\n\n```bash\ndotnet new console --language C# --output {adapter_project_path} --name {adapter_project_name}\ndotnet new xunit --language C# --output {adapter_test_project_path} --name {adapter_test_project_name}\ndotnet sln workspace/{solution_name}.sln add {adapter_project_path}/{adapter_project_name}.csproj\ndotnet sln workspace/{solution_name}.sln add {adapter_test_project_path}/{adapter_test_project_name}.csproj\ndotnet add {adapter_project_path}/{adapter_project_name}.csproj reference {contracts_project_path}\ndotnet add {adapter_test_project_path}/{adapter_test_project_name}.csproj reference {contracts_project_path}\ndotnet add {adapter_project_path}/{adapter_project_name}.csproj reference {code_project_path}\ndotnet add {adapter_test_project_path}/{adapter_test_project_name}.csproj reference {adapter_project_path}/{adapter_project_name}.csproj\n```\n\nAfter those commands finish, stay in the repository root and continue with the rest of this file."
+        "Both the adapter library and the adapter test library should reference the contracts library. The adapter library should also reference the code library.\n\nFrom the repository root, run:\n\n```bash\ndotnet new console --language C# --output {adapter_project_path} --name {adapter_project_name}\ndotnet new xunit --language C# --output {adapter_test_project_path} --name {adapter_test_project_name}\ndotnet sln workspace/{solution_name}.sln add {adapter_project_path}/{adapter_project_name}.csproj\ndotnet sln workspace/{solution_name}.sln add {adapter_test_project_path}/{adapter_test_project_name}.csproj\ndotnet add {adapter_project_path}/{adapter_project_name}.csproj reference {contracts_project_path}\ndotnet add {adapter_test_project_path}/{adapter_test_project_name}.csproj reference {contracts_project_path}\ndotnet add {adapter_project_path}/{adapter_project_name}.csproj reference {code_project_path}\ndotnet add {adapter_test_project_path}/{adapter_test_project_name}.csproj reference {adapter_project_path}/{adapter_project_name}.csproj\n```"
     )
 }
 
