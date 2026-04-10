@@ -6,6 +6,8 @@ for-all_tutorials
 
 Comparable, spec-driven tutorials organized as a project-first curriculum.
 
+[![CI](https://github.com/intrepion/for-all_tutorials/actions/workflows/ci.yml/badge.svg)](https://github.com/intrepion/for-all_tutorials/actions/workflows/ci.yml)
+
 This repository stores tutorial source material plus generated tutorial outputs. The code produced by following a tutorial should live in separate implementation repositories outside this repo.
 
 The repo is organized around stable project slugs instead of level IDs in paths:

@@ -9,6 +9,12 @@ clean output_root="tutorials":
 generate output_root="tutorials":
     cargo run --quiet --manifest-path scripts/tutorial_generator/Cargo.toml -- --output-root "{{output_root}}"
 
+check-generator:
+    cargo check --manifest-path scripts/tutorial_generator/Cargo.toml
+
+test-generator:
+    cargo test --manifest-path scripts/tutorial_generator/Cargo.toml
+
 regenerate output_root="tutorials":
     just clean "{{output_root}}"
     just generate "{{output_root}}"
@@ -24,6 +30,11 @@ check output_root="tutorials":
       exit 1
     fi
     diff -ru "{{output_root}}" "$temp_dir"
+
+check-all output_root="tutorials":
+    just check-generator
+    just test-generator
+    just check "{{output_root}}"
 
 create-output-repos owner="intrepion":
     #!/usr/bin/env bash

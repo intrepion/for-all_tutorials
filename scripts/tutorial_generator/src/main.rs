@@ -3123,3 +3123,144 @@ impl From<askama::Error> for AppError {
         Self::Askama(value)
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn sample_output_repo_spec() -> OutputRepoSpec {
+        OutputRepoSpec {
+            repo_name: "fa_tut_saying-hello".to_string(),
+            repo_description:
+                "Tutorial workspace for the Saying Hello project with default .NET/C# command-line choices."
+                    .to_string(),
+            ecosystem: "dotnet".to_string(),
+            project_slug: "saying-hello".to_string(),
+        }
+    }
+
+    #[test]
+    fn output_repo_root_justfile_uses_workspace_solution_and_run_recipe() {
+        let spec = sample_output_repo_spec();
+
+        let justfile = render_output_repo_root_justfile_content(&spec);
+
+        assert!(justfile.contains("dotnet format {{workspace}}/{{solution}}"));
+        assert!(justfile.contains("dotnet test {{workspace}}/{{solution}}"));
+        assert!(justfile.contains("run *args:"));
+        assert!(justfile.contains("dotnet run --project {{adapter_project}} -- {{args}}"));
+    }
+
+    #[test]
+    fn output_repo_ci_workflow_targets_workspace_solution_with_yaml_indentation() {
+        let spec = sample_output_repo_spec();
+
+        let workflow = render_output_repo_ci_workflow_content(&spec);
+
+        assert!(workflow.contains("\non:\n  push:\n"));
+        assert!(workflow.contains("\njobs:\n  test:\n"));
+        assert!(workflow.contains("working-directory: workspace"));
+        assert!(workflow.contains("dotnet test SayingHello.sln"));
+    }
+
+    #[test]
+    fn output_repo_setup_content_uses_output_workspace_without_cd() {
+        let spec = sample_output_repo_spec();
+
+        let setup = render_output_repo_setup_content(&spec);
+
+        assert!(setup.contains("dotnet new sln --format sln --name SayingHello --output workspace"));
+        assert!(setup.contains("dotnet new gitignore --output workspace"));
+        assert!(!setup.contains("cd workspace"));
+    }
+
+    #[test]
+    fn output_repo_code_body_replaces_dotnet_test_with_just_checkpoints() {
+        let code_body = "### 1. Red: Add The First Failing Test\n\nRun:\n\n```bash\ndotnet test\n```";
+
+        let rewritten = rewrite_output_repo_code_body(code_body);
+
+        assert!(rewritten.contains("just check-tests"));
+        assert!(rewritten.contains("git add -A"));
+        assert!(rewritten.contains("git commit -m \"1. Red: Add The First Failing Test\""));
+        assert!(!rewritten.contains("dotnet test"));
+    }
+
+    #[test]
+    fn output_repo_adapter_body_uses_real_service_and_removes_stop_section() {
+        let adapter_body = r#"### 1. Red: Add The First Failing Adapter Test
+
+Run:
+
+```bash
+dotnet test
+```
+
+```csharp
+using SayingHello.CommandLine;
+using SayingHello.Contracts;
+
+var greetingService = new NotImplementedGreetingService();
+var adapter = new CommandLineGreeting(greetingService);
+
+Console.WriteLine(adapter.BuildMessage(args));
+
+internal sealed class NotImplementedGreetingService : IGreetingService
+{
+    public string Greet(string name)
+    {
+        throw new NotImplementedException(
+            "Finish the matching core tutorial, then replace this placeholder with the real core implementation."
+        );
+    }
+}
+```
+
+### 5. Stop At The Contract Boundary
+
+Run:
+
+```bash
+dotnet test
+```
+
+This should pass with both adapter tests green.
+
+Leave the placeholder `NotImplementedGreetingService` in `Program.cs` for now. The matching core tutorial is the next step.
+"#;
+
+        let rewritten = rewrite_output_repo_adapter_body(adapter_body);
+
+        assert!(rewritten.contains("using SayingHello;"));
+        assert!(rewritten.contains("var greetingService = new GreetingService();"));
+        assert!(rewritten.contains("just check-tests"));
+        assert!(!rewritten.contains("NotImplementedGreetingService"));
+        assert!(!rewritten.contains("Stop At The Contract Boundary"));
+    }
+
+    #[test]
+    fn output_repo_finish_content_uses_just_run_examples_for_saying_hello() {
+        let spec = sample_output_repo_spec();
+
+        let finish = render_output_repo_finish_content(&spec);
+
+        assert!(finish.contains("just run"));
+        assert!(finish.contains("just run Ada"));
+        assert!(finish.contains("Hello, Ada!"));
+    }
+
+    #[test]
+    fn starter_gitignore_contains_source_markers_for_each_global_section() {
+        let gitignore = starter_gitignore_content("dotnet");
+
+        assert!(gitignore.contains(
+            "#### START https://github.com/github/gitignore/blob/main/Global/Linux.gitignore"
+        ));
+        assert!(gitignore.contains(
+            "#### END https://github.com/github/gitignore/blob/main/Global/macOS.gitignore"
+        ));
+        assert!(gitignore.contains(
+            "#### START https://github.com/github/gitignore/blob/main/Global/Windows.gitignore"
+        ));
+    }
+}
