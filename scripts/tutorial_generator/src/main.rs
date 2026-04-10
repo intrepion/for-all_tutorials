@@ -735,16 +735,20 @@ fn render_output_repo_readme_content(owner: &str, spec: &OutputRepoSpec) -> Stri
 
 fn render_output_repo_root_justfile_content(spec: &OutputRepoSpec) -> String {
     let solution_name = workspace_solution_name(&spec.project_slug);
+    let adapter_project_name = adapter_project_name(&spec.project_slug);
     format!(
         "set shell := [\"bash\", \"-eu\", \"-c\"]\n\n\
          workspace := \"workspace\"\n\
-         solution := \"{solution_name}.sln\"\n\n\
+         solution := \"{solution_name}.sln\"\n\
+         adapter_project := \"workspace/src/{adapter_project_name}\"\n\n\
          format:\n\
-         \tcd {{{{workspace}}}} && dotnet format {{{{solution}}}}\n\n\
+         \tdotnet format {{{{workspace}}}}/{{{{solution}}}}\n\n\
          check-formatting:\n\
-         \tcd {{{{workspace}}}} && dotnet format {{{{solution}}}} --verify-no-changes\n\n\
+         \tdotnet format {{{{workspace}}}}/{{{{solution}}}} --verify-no-changes\n\n\
          check-tests:\n\
-         \tcd {{{{workspace}}}} && dotnet test {{{{solution}}}}\n\n\
+         \tdotnet test {{{{workspace}}}}/{{{{solution}}}}\n\n\
+         run *args:\n\
+         \tdotnet run --project {{{{adapter_project}}}} -- {{{{args}}}}\n\n\
          check-all:\n\
          \tjust check-formatting\n\
          \tjust check-tests\n"
@@ -860,9 +864,9 @@ fn build_output_repo_tutorial_files(app_root: &Path, spec: &OutputRepoSpec) -> V
             contents: tutorial_file_markdown(
                 "Adapter",
                 &format!(
-                    "{}\n\n{}",
+                "{}\n\n{}",
                     render_output_repo_adapter_scaffold(spec),
-                    rewrite_for_single_repo_tutorial(&adapter_partial.body)
+                    rewrite_output_repo_adapter_body(&rewrite_for_single_repo_tutorial(&adapter_partial.body))
                 ),
             )
             .into_bytes(),
@@ -929,6 +933,18 @@ fn rewrite_for_single_repo_tutorial(text: &str) -> String {
             )
             .replace("src/", "workspace/src/")
             .replace("tests/", "workspace/tests/"),
+    )
+}
+
+fn rewrite_output_repo_adapter_body(text: &str) -> String {
+    let with_real_program = text.replace(
+        "```csharp\nusing SayingHello.CommandLine;\nusing SayingHello.Contracts;\n\nvar greetingService = new NotImplementedGreetingService();\nvar adapter = new CommandLineGreeting(greetingService);\n\nConsole.WriteLine(adapter.BuildMessage(args));\n\ninternal sealed class NotImplementedGreetingService : IGreetingService\n{\n    public string Greet(string name)\n    {\n        throw new NotImplementedException(\n            \"Finish the matching core tutorial, then replace this placeholder with the real core implementation.\"\n        );\n    }\n}\n```",
+        "```csharp\nusing SayingHello;\nusing SayingHello.CommandLine;\n\nvar greetingService = new GreetingService();\nvar adapter = new CommandLineGreeting(greetingService);\n\nConsole.WriteLine(adapter.BuildMessage(args));\n```",
+    );
+
+    with_real_program.replace(
+        "### 5. Stop At The Contract Boundary\n\nRun:\n\n```bash\ndotnet test\n```\n\nThis should pass with both adapter tests green.\n\nLeave the placeholder `NotImplementedGreetingService` in `Program.cs` for now. The matching core tutorial is the next step.",
+        "### 5. Run The Working Application\n\nRun:\n\n```bash\ndotnet test\njust run Ada\n```\n\nThis should keep the adapter tests green and print `Hello, Ada!` from the real command-line application.",
     )
 }
 
