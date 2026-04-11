@@ -39,6 +39,7 @@ fn main() -> Result<(), AppError> {
             owner,
             sync_branch_name,
             project,
+            selection_overrides,
         } => {
             bootstrap_output_repos(
                 &app_root,
@@ -46,6 +47,7 @@ fn main() -> Result<(), AppError> {
                 owner,
                 sync_branch_name.as_deref(),
                 project.as_deref(),
+                selection_overrides,
             )?;
         }
         CommandMode::CleanupOutputRepos {
@@ -81,12 +83,26 @@ enum CommandMode {
         owner: String,
         sync_branch_name: Option<String>,
         project: Option<String>,
+        selection_overrides: BootstrapSelectionOverrides,
     },
     CleanupOutputRepos {
         repos_root: PathBuf,
         owner: String,
         apply: bool,
     },
+}
+
+#[derive(Debug, Clone, Default)]
+struct BootstrapSelectionOverrides {
+    ecosystem: Option<String>,
+    language: Option<String>,
+    testing: Option<String>,
+    mocking: Option<String>,
+    storage: Option<String>,
+    surface: Option<String>,
+    target: Option<String>,
+    framework: Option<String>,
+    protocol: Option<String>,
 }
 
 impl Args {
@@ -101,6 +117,7 @@ impl Args {
         let mut apply = false;
         let mut sync_branch_name = None;
         let mut project = None;
+        let mut selection_overrides = BootstrapSelectionOverrides::default();
         let mut args = env::args().skip(1);
 
         while let Some(arg) = args.next() {
@@ -128,6 +145,7 @@ impl Args {
                         owner: owner.clone(),
                         sync_branch_name: sync_branch_name.clone(),
                         project: project.clone(),
+                        selection_overrides: selection_overrides.clone(),
                     };
                 }
                 "--cleanup-output-repos" => {
@@ -164,6 +182,60 @@ impl Args {
                             .ok_or_else(|| AppError::message("missing value for --project"))?,
                     );
                 }
+                "--ecosystem" => {
+                    selection_overrides.ecosystem = Some(
+                        args.next()
+                            .ok_or_else(|| AppError::message("missing value for --ecosystem"))?,
+                    );
+                }
+                "--language" => {
+                    selection_overrides.language = Some(
+                        args.next()
+                            .ok_or_else(|| AppError::message("missing value for --language"))?,
+                    );
+                }
+                "--testing" => {
+                    selection_overrides.testing = Some(
+                        args.next()
+                            .ok_or_else(|| AppError::message("missing value for --testing"))?,
+                    );
+                }
+                "--mocking" => {
+                    selection_overrides.mocking = Some(
+                        args.next()
+                            .ok_or_else(|| AppError::message("missing value for --mocking"))?,
+                    );
+                }
+                "--storage" => {
+                    selection_overrides.storage = Some(
+                        args.next()
+                            .ok_or_else(|| AppError::message("missing value for --storage"))?,
+                    );
+                }
+                "--surface" => {
+                    selection_overrides.surface = Some(
+                        args.next()
+                            .ok_or_else(|| AppError::message("missing value for --surface"))?,
+                    );
+                }
+                "--target" => {
+                    selection_overrides.target = Some(
+                        args.next()
+                            .ok_or_else(|| AppError::message("missing value for --target"))?,
+                    );
+                }
+                "--framework" => {
+                    selection_overrides.framework = Some(
+                        args.next()
+                            .ok_or_else(|| AppError::message("missing value for --framework"))?,
+                    );
+                }
+                "--protocol" => {
+                    selection_overrides.protocol = Some(
+                        args.next()
+                            .ok_or_else(|| AppError::message("missing value for --protocol"))?,
+                    );
+                }
                 other => return Err(AppError::message(format!("unknown argument: {other}"))),
             }
         }
@@ -184,6 +256,7 @@ impl Args {
                     owner,
                     sync_branch_name,
                     project,
+                    selection_overrides,
                 };
             }
             CommandMode::CleanupOutputRepos { .. } => {
@@ -319,17 +392,35 @@ fn generate_from_manifest(
 struct OutputRepoSpec {
     repo_name: String,
     repo_description: String,
-    ecosystem: String,
     project_slug: String,
+    selections: OutputRepoSelections,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+struct OutputRepoSelections {
+    ecosystem: String,
+    language: String,
+    testing: String,
+    mocking: String,
+    storage: String,
+    surface: String,
+    target: String,
+    framework: String,
+    protocol: Option<String>,
+}
+
+fn is_go_saying_hello_output_repo(spec: &OutputRepoSpec) -> bool {
+    spec.project_slug == "saying-hello" && spec.selections.ecosystem == "go"
 }
 
 fn collect_output_repo_specs(app_root: &Path) -> Result<Vec<OutputRepoSpec>, AppError> {
-    collect_output_repo_specs_for_project(app_root, None)
+    collect_output_repo_specs_for_project(app_root, None, &BootstrapSelectionOverrides::default())
 }
 
 fn collect_output_repo_specs_for_project(
     app_root: &Path,
     project_filter: Option<&str>,
+    selection_overrides: &BootstrapSelectionOverrides,
 ) -> Result<Vec<OutputRepoSpec>, AppError> {
     let manifest_paths = collect_manifest_paths(app_root)?;
     let mut specs = Vec::new();
@@ -347,17 +438,162 @@ fn collect_output_repo_specs_for_project(
             .join("README.md");
         let project_root = Partial::load(&project_root_path)?;
         let project_title = project_root.title.clone();
+        let selections =
+            output_repo_selections_for_project(&manifest.project, selection_overrides)?;
+        let repo_description = output_repo_description(&project_title, &selections);
 
         specs.push(OutputRepoSpec {
             repo_name: output_repo_name(&manifest.project),
-            repo_description: output_repo_description(&project_title),
-            ecosystem: "dotnet".to_string(),
+            repo_description,
             project_slug: manifest.project.clone(),
+            selections,
         });
     }
 
     specs.sort_by(|left, right| left.repo_name.cmp(&right.repo_name));
     Ok(specs)
+}
+
+fn output_repo_selections_for_project(
+    project_slug: &str,
+    selection_overrides: &BootstrapSelectionOverrides,
+) -> Result<OutputRepoSelections, AppError> {
+    let mut selections = selection_overrides
+        .ecosystem
+        .as_deref()
+        .and_then(|ecosystem| supported_output_repo_selections(project_slug, ecosystem))
+        .unwrap_or_else(|| default_output_repo_selections(project_slug));
+
+    if let Some(value) = &selection_overrides.ecosystem {
+        selections.ecosystem = value.clone();
+    }
+    if let Some(value) = &selection_overrides.language {
+        selections.language = value.clone();
+    }
+    if let Some(value) = &selection_overrides.testing {
+        selections.testing = value.clone();
+    }
+    if let Some(value) = &selection_overrides.mocking {
+        selections.mocking = value.clone();
+    }
+    if let Some(value) = &selection_overrides.storage {
+        selections.storage = value.clone();
+    }
+    if let Some(value) = &selection_overrides.surface {
+        selections.surface = value.clone();
+    }
+    if let Some(value) = &selection_overrides.target {
+        selections.target = value.clone();
+    }
+    if let Some(value) = &selection_overrides.framework {
+        selections.framework = value.clone();
+    }
+    if let Some(value) = &selection_overrides.protocol {
+        selections.protocol = Some(value.clone());
+    }
+
+    validate_output_repo_selections(project_slug, &selections)?;
+    Ok(selections)
+}
+
+fn default_output_repo_selections(project_slug: &str) -> OutputRepoSelections {
+    let _ = project_slug;
+    OutputRepoSelections {
+        ecosystem: "dotnet".to_string(),
+        language: "csharp".to_string(),
+        testing: "xunit".to_string(),
+        mocking: "nsubstitute".to_string(),
+        storage: "no-storage".to_string(),
+        surface: "command-line".to_string(),
+        target: "all".to_string(),
+        framework: "no-framework".to_string(),
+        protocol: None,
+    }
+}
+
+fn supported_output_repo_selections(
+    project_slug: &str,
+    ecosystem: &str,
+) -> Option<OutputRepoSelections> {
+    match (project_slug, ecosystem) {
+        ("saying-hello", "go") => Some(OutputRepoSelections {
+            ecosystem: "go".to_string(),
+            language: "go".to_string(),
+            testing: "testify".to_string(),
+            mocking: "testify-mock".to_string(),
+            storage: "no-storage".to_string(),
+            surface: "web".to_string(),
+            target: "api".to_string(),
+            framework: "echo".to_string(),
+            protocol: Some("http-json".to_string()),
+        }),
+        (_, "dotnet") => Some(OutputRepoSelections {
+            ecosystem: "dotnet".to_string(),
+            language: "csharp".to_string(),
+            testing: "xunit".to_string(),
+            mocking: "nsubstitute".to_string(),
+            storage: "no-storage".to_string(),
+            surface: "command-line".to_string(),
+            target: "all".to_string(),
+            framework: "no-framework".to_string(),
+            protocol: None,
+        }),
+        _ => None,
+    }
+}
+
+fn validate_output_repo_selections(
+    project_slug: &str,
+    selections: &OutputRepoSelections,
+) -> Result<(), AppError> {
+    let supported_go = OutputRepoSelections {
+        ecosystem: "go".to_string(),
+        language: "go".to_string(),
+        testing: "testify".to_string(),
+        mocking: "testify-mock".to_string(),
+        storage: "no-storage".to_string(),
+        surface: "web".to_string(),
+        target: "api".to_string(),
+        framework: "echo".to_string(),
+        protocol: Some("http-json".to_string()),
+    };
+
+    let supported_dotnet = OutputRepoSelections {
+        ecosystem: "dotnet".to_string(),
+        language: "csharp".to_string(),
+        testing: "xunit".to_string(),
+        mocking: "nsubstitute".to_string(),
+        storage: "no-storage".to_string(),
+        surface: "command-line".to_string(),
+        target: "all".to_string(),
+        framework: "no-framework".to_string(),
+        protocol: None,
+    };
+
+    if selections == &supported_dotnet {
+        return Ok(());
+    }
+
+    if project_slug == "saying-hello" && selections == &supported_go {
+        return Ok(());
+    }
+
+    Err(AppError::message(format!(
+        "unsupported bootstrap selections for {project_slug}: {}/{}/{}/{}/{}/{}/{}/{}{}",
+        selections.ecosystem,
+        selections.language,
+        selections.testing,
+        selections.mocking,
+        selections.storage,
+        selections.surface,
+        selections.target,
+        selections.framework,
+        selections
+            .protocol
+            .as_ref()
+            .map(|value| format!("/{}", value))
+            .unwrap_or_default()
+    )))
 }
 
 fn expanded_compiled_outputs(app_root: &Path, manifest: &Manifest) -> Vec<CompiledOutput> {
@@ -462,8 +698,9 @@ fn bootstrap_output_repos(
     owner: &str,
     sync_branch_name: Option<&str>,
     project_filter: Option<&str>,
+    selection_overrides: &BootstrapSelectionOverrides,
 ) -> Result<(), AppError> {
-    let specs = collect_output_repo_specs_for_project(app_root, project_filter)?;
+    let specs = collect_output_repo_specs_for_project(app_root, project_filter, selection_overrides)?;
     let sync_branch_name = sync_branch_name
         .filter(|value| !value.trim().is_empty())
         .map(str::to_string)
@@ -661,11 +898,11 @@ fn build_managed_repo_files(
         },
         ManagedRepoFile {
             relative_path: ".gitignore".to_string(),
-            contents: starter_gitignore_content(&spec.ecosystem).into_bytes(),
+            contents: starter_gitignore_content(&spec.selections.ecosystem).into_bytes(),
         },
     ];
 
-    if spec.ecosystem == "dotnet" {
+    if spec.selections.ecosystem == "dotnet" || is_go_saying_hello_output_repo(spec) {
         files.push(ManagedRepoFile {
             relative_path: ".github/workflows/ci.yml".to_string(),
             contents: render_output_repo_ci_workflow_content(spec).into_bytes(),
@@ -734,6 +971,23 @@ fn render_output_repo_readme_content(owner: &str, spec: &OutputRepoSpec) -> Stri
 }
 
 fn render_output_repo_root_justfile_content(spec: &OutputRepoSpec) -> String {
+    if is_go_saying_hello_output_repo(spec) {
+        return "set shell := [\"bash\", \"-eu\", \"-c\"]\n\n\
+workspace := \"workspace\"\n\n\
+format:\n\
+\tfind {{workspace}} -name '*.go' -exec gofmt -w {} +\n\n\
+check-formatting:\n\
+\ttest -z \"$(find {{workspace}} -name '*.go' -exec gofmt -l {} +)\"\n\n\
+check-tests:\n\
+\t(cd {{workspace}} && go test ./...)\n\n\
+run:\n\
+\t(cd {{workspace}} && go run ./cmd/server)\n\n\
+check-all:\n\
+\tjust check-formatting\n\
+\tjust check-tests\n"
+            .to_string();
+    }
+
     let solution_name = workspace_solution_name(&spec.project_slug);
     let adapter_project_name = adapter_project_name(&spec.project_slug);
     format!(
@@ -756,6 +1010,43 @@ fn render_output_repo_root_justfile_content(spec: &OutputRepoSpec) -> String {
 }
 
 fn render_output_repo_ci_workflow_content(spec: &OutputRepoSpec) -> String {
+    if is_go_saying_hello_output_repo(spec) {
+        return r#"name: CI
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check out code
+        uses: actions/checkout@v6
+
+      - name: Set up Go
+        if: ${{ hashFiles('workspace/go.mod') != '' }}
+        uses: actions/setup-go@v5
+        with:
+          go-version-file: workspace/go.mod
+
+      - name: Verify formatting
+        if: ${{ hashFiles('workspace/go.mod') != '' }}
+        run: test -z "$(find workspace -name '*.go' -exec gofmt -l {} +)"
+
+      - name: Test
+        if: ${{ hashFiles('workspace/go.mod') != '' }}
+        working-directory: workspace
+        run: go test ./...
+"#
+        .to_string();
+    }
+
     let solution_name = workspace_solution_name(&spec.project_slug);
     format!(
         r#"name: CI
@@ -797,6 +1088,10 @@ jobs:
 }
 
 fn build_output_repo_tutorial_files(app_root: &Path, spec: &OutputRepoSpec) -> Vec<ManagedRepoFile> {
+    if is_go_saying_hello_output_repo(spec) {
+        return build_go_saying_hello_output_repo_tutorial_files(app_root, spec);
+    }
+
     let project_root = app_root.join("partials/projects").join(&spec.project_slug);
     let spec_partial =
         Partial::load(&project_root.join("spec/README.md")).expect("spec partial should exist");
@@ -878,14 +1173,116 @@ fn build_output_repo_tutorial_files(app_root: &Path, spec: &OutputRepoSpec) -> V
     ]
 }
 
+fn build_go_saying_hello_output_repo_tutorial_files(
+    app_root: &Path,
+    spec: &OutputRepoSpec,
+) -> Vec<ManagedRepoFile> {
+    let project_root = app_root.join("partials/projects").join(&spec.project_slug);
+    let spec_partial =
+        Partial::load(&project_root.join("spec/README.md")).expect("spec partial should exist");
+
+    vec![
+        ManagedRepoFile {
+            relative_path: "tutorial/README.md".to_string(),
+            contents: render_output_repo_tutorial_readme_content(spec).into_bytes(),
+        },
+        ManagedRepoFile {
+            relative_path: "tutorial/setup.md".to_string(),
+            contents: render_output_repo_setup_content(spec).into_bytes(),
+        },
+        ManagedRepoFile {
+            relative_path: "tutorial/spec.md".to_string(),
+            contents: tutorial_file_markdown(
+                "Spec",
+                &rewrite_for_single_repo_tutorial(&spec_partial.body),
+            )
+            .into_bytes(),
+        },
+        ManagedRepoFile {
+            relative_path: "tutorial/contracts.md".to_string(),
+            contents: render_go_saying_hello_contracts_content(spec).into_bytes(),
+        },
+        ManagedRepoFile {
+            relative_path: "tutorial/code.md".to_string(),
+            contents: render_go_saying_hello_code_content(spec).into_bytes(),
+        },
+        ManagedRepoFile {
+            relative_path: "tutorial/adapter.md".to_string(),
+            contents: render_go_saying_hello_adapter_content(spec).into_bytes(),
+        },
+        ManagedRepoFile {
+            relative_path: "tutorial/finish.md".to_string(),
+            contents: render_output_repo_finish_content(spec).into_bytes(),
+        },
+    ]
+}
+
 fn render_output_repo_tutorial_readme_content(spec: &OutputRepoSpec) -> String {
+    let mut choices = vec![
+        format!("- Project: `{}`", spec.project_slug),
+        "- Workspace folder: `workspace/`".to_string(),
+        format!(
+            "- Ecosystem: `{}`",
+            repo_choice_display(&spec.selections.ecosystem)
+        ),
+        format!(
+            "- Language: `{}`",
+            repo_choice_display(&spec.selections.language)
+        ),
+        format!(
+            "- Testing: `{}`",
+            repo_choice_display(&spec.selections.testing)
+        ),
+        format!(
+            "- Mocking: `{}`",
+            repo_choice_display(&spec.selections.mocking)
+        ),
+        format!(
+            "- Storage: `{}`",
+            repo_choice_display(&spec.selections.storage)
+        ),
+        format!(
+            "- Surface: `{}`",
+            repo_choice_display(&spec.selections.surface)
+        ),
+        format!(
+            "- Target: `{}`",
+            repo_choice_display(&spec.selections.target)
+        ),
+        format!(
+            "- Framework: `{}`",
+            repo_choice_display(&spec.selections.framework)
+        ),
+    ];
+
+    if let Some(protocol) = &spec.selections.protocol {
+        choices.push(format!("- Protocol: `{}`", repo_choice_display(protocol)));
+    }
+
+    if is_go_saying_hello_output_repo(spec) {
+        choices.push("- Port: `25616`".to_string());
+    }
+
     format!(
-        "# Tutorial\n\nChoices for this repo:\n\n- Project: `{}`\n- Workspace folder: `workspace/`\n- Ecosystem: `.NET`\n- Language: `C#`\n- Testing: `xUnit`\n- Mocking: `NSubstitute`\n- Storage: `no-storage`\n- Surface: `command-line`\n- Target: `all`\n- Framework: `no-framework`\n\nWork through these files in order:\n\n1. [Spec](spec.md)\n2. [Setup](setup.md)\n3. [Contracts](contracts.md)\n4. [Code](code.md)\n5. [Adapter](adapter.md)\n6. [Finish](finish.md)\n",
-        spec.project_slug
+        "# Tutorial\n\nChoices for this repo:\n\n{}\n\nWork through these files in order:\n\n1. [Spec](spec.md)\n2. [Setup](setup.md)\n3. [Contracts](contracts.md)\n4. [Code](code.md)\n5. [Adapter](adapter.md)\n6. [Finish](finish.md)\n",
+        choices.join("\n"),
     )
 }
 
 fn render_output_repo_setup_content(spec: &OutputRepoSpec) -> String {
+    if is_go_saying_hello_output_repo(spec) {
+        let module_path = format!(
+            "github.com/{}/{}/workspace",
+            GITHUB_OWNER, spec.repo_name
+        );
+        return tutorial_file_markdown(
+            "Setup",
+            &format!(
+                "Keep the repository root for shared files like `README.md`, `LICENSE`, `.gitignore`, `.github/`, `justfile`, and `tutorial/`.\n\nPut all Go code inside a single `workspace/` folder.\n\nFrom the repository root, run:\n\n```bash\nmkdir -p workspace\n(cd workspace && go mod init {module_path})\n(cd workspace && go get github.com/labstack/echo/v4)\n(cd workspace && go get github.com/stretchr/testify/assert github.com/stretchr/testify/mock)\nmkdir -p workspace/cmd/server\nmkdir -p workspace/internal/contracts\nmkdir -p workspace/internal/code\nmkdir -p workspace/internal/adapter/http\n```\n\nWhen the full workspace is finished, it should contain these files:\n\n```text\nworkspace/\n  go.mod\n  go.sum\n  cmd/\n    server/\n      main.go\n  internal/\n    contracts/\n      greeting.go\n    code/\n      greeting_service.go\n      greeting_service_test.go\n    adapter/\n      http/\n        greeting_handler.go\n        greeting_handler_test.go\n```"
+            ),
+        );
+    }
+
     let solution_name = workspace_solution_name(&spec.project_slug);
     let contracts_project_name = contracts_project_name(&spec.project_slug);
     let code_project_name = code_project_name(&spec.project_slug);
@@ -979,7 +1376,7 @@ fn rewrite_output_repo_test_checkpoints(text: &str) -> String {
         rewritten.push_str(&text[last_index..section_start]);
         let section_text = &text[section_start..section_end];
         let replacement = format!(
-            "Run:\n\n```bash\njust check-tests\ngit add -A\ngit commit -m \"{title}\"\n```"
+            "Run:\n\n```bash\njust check-tests\ngit add --all\ngit commit --message \"{title}\"\n```"
         );
         rewritten.push_str(&section_text.replace("Run:\n\n```bash\ndotnet test\n```", &replacement));
         last_index = section_end;
@@ -990,6 +1387,13 @@ fn rewrite_output_repo_test_checkpoints(text: &str) -> String {
 }
 
 fn render_output_repo_finish_content(spec: &OutputRepoSpec) -> String {
+    if is_go_saying_hello_output_repo(spec) {
+        return tutorial_file_markdown(
+            "Finish",
+            "Start the API server from the repository root:\n\n```bash\njust run\n```\n\nIn another terminal, try these requests:\n\n```bash\ncurl \"http://localhost:25616/api/greeting\"\ncurl \"http://localhost:25616/api/greeting?name=Ada\"\n```\n\nYou should get:\n\n```json\n{\"message\":\"Hello!\"}\n```\n\nand:\n\n```json\n{\"message\":\"Hello, Ada!\"}\n```",
+        );
+    }
+
     let body = if spec.project_slug == "saying-hello" {
         "From the repository root, use the generated root `justfile` to run the finished command-line application.\n\nTry these commands:\n\n```bash\njust run\njust run Ada\n```\n\nFor `saying-hello`, the expected behavior is:\n\n- `just run` prints `Hello!`\n- `just run Ada` prints `Hello, Ada!`"
             .to_string()
@@ -2449,7 +2853,7 @@ fn recommended_dotnet_core_scaffold(project_slug: &str, output: &CompiledOutput)
          After those files exist, make this commit:\n\n\
          ```bash\n\
          git add {solution_file} src tests\n\
-         git commit -m \"Create the Solution and Projects\"\n\
+         git commit --message \"Create the Solution and Projects\"\n\
          ```"
     ))
 }
@@ -2482,7 +2886,7 @@ fn recommended_dotnet_contracts_scaffold(
          After those files exist, make this commit:\n\n\
          ```bash\n\
          git add {solution_file} src\n\
-         git commit -m \"Create the Contracts Solution and Project\"\n\
+         git commit --message \"Create the Contracts Solution and Project\"\n\
          ```"
     ))
 }
@@ -2539,7 +2943,7 @@ fn recommended_dotnet_command_line_adapter_scaffold(
          After those files exist, make this commit:\n\n\
          ```bash\n\
          git add {solution_file} src tests\n\
-         git commit -m \"Create the Adapter Solution and Projects\"\n\
+         git commit --message \"Create the Adapter Solution and Projects\"\n\
          ```"
     ))
 }
@@ -2576,7 +2980,7 @@ fn render_dotnet_root_justfile(
              After `justfile` is in place, make this commit:\n\n\
              ```bash\n\
              git add justfile\n\
-             git commit -m \"Add Root Justfile\"\n\
+             git commit --message \"Add Root Justfile\"\n\
              ```"
         ));
     }
@@ -2613,7 +3017,7 @@ fn render_dotnet_root_justfile(
              After `justfile` is in place, make this commit:\n\n\
              ```bash\n\
              git add {commit_add_paths}\n\
-             git commit -m \"Add Root Justfile\"\n\
+             git commit --message \"Add Root Justfile\"\n\
              ```"
             ,
             dotnet_test_runner_global_json()
@@ -2636,7 +3040,7 @@ fn render_dotnet_root_justfile(
              After `justfile` is in place, make this commit:\n\n\
              ```bash\n\
              git add {commit_add_paths}\n\
-             git commit -m \"Add Root Justfile\"\n\
+             git commit --message \"Add Root Justfile\"\n\
              ```"
         )
     };
@@ -2893,9 +3297,299 @@ fn output_repo_name(project_slug: &str) -> String {
     format!("{}_{}", OUTPUT_REPO_PREFIX, project_slug)
 }
 
-fn output_repo_description(project_title: &str) -> String {
+fn output_repo_description(project_title: &str, selections: &OutputRepoSelections) -> String {
+    let mut parts = vec![
+        repo_choice_display(&selections.ecosystem),
+        repo_choice_display(&selections.language),
+        repo_choice_display(&selections.testing),
+        repo_choice_display(&selections.mocking),
+        repo_choice_display(&selections.storage),
+        repo_choice_display(&selections.surface),
+        repo_choice_display(&selections.target),
+        repo_choice_display(&selections.framework),
+    ];
+
+    if let Some(protocol) = &selections.protocol {
+        parts.push(repo_choice_display(protocol));
+    }
+
     format!(
-        "Tutorial workspace for the {project_title} project with default .NET/C# command-line choices."
+        "Tutorial workspace for the {project_title} project with {} choices.",
+        parts.join(" / ")
+    )
+}
+
+fn repo_choice_display(value: &str) -> String {
+    match value {
+        "dotnet" => ".NET".to_string(),
+        "csharp" => "C#".to_string(),
+        "xunit" => "xUnit".to_string(),
+        "nsubstitute" => "NSubstitute".to_string(),
+        "http-json" => "http-json".to_string(),
+        "testify-mock" => "testify-mock".to_string(),
+        other => other.to_string(),
+    }
+}
+
+fn go_module_path(spec: &OutputRepoSpec) -> String {
+    format!("github.com/{}/{}/workspace", GITHUB_OWNER, spec.repo_name)
+}
+
+fn render_go_saying_hello_contracts_content(_spec: &OutputRepoSpec) -> String {
+    let contracts_file = "workspace/internal/contracts/greeting.go";
+    tutorial_file_markdown(
+        "Contracts",
+        &format!(
+            "Create the shared contract file:\n\n```bash\ntouch {contracts_file}\n```\n\nPut this exact content in `{contracts_file}`:\n\n```go\npackage contracts\n\ntype GreetingService interface {{\n\tGreet(name string) string\n}}\n\ntype GreetingResponse struct {{\n\tMessage string `json:\"message\"`\n}}\n```\n\nDo not add tests here. Keep this layer limited to interfaces and small shared types.\n\nThen run:\n\n```bash\ngit add --all\ngit commit --message \"Define greeting contracts\"\n```"
+        ),
+    )
+}
+
+fn render_go_saying_hello_code_content(_spec: &OutputRepoSpec) -> String {
+    tutorial_file_markdown(
+        "Code",
+        "### 1. Red: Add The First Failing Code Test\n\nCreate the first test file:\n\n```bash\ntouch workspace/internal/code/greeting_service_test.go\n```\n\nPut this exact content in `workspace/internal/code/greeting_service_test.go`:\n\n```go\npackage code\n\nimport (\n\t\"testing\"\n\n\t\"github.com/stretchr/testify/assert\"\n)\n\nfunc TestGreetingService_GreetReturnsPersonalGreetingForNonEmptyName(t *testing.T) {\n\tservice := GreetingService{}\n\n\tresult := service.Greet(\"Ada\")\n\n\tassert.Equal(t, \"Hello, Ada!\", result)\n}\n```\n\nRun:\n\n```bash\njust check-tests\ngit add --all\ngit commit --message \"1. Red: Add The First Failing Code Test\"\n```\n\n### 2. Green: Return The Personalized Greeting\n\nCreate the first production file:\n\n```bash\ntouch workspace/internal/code/greeting_service.go\n```\n\nPut this exact content in `workspace/internal/code/greeting_service.go`:\n\n```go\npackage code\n\ntype GreetingService struct{}\n\nfunc (s GreetingService) Greet(name string) string {\n\treturn \"Hello, \" + name + \"!\"\n}\n```\n\nRun:\n\n```bash\njust check-tests\ngit add --all\ngit commit --message \"2. Green: Return The Personalized Greeting\"\n```\n\n### 3. Red: Add The Trimming Test\n\nReplace `workspace/internal/code/greeting_service_test.go` with:\n\n```go\npackage code\n\nimport (\n\t\"testing\"\n\n\t\"github.com/stretchr/testify/assert\"\n)\n\nfunc TestGreetingService_GreetReturnsPersonalGreetingForNonEmptyName(t *testing.T) {\n\tservice := GreetingService{}\n\n\tresult := service.Greet(\"Ada\")\n\n\tassert.Equal(t, \"Hello, Ada!\", result)\n}\n\nfunc TestGreetingService_GreetTrimsWhitespaceBeforeGreeting(t *testing.T) {\n\tservice := GreetingService{}\n\n\tresult := service.Greet(\"  Ada  \")\n\n\tassert.Equal(t, \"Hello, Ada!\", result)\n}\n```\n\nRun:\n\n```bash\njust check-tests\ngit add --all\ngit commit --message \"3. Red: Add The Trimming Test\"\n```\n\n### 4. Green: Trim The Name Before Greeting\n\nReplace `workspace/internal/code/greeting_service.go` with:\n\n```go\npackage code\n\nimport \"strings\"\n\ntype GreetingService struct{}\n\nfunc (s GreetingService) Greet(name string) string {\n\ttrimmed := strings.TrimSpace(name)\n\treturn \"Hello, \" + trimmed + \"!\"\n}\n```\n\nRun:\n\n```bash\njust check-tests\ngit add --all\ngit commit --message \"4. Green: Trim The Name Before Greeting\"\n```\n\n### 5. Red: Add Empty-Input Tests\n\nReplace `workspace/internal/code/greeting_service_test.go` with:\n\n```go\npackage code\n\nimport (\n\t\"testing\"\n\n\t\"github.com/stretchr/testify/assert\"\n)\n\nfunc TestGreetingService_GreetReturnsPersonalGreetingForNonEmptyName(t *testing.T) {\n\tservice := GreetingService{}\n\n\tresult := service.Greet(\"Ada\")\n\n\tassert.Equal(t, \"Hello, Ada!\", result)\n}\n\nfunc TestGreetingService_GreetTrimsWhitespaceBeforeGreeting(t *testing.T) {\n\tservice := GreetingService{}\n\n\tresult := service.Greet(\"  Ada  \")\n\n\tassert.Equal(t, \"Hello, Ada!\", result)\n}\n\nfunc TestGreetingService_GreetReturnsGenericGreetingForEmptyName(t *testing.T) {\n\tservice := GreetingService{}\n\n\tresult := service.Greet(\"\")\n\n\tassert.Equal(t, \"Hello!\", result)\n}\n\nfunc TestGreetingService_GreetReturnsGenericGreetingForWhitespaceOnlyName(t *testing.T) {\n\tservice := GreetingService{}\n\n\tresult := service.Greet(\"   \")\n\n\tassert.Equal(t, \"Hello!\", result)\n}\n```\n\nRun:\n\n```bash\njust check-tests\ngit add --all\ngit commit --message \"5. Red: Add Empty-Input Tests\"\n```\n\n### 6. Green: Return The Generic Greeting For Empty Input\n\nReplace `workspace/internal/code/greeting_service.go` with:\n\n```go\npackage code\n\nimport \"strings\"\n\ntype GreetingService struct{}\n\nfunc (s GreetingService) Greet(name string) string {\n\ttrimmed := strings.TrimSpace(name)\n\tif trimmed == \"\" {\n\t\treturn \"Hello!\"\n\t}\n\n\treturn \"Hello, \" + trimmed + \"!\"\n}\n```\n\nRun:\n\n```bash\njust check-tests\ngit add --all\ngit commit --message \"6. Green: Return The Generic Greeting For Empty Input\"\n```",
+    )
+}
+
+fn render_go_saying_hello_adapter_content(spec: &OutputRepoSpec) -> String {
+    let module_path = go_module_path(spec);
+    let body = r#"### 1. Red: Add The First Failing Adapter Test
+
+Create the first adapter test file:
+
+```bash
+touch workspace/internal/adapter/http/greeting_handler_test.go
+```
+
+Put this exact content in `workspace/internal/adapter/http/greeting_handler_test.go`:
+
+```go
+package httpadapter
+
+import (
+	"encoding/json"
+	"net/http"
+	"net/http/httptest"
+	"testing"
+
+	"__MODULE_PATH__/internal/contracts"
+	"github.com/labstack/echo/v4"
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/mock"
+)
+
+type MockGreetingService struct {
+	mock.Mock
+}
+
+func (m *MockGreetingService) Greet(name string) string {
+	args := m.Called(name)
+	return args.String(0)
+}
+
+func TestGreetingHandler_GetGreetingReturnsCanonicalJson(t *testing.T) {
+	e := echo.New()
+	req := httptest.NewRequest(http.MethodGet, "/api/greeting?name=Ada", nil)
+	rec := httptest.NewRecorder()
+	ctx := e.NewContext(req, rec)
+
+	service := new(MockGreetingService)
+	service.On("Greet", "Ada").Return("Hello, Ada!")
+
+	handler := NewGreetingHandler(service)
+	err := handler.GetGreeting(ctx)
+
+	assert.NoError(t, err)
+	assert.Equal(t, http.StatusOK, rec.Code)
+
+	var body contracts.GreetingResponse
+	err = json.Unmarshal(rec.Body.Bytes(), &body)
+
+	assert.NoError(t, err)
+	assert.Equal(t, "Hello, Ada!", body.Message)
+	service.AssertExpectations(t)
+}
+```
+
+Run:
+
+```bash
+just check-tests
+git add --all
+git commit --message "1. Red: Add The First Failing Adapter Test"
+```
+
+### 2. Green: Return The Canonical JSON Response
+
+Create the first adapter production file:
+
+```bash
+touch workspace/internal/adapter/http/greeting_handler.go
+```
+
+Put this exact content in `workspace/internal/adapter/http/greeting_handler.go`:
+
+```go
+package httpadapter
+
+import (
+	"net/http"
+
+	"__MODULE_PATH__/internal/contracts"
+	"github.com/labstack/echo/v4"
+)
+
+type GreetingHandler struct {
+	service contracts.GreetingService
+}
+
+func NewGreetingHandler(service contracts.GreetingService) *GreetingHandler {
+	return &GreetingHandler{service: service}
+}
+
+func (h *GreetingHandler) GetGreeting(c echo.Context) error {
+	name := c.QueryParam("name")
+
+	return c.JSON(http.StatusOK, contracts.GreetingResponse{
+		Message: h.service.Greet(name),
+	})
+}
+```
+
+Run:
+
+```bash
+just check-tests
+git add --all
+git commit --message "2. Green: Return The Canonical JSON Response"
+```
+
+### 3. Red: Add The Empty-Name Adapter Test
+
+Replace `workspace/internal/adapter/http/greeting_handler_test.go` with:
+
+```go
+package httpadapter
+
+import (
+	"encoding/json"
+	"net/http"
+	"net/http/httptest"
+	"testing"
+
+	"__MODULE_PATH__/internal/contracts"
+	"github.com/labstack/echo/v4"
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/mock"
+)
+
+type MockGreetingService struct {
+	mock.Mock
+}
+
+func (m *MockGreetingService) Greet(name string) string {
+	args := m.Called(name)
+	return args.String(0)
+}
+
+func TestGreetingHandler_GetGreetingReturnsCanonicalJson(t *testing.T) {
+	e := echo.New()
+	req := httptest.NewRequest(http.MethodGet, "/api/greeting?name=Ada", nil)
+	rec := httptest.NewRecorder()
+	ctx := e.NewContext(req, rec)
+
+	service := new(MockGreetingService)
+	service.On("Greet", "Ada").Return("Hello, Ada!")
+
+	handler := NewGreetingHandler(service)
+	err := handler.GetGreeting(ctx)
+
+	assert.NoError(t, err)
+	assert.Equal(t, http.StatusOK, rec.Code)
+
+	var body contracts.GreetingResponse
+	err = json.Unmarshal(rec.Body.Bytes(), &body)
+
+	assert.NoError(t, err)
+	assert.Equal(t, "Hello, Ada!", body.Message)
+	service.AssertExpectations(t)
+}
+
+func TestGreetingHandler_GetGreetingDelegatesEmptyNameForGenericGreeting(t *testing.T) {
+	e := echo.New()
+	req := httptest.NewRequest(http.MethodGet, "/api/greeting", nil)
+	rec := httptest.NewRecorder()
+	ctx := e.NewContext(req, rec)
+
+	service := new(MockGreetingService)
+	service.On("Greet", "").Return("Hello!")
+
+	handler := NewGreetingHandler(service)
+	err := handler.GetGreeting(ctx)
+
+	assert.NoError(t, err)
+	assert.Equal(t, http.StatusOK, rec.Code)
+
+	var body contracts.GreetingResponse
+	err = json.Unmarshal(rec.Body.Bytes(), &body)
+
+	assert.NoError(t, err)
+	assert.Equal(t, "Hello!", body.Message)
+	service.AssertExpectations(t)
+}
+```
+
+Run:
+
+```bash
+just check-tests
+git add --all
+git commit --message "3. Red: Add The Empty-Name Adapter Test"
+```
+
+### 4. Green: Wire The Server Entry Point
+
+Create the server entry point:
+
+```bash
+touch workspace/cmd/server/main.go
+```
+
+Put this exact content in `workspace/cmd/server/main.go`:
+
+```go
+package main
+
+import (
+	"log"
+
+	httpadapter "__MODULE_PATH__/internal/adapter/http"
+	"__MODULE_PATH__/internal/code"
+	"github.com/labstack/echo/v4"
+)
+
+func main() {
+	e := echo.New()
+	service := code.GreetingService{}
+	handler := httpadapter.NewGreetingHandler(service)
+
+	e.GET("/api/greeting", handler.GetGreeting)
+
+	log.Fatal(e.Start(":25616"))
+}
+```
+
+Run:
+
+```bash
+just check-tests
+git add --all
+git commit --message "4. Green: Wire The Server Entry Point"
+```"#;
+    tutorial_file_markdown(
+        "Adapter",
+        &body.replace("__MODULE_PATH__", &module_path),
     )
 }
 
@@ -3132,121 +3826,156 @@ mod tests {
         OutputRepoSpec {
             repo_name: "fa_tut_saying-hello".to_string(),
             repo_description:
-                "Tutorial workspace for the Saying Hello project with default .NET/C# command-line choices."
+                "Tutorial workspace for the Saying Hello project with default Go/Echo API choices."
                     .to_string(),
-            ecosystem: "dotnet".to_string(),
             project_slug: "saying-hello".to_string(),
+            selections: OutputRepoSelections {
+                ecosystem: "go".to_string(),
+                language: "go".to_string(),
+                testing: "testify".to_string(),
+                mocking: "testify-mock".to_string(),
+                storage: "no-storage".to_string(),
+                surface: "web".to_string(),
+                target: "api".to_string(),
+                framework: "echo".to_string(),
+                protocol: Some("http-json".to_string()),
+            },
         }
     }
 
     #[test]
-    fn output_repo_root_justfile_uses_workspace_solution_and_run_recipe() {
+    fn output_repo_selection_overrides_allow_switching_saying_hello_back_to_dotnet() {
+        let overrides = BootstrapSelectionOverrides {
+            ecosystem: Some("dotnet".to_string()),
+            ..BootstrapSelectionOverrides::default()
+        };
+
+        let selections = output_repo_selections_for_project("saying-hello", &overrides)
+            .expect("dotnet saying-hello should be supported");
+
+        assert_eq!(selections.ecosystem, "dotnet");
+        assert_eq!(selections.testing, "xunit");
+        assert_eq!(selections.surface, "command-line");
+        assert_eq!(selections.protocol, None);
+    }
+
+    #[test]
+    fn output_repo_default_saying_hello_selections_are_dotnet() {
+        let selections =
+            output_repo_selections_for_project("saying-hello", &BootstrapSelectionOverrides::default())
+                .expect("default saying-hello selections should be supported");
+
+        assert_eq!(selections.ecosystem, "dotnet");
+        assert_eq!(selections.language, "csharp");
+        assert_eq!(selections.testing, "xunit");
+        assert_eq!(selections.surface, "command-line");
+        assert_eq!(selections.target, "all");
+        assert_eq!(selections.protocol, None);
+    }
+
+    #[test]
+    fn output_repo_selection_overrides_allow_switching_saying_hello_to_go() {
+        let overrides = BootstrapSelectionOverrides {
+            ecosystem: Some("go".to_string()),
+            ..BootstrapSelectionOverrides::default()
+        };
+
+        let selections = output_repo_selections_for_project("saying-hello", &overrides)
+            .expect("go saying-hello should be supported");
+
+        assert_eq!(selections.ecosystem, "go");
+        assert_eq!(selections.language, "go");
+        assert_eq!(selections.testing, "testify");
+        assert_eq!(selections.surface, "web");
+        assert_eq!(selections.target, "api");
+        assert_eq!(selections.protocol, Some("http-json".to_string()));
+    }
+
+    #[test]
+    fn output_repo_root_justfile_uses_go_commands_and_run_recipe() {
         let spec = sample_output_repo_spec();
 
         let justfile = render_output_repo_root_justfile_content(&spec);
 
-        assert!(justfile.contains("dotnet format {{workspace}}/{{solution}}"));
-        assert!(justfile.contains("dotnet test {{workspace}}/{{solution}}"));
-        assert!(justfile.contains("run *args:"));
-        assert!(justfile.contains("dotnet run --project {{adapter_project}} -- {{args}}"));
+        assert!(justfile.contains("gofmt -w"));
+        assert!(justfile.contains("go test ./..."));
+        assert!(justfile.contains("\nrun:\n"));
+        assert!(justfile.contains("go run ./cmd/server"));
     }
 
     #[test]
-    fn output_repo_ci_workflow_targets_workspace_solution_with_yaml_indentation() {
+    fn output_repo_ci_workflow_targets_workspace_go_module_with_yaml_indentation() {
         let spec = sample_output_repo_spec();
 
         let workflow = render_output_repo_ci_workflow_content(&spec);
 
         assert!(workflow.contains("\non:\n  push:\n"));
         assert!(workflow.contains("\njobs:\n  test:\n"));
+        assert!(workflow.contains("uses: actions/setup-go@v5"));
+        assert!(workflow.contains("hashFiles('workspace/go.mod')"));
         assert!(workflow.contains("working-directory: workspace"));
-        assert!(workflow.contains("dotnet test SayingHello.sln"));
+        assert!(workflow.contains("go test ./..."));
     }
 
     #[test]
-    fn output_repo_setup_content_uses_output_workspace_without_cd() {
+    fn output_repo_tutorial_readme_lists_go_api_http_json_choices() {
+        let spec = sample_output_repo_spec();
+
+        let readme = render_output_repo_tutorial_readme_content(&spec);
+
+        assert!(readme.contains("- Ecosystem: `go`"));
+        assert!(readme.contains("- Target: `api`"));
+        assert!(readme.contains("- Protocol: `http-json`"));
+        assert!(readme.contains("- Port: `25616`"));
+    }
+
+    #[test]
+    fn output_repo_setup_content_uses_go_module_and_workspace_layout() {
         let spec = sample_output_repo_spec();
 
         let setup = render_output_repo_setup_content(&spec);
 
-        assert!(setup.contains("dotnet new sln --format sln --name SayingHello --output workspace"));
-        assert!(setup.contains("dotnet new gitignore --output workspace"));
-        assert!(!setup.contains("cd workspace"));
+        assert!(setup.contains("go mod init github.com/intrepion/fa_tut_saying-hello/workspace"));
+        assert!(setup.contains("go get github.com/labstack/echo/v4"));
+        assert!(setup.contains("go get github.com/stretchr/testify/assert github.com/stretchr/testify/mock"));
+        assert!(setup.contains("workspace/internal/adapter/http"));
     }
 
     #[test]
-    fn output_repo_code_body_replaces_dotnet_test_with_just_checkpoints() {
-        let code_body = "### 1. Red: Add The First Failing Test\n\nRun:\n\n```bash\ndotnet test\n```";
+    fn go_saying_hello_contracts_and_adapter_tutorials_are_concrete() {
+        let spec = sample_output_repo_spec();
 
-        let rewritten = rewrite_output_repo_code_body(code_body);
+        let contracts = render_go_saying_hello_contracts_content(&spec);
+        let code = render_go_saying_hello_code_content(&spec);
+        let adapter = render_go_saying_hello_adapter_content(&spec);
 
-        assert!(rewritten.contains("just check-tests"));
-        assert!(rewritten.contains("git add -A"));
-        assert!(rewritten.contains("git commit -m \"1. Red: Add The First Failing Test\""));
-        assert!(!rewritten.contains("dotnet test"));
+        assert!(contracts.contains("type GreetingService interface"));
+        assert!(contracts.contains("type GreetingResponse struct"));
+        assert!(!code.contains("touch workspace/internal/code/greeting_service.go\ntouch workspace/internal/code/greeting_service_test.go"));
+        assert!(code.contains("### 1. Red: Add The First Failing Code Test"));
+        assert!(code.contains("touch workspace/internal/code/greeting_service_test.go"));
+        assert!(code.contains("### 2. Green: Return The Personalized Greeting"));
+        assert!(code.contains("touch workspace/internal/code/greeting_service.go"));
+        assert!(adapter.contains("github.com/intrepion/fa_tut_saying-hello/workspace/internal/contracts"));
+        assert!(!adapter.contains("touch workspace/internal/adapter/http/greeting_handler.go\ntouch workspace/internal/adapter/http/greeting_handler_test.go"));
+        assert!(adapter.contains("Create the first adapter test file:"));
+        assert!(!adapter.contains("touch workspace/cmd/server/main.go\n```\n\n### 1. Red"));
+        assert!(adapter.contains("Create the server entry point:"));
+        assert!(adapter.contains("\tservice.AssertExpectations(t)"));
+        assert!(adapter.contains("e.GET(\"/api/greeting\", handler.GetGreeting)"));
+        assert!(adapter.contains("service.On(\"Greet\", \"Ada\").Return(\"Hello, Ada!\")"));
+        assert!(adapter.contains("just check-tests"));
     }
 
     #[test]
-    fn output_repo_adapter_body_uses_real_service_and_removes_stop_section() {
-        let adapter_body = r#"### 1. Red: Add The First Failing Adapter Test
-
-Run:
-
-```bash
-dotnet test
-```
-
-```csharp
-using SayingHello.CommandLine;
-using SayingHello.Contracts;
-
-var greetingService = new NotImplementedGreetingService();
-var adapter = new CommandLineGreeting(greetingService);
-
-Console.WriteLine(adapter.BuildMessage(args));
-
-internal sealed class NotImplementedGreetingService : IGreetingService
-{
-    public string Greet(string name)
-    {
-        throw new NotImplementedException(
-            "Finish the matching core tutorial, then replace this placeholder with the real core implementation."
-        );
-    }
-}
-```
-
-### 5. Stop At The Contract Boundary
-
-Run:
-
-```bash
-dotnet test
-```
-
-This should pass with both adapter tests green.
-
-Leave the placeholder `NotImplementedGreetingService` in `Program.cs` for now. The matching core tutorial is the next step.
-"#;
-
-        let rewritten = rewrite_output_repo_adapter_body(adapter_body);
-
-        assert!(rewritten.contains("using SayingHello;"));
-        assert!(rewritten.contains("var greetingService = new GreetingService();"));
-        assert!(rewritten.contains("just check-tests"));
-        assert!(!rewritten.contains("NotImplementedGreetingService"));
-        assert!(!rewritten.contains("Stop At The Contract Boundary"));
-    }
-
-    #[test]
-    fn output_repo_finish_content_uses_just_run_examples_for_saying_hello() {
+    fn output_repo_finish_content_uses_api_smoke_test_examples_for_saying_hello() {
         let spec = sample_output_repo_spec();
 
         let finish = render_output_repo_finish_content(&spec);
 
         assert!(finish.contains("just run"));
-        assert!(finish.contains("just run Ada"));
-        assert!(finish.contains("Hello, Ada!"));
+        assert!(finish.contains("http://localhost:25616/api/greeting?name=Ada"));
+        assert!(finish.contains("{\"message\":\"Hello, Ada!\"}"));
     }
 
     #[test]

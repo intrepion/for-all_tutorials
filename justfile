@@ -1,5 +1,15 @@
 set shell := ["bash", "-eu", "-c"]
 
+bootstrap_ecosystem := ""
+bootstrap_language := ""
+bootstrap_testing := ""
+bootstrap_mocking := ""
+bootstrap_storage := ""
+bootstrap_surface := ""
+bootstrap_target := ""
+bootstrap_framework := ""
+bootstrap_protocol := ""
+
 default:
     @just --list
 
@@ -89,18 +99,118 @@ bootstrap-output-repos repos_root="../output-repos" owner="intrepion" sync_branc
     normalized_project="${normalized_project%\"}"
     normalized_project="${normalized_project#project=}"
 
+    normalized_ecosystem='{{bootstrap_ecosystem}}'
+    normalized_ecosystem="${normalized_ecosystem#\"}"
+    normalized_ecosystem="${normalized_ecosystem%\"}"
+    normalized_ecosystem="${normalized_ecosystem#ecosystem=}"
+
+    normalized_language='{{bootstrap_language}}'
+    normalized_language="${normalized_language#\"}"
+    normalized_language="${normalized_language%\"}"
+    normalized_language="${normalized_language#language=}"
+
+    normalized_testing='{{bootstrap_testing}}'
+    normalized_testing="${normalized_testing#\"}"
+    normalized_testing="${normalized_testing%\"}"
+    normalized_testing="${normalized_testing#testing=}"
+
+    normalized_mocking='{{bootstrap_mocking}}'
+    normalized_mocking="${normalized_mocking#\"}"
+    normalized_mocking="${normalized_mocking%\"}"
+    normalized_mocking="${normalized_mocking#mocking=}"
+
+    normalized_storage='{{bootstrap_storage}}'
+    normalized_storage="${normalized_storage#\"}"
+    normalized_storage="${normalized_storage%\"}"
+    normalized_storage="${normalized_storage#storage=}"
+
+    normalized_surface='{{bootstrap_surface}}'
+    normalized_surface="${normalized_surface#\"}"
+    normalized_surface="${normalized_surface%\"}"
+    normalized_surface="${normalized_surface#surface=}"
+
+    normalized_target='{{bootstrap_target}}'
+    normalized_target="${normalized_target#\"}"
+    normalized_target="${normalized_target%\"}"
+    normalized_target="${normalized_target#target=}"
+
+    normalized_framework='{{bootstrap_framework}}'
+    normalized_framework="${normalized_framework#\"}"
+    normalized_framework="${normalized_framework%\"}"
+    normalized_framework="${normalized_framework#framework=}"
+
+    normalized_protocol='{{bootstrap_protocol}}'
+    normalized_protocol="${normalized_protocol#\"}"
+    normalized_protocol="${normalized_protocol%\"}"
+    normalized_protocol="${normalized_protocol#protocol=}"
+
     if [ -z "$normalized_sync_branch_name" ] && command -v python3 >/dev/null 2>&1; then
       normalized_sync_branch_name="$(
         python3 -c 'from datetime import UTC, datetime; print(datetime.now(UTC).strftime("%Y%m%dT%H%M%S%fZ"))'
       )"
     fi
 
-    cargo run --quiet --manifest-path scripts/tutorial_generator/Cargo.toml -- \
-      --bootstrap-output-repos \
-      --repos-root "$normalized_repos_root" \
-      --owner "$normalized_owner" \
-      --sync-branch-name "$normalized_sync_branch_name" \
+    args=(
+      cargo run --quiet --manifest-path scripts/tutorial_generator/Cargo.toml --
+      --bootstrap-output-repos
+      --repos-root "$normalized_repos_root"
+      --owner "$normalized_owner"
+      --sync-branch-name "$normalized_sync_branch_name"
       --project "$normalized_project"
+    )
+
+    if [ -n "$normalized_ecosystem" ]; then
+      args+=(--ecosystem "$normalized_ecosystem")
+    fi
+    if [ -n "$normalized_language" ]; then
+      args+=(--language "$normalized_language")
+    fi
+    if [ -n "$normalized_testing" ]; then
+      args+=(--testing "$normalized_testing")
+    fi
+    if [ -n "$normalized_mocking" ]; then
+      args+=(--mocking "$normalized_mocking")
+    fi
+    if [ -n "$normalized_storage" ]; then
+      args+=(--storage "$normalized_storage")
+    fi
+    if [ -n "$normalized_surface" ]; then
+      args+=(--surface "$normalized_surface")
+    fi
+    if [ -n "$normalized_target" ]; then
+      args+=(--target "$normalized_target")
+    fi
+    if [ -n "$normalized_framework" ]; then
+      args+=(--framework "$normalized_framework")
+    fi
+    if [ -n "$normalized_protocol" ]; then
+      args+=(--protocol "$normalized_protocol")
+    fi
+
+    "${args[@]}"
+
+bootstrap-output-repos-dotnet repos_root="../output-repos" owner="intrepion" sync_branch_name="" project="saying-hello":
+    just --set bootstrap_ecosystem dotnet \
+      --set bootstrap_language csharp \
+      --set bootstrap_testing xunit \
+      --set bootstrap_mocking nsubstitute \
+      --set bootstrap_storage no-storage \
+      --set bootstrap_surface command-line \
+      --set bootstrap_target all \
+      --set bootstrap_framework no-framework \
+      bootstrap-output-repos "{{repos_root}}" "{{owner}}" "{{sync_branch_name}}" "{{project}}"
+
+bootstrap-output-repos-go repos_root="../output-repos" owner="intrepion" sync_branch_name="" project="saying-hello":
+    just --set bootstrap_ecosystem go \
+      --set bootstrap_language go \
+      --set bootstrap_testing testify \
+      --set bootstrap_mocking testify-mock \
+      --set bootstrap_storage no-storage \
+      --set bootstrap_surface web \
+      --set bootstrap_target api \
+      --set bootstrap_framework echo \
+      --set bootstrap_protocol http-json \
+      bootstrap-output-repos "{{repos_root}}" "{{owner}}" "{{sync_branch_name}}" "{{project}}"
 
 cleanup-output-repos apply="false" repos_root="../output-repos" owner="intrepion":
     #!/usr/bin/env bash

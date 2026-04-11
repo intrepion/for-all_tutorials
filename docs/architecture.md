@@ -426,7 +426,7 @@ Current target taxonomy:
 - `client/all`
 - `command-line/all`
 - `graphical/all`
-- `web/back-end`
+- `web/api`
 - `web/front-end`
 - `web/full-stack`
 - `web-service/all`
