@@ -1436,10 +1436,22 @@ fn render_output_repo_setup_content(spec: &OutputRepoSpec) -> String {
             "github.com/{}/{}/workspace",
             GITHUB_OWNER, spec.repo_name
         );
+        let setup_commands = vec![
+            "mkdir -p workspace".to_string(),
+            format!("(cd workspace && go mod init {module_path})"),
+            "(cd workspace && go get github.com/labstack/echo/v4)".to_string(),
+            "(cd workspace && go get github.com/labstack/echo/v4/middleware)".to_string(),
+            "(cd workspace && go get github.com/stretchr/testify/assert github.com/stretchr/testify/mock)".to_string(),
+            "mkdir -p workspace/cmd/server".to_string(),
+            "mkdir -p workspace/internal/contracts".to_string(),
+            "mkdir -p workspace/internal/code".to_string(),
+            "mkdir -p workspace/internal/adapter/http".to_string(),
+        ];
         return tutorial_file_markdown(
             "Setup",
             &format!(
-                "Keep the repository root for shared files like `README.md`, `LICENSE`, `.gitignore`, `.github/`, `justfile`, and `tutorial/`.\n\nPut all Go code inside a single `workspace/` folder.\n\nFrom the repository root, run:\n\n```bash\nmkdir -p workspace\n(cd workspace && go mod init {module_path})\n(cd workspace && go get github.com/labstack/echo/v4)\n(cd workspace && go get github.com/stretchr/testify/assert github.com/stretchr/testify/mock)\nmkdir -p workspace/cmd/server\nmkdir -p workspace/internal/contracts\nmkdir -p workspace/internal/code\nmkdir -p workspace/internal/adapter/http\n```\n\nWhen the full workspace is finished, it should contain these files:\n\n```text\nworkspace/\n  go.mod\n  go.sum\n  cmd/\n    server/\n      main.go\n  internal/\n    contracts/\n      greeting.go\n    code/\n      greeting_service.go\n      greeting_service_test.go\n    adapter/\n      http/\n        greeting_handler.go\n        greeting_handler_test.go\n```"
+                "Keep the repository root for shared files like `README.md`, `LICENSE`, `.gitignore`, `.github/`, `justfile`, and `tutorial/`.\n\nPut all Go code inside a single `workspace/` folder.\n\nFrom the repository root, run each setup command and checkpoint it before moving to the next one:\n\n```bash\n{}\n```\n\nWhen the full workspace is finished, it should contain these files:\n\n```text\nworkspace/\n  go.mod\n  go.sum\n  cmd/\n    server/\n      main.go\n  internal/\n    contracts/\n      greeting.go\n    code/\n      greeting_service.go\n      greeting_service_test.go\n    adapter/\n      http/\n        greeting_handler.go\n        greeting_handler_test.go\n```",
+                render_setup_commands_with_commits(&setup_commands, 1)
             ),
         );
     }
@@ -1548,6 +1560,17 @@ fn rewrite_tutorial_checkpoint_commands(text: &str) -> String {
 }
 
 fn rewrite_touch_creation_checkpoints(text: &str) -> String {
+    rewrite_touch_creation_checkpoints_with_check_all(text, true)
+}
+
+fn rewrite_touch_creation_stage_only(text: &str) -> String {
+    rewrite_touch_creation_checkpoints_with_check_all(text, false)
+}
+
+fn rewrite_touch_creation_checkpoints_with_check_all(
+    text: &str,
+    include_check_all: bool,
+) -> String {
     let fenced_block_re = Regex::new(r"(?s)```bash\n(?P<body>.*?)\n```").expect("valid fenced bash regex");
 
     fenced_block_re
@@ -1569,13 +1592,16 @@ fn rewrite_touch_creation_checkpoints(text: &str) -> String {
                 .lines()
                 .flat_map(|line| {
                     if line.starts_with("touch ") {
-                        vec![
+                        let mut lines = vec![
                             line.to_string(),
                             "just format".to_string(),
-                            "just check-all".to_string(),
                             "git add --all".to_string(),
                             format!("git commit --message '{}'", line),
-                        ]
+                        ];
+                        if include_check_all {
+                            lines.insert(2, "just check-all".to_string());
+                        }
+                        lines
                     } else {
                         vec![line.to_string()]
                     }
@@ -1726,7 +1752,7 @@ fn render_output_repo_finish_content(spec: &OutputRepoSpec) -> String {
         return tutorial_file_markdown(
             "Finish",
             &format!(
-                "Start the API server from the repository root:\n\n```bash\njust run\n```\n\nIn another terminal, try these requests:\n\n```bash\ncurl \"http://localhost:{FOR_ALL_API_PORT}/api/greeting\"\ncurl \"http://localhost:{FOR_ALL_API_PORT}/api/greeting?name=Ada\"\n```\n\nYou should get:\n\n```json\n{{\"message\":\"Hello!\"}}\n```\n\nand:\n\n```json\n{{\"message\":\"Hello, Ada!\"}}\n```"
+                "Start the API server from the repository root:\n\n```bash\njust run\n```\n\nThis API is configured to accept browser requests from `http://localhost:{FOR_ALL_FRONTEND_PORT}`.\n\nIn another terminal, try these requests:\n\n```bash\ncurl \"http://localhost:{FOR_ALL_API_PORT}/api/greeting\"\ncurl \"http://localhost:{FOR_ALL_API_PORT}/api/greeting?name=Ada\"\n```\n\nYou should get:\n\n```json\n{{\"message\":\"Hello!\"}}\n```\n\nand:\n\n```json\n{{\"message\":\"Hello, Ada!\"}}\n```"
             ),
         );
     }
@@ -3764,16 +3790,16 @@ fn render_go_saying_hello_contracts_content(_spec: &OutputRepoSpec) -> String {
     let contracts_file = "workspace/internal/contracts/greeting.go";
     tutorial_file_markdown(
         "Contracts",
-        &format!(
+        &rewrite_stage_commit_checkpoints(&rewrite_touch_creation_stage_only(&format!(
             "Create the shared contract file:\n\n```bash\ntouch {contracts_file}\n```\n\nPut this exact content in `{contracts_file}`:\n\n```go\npackage contracts\n\ntype GreetingService interface {{\n\tGreet(name string) string\n}}\n\ntype GreetingResponse struct {{\n\tMessage string `json:\"message\"`\n}}\n```\n\nDo not add tests here. Keep this layer limited to interfaces and small shared types.\n\nThen run:\n\n```bash\ngit add --all\ngit commit --message \"Define greeting contracts\"\n```"
-        ),
+        ))),
     )
 }
 
 fn render_go_saying_hello_code_content(_spec: &OutputRepoSpec) -> String {
     tutorial_file_markdown(
         "Code",
-        "### 1. Red: Add The First Failing Code Test\n\nCreate the first test file:\n\n```bash\ntouch workspace/internal/code/greeting_service_test.go\n```\n\nPut this exact content in `workspace/internal/code/greeting_service_test.go`:\n\n```go\npackage code\n\nimport (\n\t\"testing\"\n\n\t\"github.com/stretchr/testify/assert\"\n)\n\nfunc TestGreetingService_GreetReturnsPersonalGreetingForNonEmptyName(t *testing.T) {\n\tservice := GreetingService{}\n\n\tresult := service.Greet(\"Ada\")\n\n\tassert.Equal(t, \"Hello, Ada!\", result)\n}\n```\n\nRun:\n\n```bash\njust check-tests\ngit add --all\ngit commit --message \"1. Red: Add The First Failing Code Test\"\n```\n\n### 2. Green: Return The Personalized Greeting\n\nCreate the first production file:\n\n```bash\ntouch workspace/internal/code/greeting_service.go\n```\n\nPut this exact content in `workspace/internal/code/greeting_service.go`:\n\n```go\npackage code\n\ntype GreetingService struct{}\n\nfunc (s GreetingService) Greet(name string) string {\n\treturn \"Hello, \" + name + \"!\"\n}\n```\n\nRun:\n\n```bash\njust check-tests\ngit add --all\ngit commit --message \"2. Green: Return The Personalized Greeting\"\n```\n\n### 3. Red: Add The Trimming Test\n\nReplace `workspace/internal/code/greeting_service_test.go` with:\n\n```go\npackage code\n\nimport (\n\t\"testing\"\n\n\t\"github.com/stretchr/testify/assert\"\n)\n\nfunc TestGreetingService_GreetReturnsPersonalGreetingForNonEmptyName(t *testing.T) {\n\tservice := GreetingService{}\n\n\tresult := service.Greet(\"Ada\")\n\n\tassert.Equal(t, \"Hello, Ada!\", result)\n}\n\nfunc TestGreetingService_GreetTrimsWhitespaceBeforeGreeting(t *testing.T) {\n\tservice := GreetingService{}\n\n\tresult := service.Greet(\"  Ada  \")\n\n\tassert.Equal(t, \"Hello, Ada!\", result)\n}\n```\n\nRun:\n\n```bash\njust check-tests\ngit add --all\ngit commit --message \"3. Red: Add The Trimming Test\"\n```\n\n### 4. Green: Trim The Name Before Greeting\n\nReplace `workspace/internal/code/greeting_service.go` with:\n\n```go\npackage code\n\nimport \"strings\"\n\ntype GreetingService struct{}\n\nfunc (s GreetingService) Greet(name string) string {\n\ttrimmed := strings.TrimSpace(name)\n\treturn \"Hello, \" + trimmed + \"!\"\n}\n```\n\nRun:\n\n```bash\njust check-tests\ngit add --all\ngit commit --message \"4. Green: Trim The Name Before Greeting\"\n```\n\n### 5. Red: Add Empty-Input Tests\n\nReplace `workspace/internal/code/greeting_service_test.go` with:\n\n```go\npackage code\n\nimport (\n\t\"testing\"\n\n\t\"github.com/stretchr/testify/assert\"\n)\n\nfunc TestGreetingService_GreetReturnsPersonalGreetingForNonEmptyName(t *testing.T) {\n\tservice := GreetingService{}\n\n\tresult := service.Greet(\"Ada\")\n\n\tassert.Equal(t, \"Hello, Ada!\", result)\n}\n\nfunc TestGreetingService_GreetTrimsWhitespaceBeforeGreeting(t *testing.T) {\n\tservice := GreetingService{}\n\n\tresult := service.Greet(\"  Ada  \")\n\n\tassert.Equal(t, \"Hello, Ada!\", result)\n}\n\nfunc TestGreetingService_GreetReturnsGenericGreetingForEmptyName(t *testing.T) {\n\tservice := GreetingService{}\n\n\tresult := service.Greet(\"\")\n\n\tassert.Equal(t, \"Hello!\", result)\n}\n\nfunc TestGreetingService_GreetReturnsGenericGreetingForWhitespaceOnlyName(t *testing.T) {\n\tservice := GreetingService{}\n\n\tresult := service.Greet(\"   \")\n\n\tassert.Equal(t, \"Hello!\", result)\n}\n```\n\nRun:\n\n```bash\njust check-tests\ngit add --all\ngit commit --message \"5. Red: Add Empty-Input Tests\"\n```\n\n### 6. Green: Return The Generic Greeting For Empty Input\n\nReplace `workspace/internal/code/greeting_service.go` with:\n\n```go\npackage code\n\nimport \"strings\"\n\ntype GreetingService struct{}\n\nfunc (s GreetingService) Greet(name string) string {\n\ttrimmed := strings.TrimSpace(name)\n\tif trimmed == \"\" {\n\t\treturn \"Hello!\"\n\t}\n\n\treturn \"Hello, \" + trimmed + \"!\"\n}\n```\n\nRun:\n\n```bash\njust check-tests\ngit add --all\ngit commit --message \"6. Green: Return The Generic Greeting For Empty Input\"\n```",
+        &rewrite_touch_creation_stage_only("### 1. Red: Add The First Failing Code Test\n\nCreate the first test file:\n\n```bash\ntouch workspace/internal/code/greeting_service_test.go\n```\n\nPut this exact content in `workspace/internal/code/greeting_service_test.go`:\n\n```go\npackage code\n\nimport (\n\t\"testing\"\n\n\t\"github.com/stretchr/testify/assert\"\n)\n\nfunc TestGreetingService_GreetReturnsPersonalGreetingForNonEmptyName(t *testing.T) {\n\tservice := GreetingService{}\n\n\tresult := service.Greet(\"Ada\")\n\n\tassert.Equal(t, \"Hello, Ada!\", result)\n}\n```\n\nRun:\n\n```bash\njust check-tests\ngit add --all\ngit commit --message \"1. Red: Add The First Failing Code Test\"\n```\n\n### 2. Green: Return The Personalized Greeting\n\nCreate the first production file:\n\n```bash\ntouch workspace/internal/code/greeting_service.go\n```\n\nPut this exact content in `workspace/internal/code/greeting_service.go`:\n\n```go\npackage code\n\ntype GreetingService struct{}\n\nfunc (s GreetingService) Greet(name string) string {\n\treturn \"Hello, \" + name + \"!\"\n}\n```\n\nRun:\n\n```bash\njust check-tests\ngit add --all\ngit commit --message \"2. Green: Return The Personalized Greeting\"\n```\n\n### 3. Red: Add The Trimming Test\n\nReplace `workspace/internal/code/greeting_service_test.go` with:\n\n```go\npackage code\n\nimport (\n\t\"testing\"\n\n\t\"github.com/stretchr/testify/assert\"\n)\n\nfunc TestGreetingService_GreetReturnsPersonalGreetingForNonEmptyName(t *testing.T) {\n\tservice := GreetingService{}\n\n\tresult := service.Greet(\"Ada\")\n\n\tassert.Equal(t, \"Hello, Ada!\", result)\n}\n\nfunc TestGreetingService_GreetTrimsWhitespaceBeforeGreeting(t *testing.T) {\n\tservice := GreetingService{}\n\n\tresult := service.Greet(\"  Ada  \")\n\n\tassert.Equal(t, \"Hello, Ada!\", result)\n}\n```\n\nRun:\n\n```bash\njust check-tests\ngit add --all\ngit commit --message \"3. Red: Add The Trimming Test\"\n```\n\n### 4. Green: Trim The Name Before Greeting\n\nReplace `workspace/internal/code/greeting_service.go` with:\n\n```go\npackage code\n\nimport \"strings\"\n\ntype GreetingService struct{}\n\nfunc (s GreetingService) Greet(name string) string {\n\ttrimmed := strings.TrimSpace(name)\n\treturn \"Hello, \" + trimmed + \"!\"\n}\n```\n\nRun:\n\n```bash\njust check-tests\ngit add --all\ngit commit --message \"4. Green: Trim The Name Before Greeting\"\n```\n\n### 5. Red: Add Empty-Input Tests\n\nReplace `workspace/internal/code/greeting_service_test.go` with:\n\n```go\npackage code\n\nimport (\n\t\"testing\"\n\n\t\"github.com/stretchr/testify/assert\"\n)\n\nfunc TestGreetingService_GreetReturnsPersonalGreetingForNonEmptyName(t *testing.T) {\n\tservice := GreetingService{}\n\n\tresult := service.Greet(\"Ada\")\n\n\tassert.Equal(t, \"Hello, Ada!\", result)\n}\n\nfunc TestGreetingService_GreetTrimsWhitespaceBeforeGreeting(t *testing.T) {\n\tservice := GreetingService{}\n\n\tresult := service.Greet(\"  Ada  \")\n\n\tassert.Equal(t, \"Hello, Ada!\", result)\n}\n\nfunc TestGreetingService_GreetReturnsGenericGreetingForEmptyName(t *testing.T) {\n\tservice := GreetingService{}\n\n\tresult := service.Greet(\"\")\n\n\tassert.Equal(t, \"Hello!\", result)\n}\n\nfunc TestGreetingService_GreetReturnsGenericGreetingForWhitespaceOnlyName(t *testing.T) {\n\tservice := GreetingService{}\n\n\tresult := service.Greet(\"   \")\n\n\tassert.Equal(t, \"Hello!\", result)\n}\n```\n\nRun:\n\n```bash\njust check-tests\ngit add --all\ngit commit --message \"5. Red: Add Empty-Input Tests\"\n```\n\n### 6. Green: Return The Generic Greeting For Empty Input\n\nReplace `workspace/internal/code/greeting_service.go` with:\n\n```go\npackage code\n\nimport \"strings\"\n\ntype GreetingService struct{}\n\nfunc (s GreetingService) Greet(name string) string {\n\ttrimmed := strings.TrimSpace(name)\n\tif trimmed == \"\" {\n\t\treturn \"Hello!\"\n\t}\n\n\treturn \"Hello, \" + trimmed + \"!\"\n}\n```\n\nRun:\n\n```bash\njust check-tests\ngit add --all\ngit commit --message \"6. Green: Return The Generic Greeting For Empty Input\"\n```"),
     )
 }
 
@@ -3992,10 +4018,14 @@ import (
 	httpadapter "__MODULE_PATH__/internal/adapter/http"
 	"__MODULE_PATH__/internal/code"
 	"github.com/labstack/echo/v4"
+	"github.com/labstack/echo/v4/middleware"
 )
 
 func main() {
 	e := echo.New()
+	e.Use(middleware.CORSWithConfig(middleware.CORSConfig{
+		AllowOrigins: []string{"http://localhost:25617"},
+	}))
 	service := code.GreetingService{}
 	handler := httpadapter.NewGreetingHandler(service)
 
@@ -4014,7 +4044,7 @@ git commit --message "4. Green: Wire The Server Entry Point"
 ```"#;
     tutorial_file_markdown(
         "Adapter",
-        &body.replace("__MODULE_PATH__", &module_path),
+        &rewrite_touch_creation_stage_only(&body.replace("__MODULE_PATH__", &module_path)),
     )
 }
 
@@ -4330,7 +4360,7 @@ describe('index page', () => {
     expect(result).toContain('data-greeting-form');
     expect(result).toContain('data-greeting-name');
     expect(result).toContain('data-greeting-output');
-    expect(result).toContain('http://localhost:__API_PORT__');
+    expect(result).toContain('data-api-base-url="http://localhost:__API_PORT__"');
   });
 });
 ```
@@ -4365,7 +4395,7 @@ const apiBaseUrl = 'http://localhost:__API_PORT__';
     <title>Saying Hello</title>
   </head>
   <body>
-    <main>
+    <main data-api-base-url={apiBaseUrl}>
       <h1>Saying Hello</h1>
       <form data-greeting-form>
         <label for="name-input">Name</label>
@@ -4379,14 +4409,17 @@ const apiBaseUrl = 'http://localhost:__API_PORT__';
       import { HttpGreetingApi } from '../adapter/http-greeting-api';
       import { bindGreetingForm } from '../adapter/bind-greeting-form';
 
+      const page = document.querySelector('[data-api-base-url]');
       const form = document.querySelector('[data-greeting-form]');
       const nameInput = document.querySelector('[data-greeting-name]');
       const output = document.querySelector('[data-greeting-output]');
+      const apiBaseUrl = page?.getAttribute('data-api-base-url');
 
       if (
         form instanceof HTMLFormElement &&
         nameInput instanceof HTMLInputElement &&
-        output instanceof HTMLElement
+        output instanceof HTMLElement &&
+        apiBaseUrl
       ) {
         bindGreetingForm({
           form,
@@ -4827,8 +4860,14 @@ mod tests {
 
         assert!(setup.contains("go mod init github.com/intrepion/fa_tut_saying-hello/workspace"));
         assert!(setup.contains("go get github.com/labstack/echo/v4"));
+        assert!(setup.contains("go get github.com/labstack/echo/v4/middleware"));
         assert!(setup.contains("go get github.com/stretchr/testify/assert github.com/stretchr/testify/mock"));
         assert!(setup.contains("workspace/internal/adapter/http"));
+        assert!(setup.contains("run each setup command and checkpoint it before moving to the next one"));
+        assert!(setup.contains("git commit --message \"mkdir -p workspace\""));
+        assert!(setup.contains("git commit --message \"(cd workspace && go mod init github.com/intrepion/fa_tut_saying-hello/workspace)\""));
+        assert!(setup.contains("just format\ngit add --all\ngit commit --message \"(cd workspace && go get github.com/labstack/echo/v4)\""));
+        assert!(setup.contains("just format\ngit add --all\ngit commit --message \"(cd workspace && go get github.com/labstack/echo/v4/middleware)\""));
     }
 
     #[test]
@@ -4841,17 +4880,25 @@ mod tests {
 
         assert!(contracts.contains("type GreetingService interface"));
         assert!(contracts.contains("type GreetingResponse struct"));
+        assert!(contracts.contains("git commit --message 'touch workspace/internal/contracts/greeting.go'"));
+        assert!(contracts.contains("just format\njust check-all\ngit add --all\ngit commit --message \"Define greeting contracts\""));
         assert!(!code.contains("touch workspace/internal/code/greeting_service.go\ntouch workspace/internal/code/greeting_service_test.go"));
         assert!(code.contains("### 1. Red: Add The First Failing Code Test"));
         assert!(code.contains("touch workspace/internal/code/greeting_service_test.go"));
+        assert!(code.contains("git commit --message 'touch workspace/internal/code/greeting_service_test.go'"));
         assert!(code.contains("### 2. Green: Return The Personalized Greeting"));
         assert!(code.contains("touch workspace/internal/code/greeting_service.go"));
+        assert!(code.contains("git commit --message 'touch workspace/internal/code/greeting_service.go'"));
         assert!(adapter.contains("github.com/intrepion/fa_tut_saying-hello/workspace/internal/contracts"));
         assert!(!adapter.contains("touch workspace/internal/adapter/http/greeting_handler.go\ntouch workspace/internal/adapter/http/greeting_handler_test.go"));
         assert!(adapter.contains("Create the first adapter test file:"));
+        assert!(adapter.contains("git commit --message 'touch workspace/internal/adapter/http/greeting_handler_test.go'"));
         assert!(!adapter.contains("touch workspace/cmd/server/main.go\n```\n\n### 1. Red"));
         assert!(adapter.contains("Create the server entry point:"));
+        assert!(adapter.contains("git commit --message 'touch workspace/cmd/server/main.go'"));
         assert!(adapter.contains("\tservice.AssertExpectations(t)"));
+        assert!(adapter.contains("middleware.CORSWithConfig"));
+        assert!(adapter.contains("AllowOrigins: []string{\"http://localhost:25617\"}"));
         assert!(adapter.contains("e.GET(\"/api/greeting\", handler.GetGreeting)"));
         assert!(adapter.contains("service.On(\"Greet\", \"Ada\").Return(\"Hello, Ada!\")"));
         assert!(adapter.contains("just format"));
@@ -4866,6 +4913,7 @@ mod tests {
 
         assert!(finish.contains("just run"));
         assert!(finish.contains("http://localhost:25616/api/greeting?name=Ada"));
+        assert!(finish.contains("http://localhost:25617"));
         assert!(finish.contains("{\"message\":\"Hello, Ada!\"}"));
     }
 
@@ -5030,7 +5078,10 @@ mod tests {
         assert!(adapter.contains("// @vitest-environment jsdom"));
         assert!(adapter.contains("experimental_AstroContainer as AstroContainer"));
         assert!(adapter.contains("const apiBaseUrl = 'http://localhost:25616';"));
+        assert!(adapter.contains("data-api-base-url={apiBaseUrl}"));
+        assert!(adapter.contains("const apiBaseUrl = page?.getAttribute('data-api-base-url');"));
         assert!(adapter.contains("api: new HttpGreetingApi(apiBaseUrl)"));
+        assert!(adapter.contains("data-api-base-url=\"http://localhost:25616\""));
         assert!(adapter.contains("just format"));
         assert!(adapter.contains("just check-all"));
     }
