@@ -1019,6 +1019,8 @@ fn render_output_repo_root_justfile_content(spec: &OutputRepoSpec) -> String {
     if is_go_saying_hello_output_repo(spec) {
         return "set shell := [\"bash\", \"-eu\", \"-c\"]\n\n\
 workspace := \"workspace\"\n\n\
+restore:\n\
+\t(cd {{workspace}} && go mod download)\n\n\
 format:\n\
 \tfind {{workspace}} -name '*.go' -exec gofmt -w {} +\n\n\
 check-formatting:\n\
@@ -1036,6 +1038,8 @@ check-all:\n\
     if is_astro_saying_hello_output_repo(spec) {
         return "set shell := [\"bash\", \"-eu\", \"-c\"]\n\n\
 workspace := \"workspace\"\n\n\
+restore:\n\
+\tnpm --prefix {{workspace}} ci\n\n\
 format:\n\
 \tnpm --prefix {{workspace}} run format\n\n\
 check-formatting:\n\
@@ -1057,6 +1061,8 @@ check-all:\n\
          workspace := \"workspace\"\n\
          solution := \"{solution_name}.sln\"\n\
          adapter_project := \"workspace/src/{adapter_project_name}\"\n\n\
+         restore:\n\
+         \tdotnet restore {{{{workspace}}}}/{{{{solution}}}}\n\n\
          format:\n\
          \tdotnet format {{{{workspace}}}}/{{{{solution}}}}\n\n\
          check-formatting:\n\
@@ -3501,7 +3507,9 @@ fn dotnet_contracts_root_justfile_contents(project_slug: &str) -> String {
     let solution_name = format!("{}.Contracts", pascal_case_slug(project_slug));
     let solution_file = format!("{solution_name}.sln");
     format!(
-        "format:\n\
+        "restore:\n\
+         \tdotnet restore\n\n\
+         format:\n\
          \tdotnet format\n\n\
          check-formatting:\n\
          \tdotnet format --verify-no-changes\n\n\
@@ -3516,7 +3524,9 @@ fn dotnet_contracts_root_justfile_contents(project_slug: &str) -> String {
 fn dotnet_root_justfile_contents(test_project_path: &str, testing: &str) -> String {
     if testing == "tunit" {
         return format!(
-            "format:\n\
+            "restore:\n\
+             \tdotnet restore\n\n\
+             format:\n\
              \tdotnet format\n\n\
              check-formatting:\n\
              \tdotnet format --verify-no-changes\n\n\
@@ -3539,7 +3549,9 @@ fn dotnet_root_justfile_contents(test_project_path: &str, testing: &str) -> Stri
     }
 
     format!(
-        "format:\n\
+        "restore:\n\
+         \tdotnet restore\n\n\
+         format:\n\
          \tdotnet format\n\n\
          check-formatting:\n\
          \tdotnet format --verify-no-changes\n\n\
@@ -4820,6 +4832,8 @@ mod tests {
 
         let justfile = render_output_repo_root_justfile_content(&spec);
 
+        assert!(justfile.contains("\nrestore:\n"));
+        assert!(justfile.contains("go mod download"));
         assert!(justfile.contains("gofmt -w"));
         assert!(justfile.contains("go test ./..."));
         assert!(justfile.contains("\nrun:\n"));
@@ -4922,6 +4936,7 @@ mod tests {
         let app_root = app_root_for_tests();
         let spec = sample_dotnet_output_repo_spec();
         let files = build_output_repo_tutorial_files(&app_root, &spec);
+        let justfile = render_output_repo_root_justfile_content(&spec);
 
         let setup = String::from_utf8(
             files
@@ -4960,6 +4975,8 @@ mod tests {
         )
         .expect("adapter utf8");
 
+        assert!(justfile.contains("\nrestore:\n"));
+        assert!(justfile.contains("dotnet restore {{workspace}}/{{solution}}"));
         assert!(setup.contains("git commit --message \"mkdir -p workspace\""));
         assert!(setup.contains("dotnet new sln --format sln --name SayingHello --output workspace\njust format\ngit add --all"));
         assert!(contracts.contains("dotnet new classlib --language C# --output workspace/src/SayingHello.Contracts --name SayingHello.Contracts\njust format\njust check-all\ngit add --all\ngit commit --message 'dotnet new classlib --language C# --output workspace/src/SayingHello.Contracts --name SayingHello.Contracts'"));
@@ -4982,6 +4999,8 @@ mod tests {
 
         let justfile = render_output_repo_root_justfile_content(&spec);
 
+        assert!(justfile.contains("\nrestore:\n"));
+        assert!(justfile.contains("npm --prefix {{workspace}} ci"));
         assert!(justfile.contains("npm --prefix {{workspace}} run format"));
         assert!(justfile.contains("npm --prefix {{workspace}} run test"));
         assert!(justfile.contains("\nrun:\n"));
