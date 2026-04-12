@@ -212,6 +212,18 @@ bootstrap-output-repos-go repos_root="../output-repos" owner="intrepion" sync_br
       --set bootstrap_protocol http-json \
       bootstrap-output-repos "{{repos_root}}" "{{owner}}" "{{sync_branch_name}}" "{{project}}"
 
+bootstrap-output-repos-astro repos_root="../output-repos" owner="intrepion" sync_branch_name="" project="saying-hello":
+    just --set bootstrap_ecosystem javascript \
+      --set bootstrap_language typescript \
+      --set bootstrap_testing vitest \
+      --set bootstrap_mocking vitest-built-in \
+      --set bootstrap_storage no-storage \
+      --set bootstrap_surface web \
+      --set bootstrap_target front-end \
+      --set bootstrap_framework astro \
+      --set bootstrap_protocol http-json \
+      bootstrap-output-repos "{{repos_root}}" "{{owner}}" "{{sync_branch_name}}" "{{project}}"
+
 cleanup-output-repos apply="false" repos_root="../output-repos" owner="intrepion":
     #!/usr/bin/env bash
     set -euo pipefail

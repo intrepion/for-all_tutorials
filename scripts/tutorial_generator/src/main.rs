@@ -14,6 +14,8 @@ const ROOT: &str = env!("CARGO_MANIFEST_DIR");
 const GITHUB_OWNER: &str = "intrepion";
 const OUTPUT_REPO_PREFIX: &str = "fa_tut";
 const GITHUB_REPO_CREATE_DELAY: Duration = Duration::from_secs(1);
+const FOR_ALL_API_PORT: &str = "25616";
+const FOR_ALL_FRONTEND_PORT: &str = "25617";
 
 fn main() -> Result<(), AppError> {
     let app_root = Path::new(ROOT)
@@ -413,6 +415,19 @@ fn is_go_saying_hello_output_repo(spec: &OutputRepoSpec) -> bool {
     spec.project_slug == "saying-hello" && spec.selections.ecosystem == "go"
 }
 
+fn is_astro_saying_hello_output_repo(spec: &OutputRepoSpec) -> bool {
+    spec.project_slug == "saying-hello"
+        && spec.selections.ecosystem == "javascript"
+        && spec.selections.language == "typescript"
+        && spec.selections.testing == "vitest"
+        && spec.selections.mocking == "vitest-built-in"
+        && spec.selections.storage == "no-storage"
+        && spec.selections.surface == "web"
+        && spec.selections.target == "front-end"
+        && spec.selections.framework == "astro"
+        && spec.selections.protocol.as_deref() == Some("http-json")
+}
+
 fn collect_output_repo_specs(app_root: &Path) -> Result<Vec<OutputRepoSpec>, AppError> {
     collect_output_repo_specs_for_project(app_root, None, &BootstrapSelectionOverrides::default())
 }
@@ -527,6 +542,17 @@ fn supported_output_repo_selections(
             framework: "echo".to_string(),
             protocol: Some("http-json".to_string()),
         }),
+        ("saying-hello", "javascript") => Some(OutputRepoSelections {
+            ecosystem: "javascript".to_string(),
+            language: "typescript".to_string(),
+            testing: "vitest".to_string(),
+            mocking: "vitest-built-in".to_string(),
+            storage: "no-storage".to_string(),
+            surface: "web".to_string(),
+            target: "front-end".to_string(),
+            framework: "astro".to_string(),
+            protocol: Some("http-json".to_string()),
+        }),
         (_, "dotnet") => Some(OutputRepoSelections {
             ecosystem: "dotnet".to_string(),
             language: "csharp".to_string(),
@@ -558,6 +584,18 @@ fn validate_output_repo_selections(
         protocol: Some("http-json".to_string()),
     };
 
+    let supported_astro = OutputRepoSelections {
+        ecosystem: "javascript".to_string(),
+        language: "typescript".to_string(),
+        testing: "vitest".to_string(),
+        mocking: "vitest-built-in".to_string(),
+        storage: "no-storage".to_string(),
+        surface: "web".to_string(),
+        target: "front-end".to_string(),
+        framework: "astro".to_string(),
+        protocol: Some("http-json".to_string()),
+    };
+
     let supported_dotnet = OutputRepoSelections {
         ecosystem: "dotnet".to_string(),
         language: "csharp".to_string(),
@@ -575,6 +613,10 @@ fn validate_output_repo_selections(
     }
 
     if project_slug == "saying-hello" && selections == &supported_go {
+        return Ok(());
+    }
+
+    if project_slug == "saying-hello" && selections == &supported_astro {
         return Ok(());
     }
 
@@ -902,7 +944,10 @@ fn build_managed_repo_files(
         },
     ];
 
-    if spec.selections.ecosystem == "dotnet" || is_go_saying_hello_output_repo(spec) {
+    if spec.selections.ecosystem == "dotnet"
+        || is_go_saying_hello_output_repo(spec)
+        || is_astro_saying_hello_output_repo(spec)
+    {
         files.push(ManagedRepoFile {
             relative_path: ".github/workflows/ci.yml".to_string(),
             contents: render_output_repo_ci_workflow_content(spec).into_bytes(),
@@ -988,6 +1033,23 @@ check-all:\n\
             .to_string();
     }
 
+    if is_astro_saying_hello_output_repo(spec) {
+        return "set shell := [\"bash\", \"-eu\", \"-c\"]\n\n\
+workspace := \"workspace\"\n\n\
+format:\n\
+\tnpm --prefix {{workspace}} run format\n\n\
+check-formatting:\n\
+\tnpm --prefix {{workspace}} run check-formatting\n\n\
+check-tests:\n\
+\tnpm --prefix {{workspace}} run test\n\n\
+run:\n\
+\tnpm --prefix {{workspace}} run dev\n\n\
+check-all:\n\
+\tjust check-formatting\n\
+\tjust check-tests\n"
+            .to_string();
+    }
+
     let solution_name = workspace_solution_name(&spec.project_slug);
     let adapter_project_name = adapter_project_name(&spec.project_slug);
     format!(
@@ -1047,6 +1109,51 @@ jobs:
         .to_string();
     }
 
+    if is_astro_saying_hello_output_repo(spec) {
+        return r#"name: CI
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check out code
+        uses: actions/checkout@v6
+
+      - name: Set up Node.js
+        if: ${{ hashFiles('workspace/package-lock.json') != '' }}
+        uses: actions/setup-node@v6
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: workspace/package-lock.json
+
+      - name: Install dependencies
+        if: ${{ hashFiles('workspace/package-lock.json') != '' }}
+        working-directory: workspace
+        run: npm ci
+
+      - name: Verify formatting
+        if: ${{ hashFiles('workspace/package-lock.json') != '' }}
+        working-directory: workspace
+        run: npm run check-formatting
+
+      - name: Test
+        if: ${{ hashFiles('workspace/package-lock.json') != '' }}
+        working-directory: workspace
+        run: npm test
+"#
+        .to_string();
+    }
+
     let solution_name = workspace_solution_name(&spec.project_slug);
     format!(
         r#"name: CI
@@ -1092,6 +1199,10 @@ fn build_output_repo_tutorial_files(app_root: &Path, spec: &OutputRepoSpec) -> V
         return build_go_saying_hello_output_repo_tutorial_files(app_root, spec);
     }
 
+    if is_astro_saying_hello_output_repo(spec) {
+        return build_astro_saying_hello_output_repo_tutorial_files(app_root, spec);
+    }
+
     let project_root = app_root.join("partials/projects").join(&spec.project_slug);
     let spec_partial =
         Partial::load(&project_root.join("spec/README.md")).expect("spec partial should exist");
@@ -1109,13 +1220,14 @@ fn build_output_repo_tutorial_files(app_root: &Path, spec: &OutputRepoSpec) -> V
     let contracts_path = project_root.join("instructions/contracts.md");
     let contracts_contents = if contracts_path.exists() {
         let partial = Partial::load(&contracts_path).expect("contracts partial should exist");
+        let contracts_body = format!(
+            "{}\n\n{}",
+            render_output_repo_contracts_scaffold(spec),
+            rewrite_for_single_repo_tutorial(&partial.body)
+        );
         tutorial_file_markdown(
             "Contracts",
-            &format!(
-                "{}\n\n{}",
-                render_output_repo_contracts_scaffold(spec),
-                rewrite_for_single_repo_tutorial(&partial.body)
-            ),
+            &rewrite_stage_commit_checkpoints(&rewrite_touch_creation_checkpoints(&contracts_body)),
         )
     } else {
         generic_contracts_tutorial(spec, &spec_partial.body)
@@ -1146,11 +1258,11 @@ fn build_output_repo_tutorial_files(app_root: &Path, spec: &OutputRepoSpec) -> V
             relative_path: "tutorial/code.md".to_string(),
             contents: tutorial_file_markdown(
                 "Code",
-                &format!(
+                &rewrite_stage_commit_checkpoints(&rewrite_touch_creation_checkpoints(&format!(
                     "{}\n\n{}",
                     render_output_repo_code_scaffold(spec),
                     rewrite_output_repo_code_body(&rewrite_for_single_repo_tutorial(&code_partial.body))
-                ),
+                ))),
             )
             .into_bytes(),
         },
@@ -1158,11 +1270,11 @@ fn build_output_repo_tutorial_files(app_root: &Path, spec: &OutputRepoSpec) -> V
             relative_path: "tutorial/adapter.md".to_string(),
             contents: tutorial_file_markdown(
                 "Adapter",
-                &format!(
-                "{}\n\n{}",
+                &rewrite_stage_commit_checkpoints(&rewrite_touch_creation_checkpoints(&format!(
+                    "{}\n\n{}",
                     render_output_repo_adapter_scaffold(spec),
                     rewrite_output_repo_adapter_body(&rewrite_for_single_repo_tutorial(&adapter_partial.body))
-                ),
+                ))),
             )
             .into_bytes(),
         },
@@ -1217,6 +1329,50 @@ fn build_go_saying_hello_output_repo_tutorial_files(
     ]
 }
 
+fn build_astro_saying_hello_output_repo_tutorial_files(
+    app_root: &Path,
+    spec: &OutputRepoSpec,
+) -> Vec<ManagedRepoFile> {
+    let project_root = app_root.join("partials/projects").join(&spec.project_slug);
+    let spec_partial =
+        Partial::load(&project_root.join("spec/README.md")).expect("spec partial should exist");
+
+    vec![
+        ManagedRepoFile {
+            relative_path: "tutorial/README.md".to_string(),
+            contents: render_output_repo_tutorial_readme_content(spec).into_bytes(),
+        },
+        ManagedRepoFile {
+            relative_path: "tutorial/setup.md".to_string(),
+            contents: render_output_repo_setup_content(spec).into_bytes(),
+        },
+        ManagedRepoFile {
+            relative_path: "tutorial/spec.md".to_string(),
+            contents: tutorial_file_markdown(
+                "Spec",
+                &rewrite_for_single_repo_tutorial(&spec_partial.body),
+            )
+            .into_bytes(),
+        },
+        ManagedRepoFile {
+            relative_path: "tutorial/contracts.md".to_string(),
+            contents: render_astro_saying_hello_contracts_content(spec).into_bytes(),
+        },
+        ManagedRepoFile {
+            relative_path: "tutorial/code.md".to_string(),
+            contents: render_astro_saying_hello_code_content(spec).into_bytes(),
+        },
+        ManagedRepoFile {
+            relative_path: "tutorial/adapter.md".to_string(),
+            contents: render_astro_saying_hello_adapter_content(spec).into_bytes(),
+        },
+        ManagedRepoFile {
+            relative_path: "tutorial/finish.md".to_string(),
+            contents: render_output_repo_finish_content(spec).into_bytes(),
+        },
+    ]
+}
+
 fn render_output_repo_tutorial_readme_content(spec: &OutputRepoSpec) -> String {
     let mut choices = vec![
         format!("- Project: `{}`", spec.project_slug),
@@ -1260,7 +1416,12 @@ fn render_output_repo_tutorial_readme_content(spec: &OutputRepoSpec) -> String {
     }
 
     if is_go_saying_hello_output_repo(spec) {
-        choices.push("- Port: `25616`".to_string());
+        choices.push(format!("- Port: `{FOR_ALL_API_PORT}`"));
+    }
+
+    if is_astro_saying_hello_output_repo(spec) {
+        choices.push(format!("- API Port: `{FOR_ALL_API_PORT}`"));
+        choices.push(format!("- App Port: `{FOR_ALL_FRONTEND_PORT}`"));
     }
 
     format!(
@@ -1283,38 +1444,212 @@ fn render_output_repo_setup_content(spec: &OutputRepoSpec) -> String {
         );
     }
 
+    if is_astro_saying_hello_output_repo(spec) {
+        let setup_commands = vec![
+            "mkdir -p workspace".to_string(),
+            "curl -L -s https://raw.githubusercontent.com/github/gitignore/refs/heads/main/Node.gitignore > workspace/.gitignore".to_string(),
+            "printf '\\n# Astro\\n.astro/\\ndist/\\n\\n# Vitest\\ncoverage/\\n' >> workspace/.gitignore".to_string(),
+            "(cd workspace && npm init --yes)".to_string(),
+            "(cd workspace && npm install astro)".to_string(),
+            "(cd workspace && npm install --save-dev typescript vitest jsdom prettier @types/node)".to_string(),
+            "(cd workspace && npm pkg set private=true)".to_string(),
+            "(cd workspace && npm pkg set type=module)".to_string(),
+            "(cd workspace && npm pkg delete main)".to_string(),
+            format!(
+                "(cd workspace && npm pkg set scripts.dev=\"astro dev --host 0.0.0.0 --port {FOR_ALL_FRONTEND_PORT}\")"
+            ),
+            "(cd workspace && npm pkg set scripts.build=\"astro build\")".to_string(),
+            format!(
+                "(cd workspace && npm pkg set scripts.preview=\"astro preview --host 0.0.0.0 --port {FOR_ALL_FRONTEND_PORT}\")"
+            ),
+            "(cd workspace && npm pkg set scripts.format=\"prettier --write .\")".to_string(),
+            "(cd workspace && npm pkg set scripts.check-formatting=\"prettier --check .\")".to_string(),
+            "(cd workspace && npm pkg set scripts.test=\"vitest run\")".to_string(),
+            "mkdir -p workspace/src/contracts".to_string(),
+            "mkdir -p workspace/src/code".to_string(),
+            "mkdir -p workspace/src/adapter".to_string(),
+            "mkdir -p workspace/src/pages".to_string(),
+            "touch workspace/astro.config.mjs".to_string(),
+            "touch workspace/tsconfig.json".to_string(),
+            "touch workspace/vitest.config.ts".to_string(),
+            "touch workspace/src/env.d.ts".to_string(),
+        ];
+        return tutorial_file_markdown(
+            "Setup",
+            &format!(
+                "Keep the repository root for shared files like `README.md`, `LICENSE`, `.gitignore`, `.github/`, `justfile`, and `tutorial/`.\n\nPut all Astro code inside a single `workspace/` folder.\n\nFrom the repository root, run each setup command and checkpoint it before moving to the next one:\n\n```bash\n{}\n```\n\nPut this exact content in `workspace/astro.config.mjs`:\n\n```js\nimport {{ defineConfig }} from 'astro/config';\n\nexport default defineConfig({{}});\n```\n\nPut this exact content in `workspace/tsconfig.json`:\n\n```json\n{{\n  \"extends\": \"astro/tsconfigs/strict\"\n}}\n```\n\nPut this exact content in `workspace/vitest.config.ts`:\n\n```ts\n/// <reference types=\"vitest/config\" />\n\nimport {{ getViteConfig }} from 'astro/config';\n\nexport default getViteConfig({{\n  test: {{\n    environment: 'node',\n  }},\n}});\n```\n\nPut this exact content in `workspace/src/env.d.ts`:\n\n```ts\n/// <reference types=\"astro/client\" />\n```\n\nAfter those setup files have their final contents, run:\n\n```bash\njust format\ngit add --all\ngit commit --message \"Add Astro workspace configuration files\"\n```\n\nThe browser-binding test later in `tutorial/adapter.md` opts into `jsdom` explicitly. Everything else can stay on the default Node test environment.\n\nWhen the full workspace is finished, it should contain these files:\n\n```text\nworkspace/\n  .gitignore\n  astro.config.mjs\n  package.json\n  package-lock.json\n  tsconfig.json\n  vitest.config.ts\n  src/\n    env.d.ts\n    contracts/\n      greeting-api.ts\n      greeting-response.ts\n    code/\n      load-greeting.ts\n      load-greeting.test.ts\n    adapter/\n      http-greeting-api.ts\n      http-greeting-api.test.ts\n      bind-greeting-form.ts\n      bind-greeting-form.test.ts\n      index-page.test.ts\n    pages/\n      index.astro\n```",
+                render_setup_commands_with_commits(&setup_commands, 12)
+            ),
+        );
+    }
+
     let solution_name = workspace_solution_name(&spec.project_slug);
     let contracts_project_name = contracts_project_name(&spec.project_slug);
     let code_project_name = code_project_name(&spec.project_slug);
     let code_test_project_name = code_test_project_name(&spec.project_slug);
     let adapter_project_name = adapter_project_name(&spec.project_slug);
     let adapter_test_project_name = adapter_test_project_name(&spec.project_slug);
+    let setup_commands = vec![
+        "mkdir -p workspace".to_string(),
+        format!(
+            "dotnet new sln --format sln --name {solution_name} --output workspace"
+        ),
+        "dotnet new gitignore --output workspace".to_string(),
+    ];
 
     tutorial_file_markdown(
         "Setup",
         &format!(
-            "Keep the repository root for shared files like `README.md`, `LICENSE`, `.gitignore`, `.github/`, and `tutorial/`.\n\nPut all .NET code inside a single `workspace/` folder.\n\nFrom the repository root, run:\n\n```bash\nmkdir -p workspace\ndotnet new sln --format sln --name {solution_name} --output workspace\ndotnet new gitignore --output workspace\n```\n\nAfter those commands finish, stay in the repository root for the rest of this tutorial sequence unless a step explicitly says otherwise.\n\nThis gives you:\n\n- a root-level `.gitignore` for operating-system noise and editor leftovers\n- a `workspace/.gitignore` for standard `.NET` build output and local tooling files\n\nWhen the full workspace is finished, it should contain these projects:\n\n- `workspace/src/{contracts_project_name}`\n- `workspace/src/{code_project_name}`\n- `workspace/tests/{code_test_project_name}`\n- `workspace/src/{adapter_project_name}`\n- `workspace/tests/{adapter_test_project_name}`\n\nThe next files assume this layout:\n\n```text\nworkspace/\n  .gitignore\n  {solution_name}.sln\n  src/\n    {contracts_project_name}/\n    {code_project_name}/\n    {adapter_project_name}/\n  tests/\n    {code_test_project_name}/\n    {adapter_test_project_name}/\n```"
+            "Keep the repository root for shared files like `README.md`, `LICENSE`, `.gitignore`, `.github/`, and `tutorial/`.\n\nPut all .NET code inside a single `workspace/` folder.\n\nFrom the repository root, run each setup command and checkpoint it before moving to the next one:\n\n```bash\n{}\n```\n\nThis gives you:\n\n- a root-level `.gitignore` for operating-system noise and editor leftovers\n- a `workspace/.gitignore` for standard `.NET` build output and local tooling files\n\nWhen the full workspace is finished, it should contain these projects:\n\n- `workspace/src/{contracts_project_name}`\n- `workspace/src/{code_project_name}`\n- `workspace/tests/{code_test_project_name}`\n- `workspace/src/{adapter_project_name}`\n- `workspace/tests/{adapter_test_project_name}`\n\nThe next files assume this layout:\n\n```text\nworkspace/\n  .gitignore\n  {solution_name}.sln\n  src/\n    {contracts_project_name}/\n    {code_project_name}/\n    {adapter_project_name}/\n  tests/\n    {code_test_project_name}/\n    {adapter_test_project_name}/\n```",
+            render_setup_commands_with_commits(&setup_commands, 1)
         ),
     )
 }
 
+fn render_setup_commands_with_commits(commands: &[String], format_start_index: usize) -> String {
+    commands
+        .iter()
+        .enumerate()
+        .map(|(index, command)| {
+            let maybe_format = if index >= format_start_index {
+                "just format\n"
+            } else {
+                ""
+            };
+            format!(
+                "{command}\n{maybe_format}git add --all\ngit commit --message \"{}\"",
+                escape_shell_double_quoted(command)
+            )
+        })
+        .collect::<Vec<_>>()
+        .join("\n\n")
+}
+
+fn escape_shell_double_quoted(value: &str) -> String {
+    value
+        .replace('\\', "\\\\")
+        .replace('"', "\\\"")
+        .replace('$', "\\$")
+        .replace('`', "\\`")
+}
+
 fn tutorial_file_markdown(title: &str, body: &str) -> String {
-    format!("# {title}\n\n{}\n", normalize_text(body))
+    format!(
+        "# {title}\n\n{}\n",
+        rewrite_tutorial_checkpoint_commands(&normalize_text(body))
+    )
+}
+
+fn rewrite_tutorial_checkpoint_commands(text: &str) -> String {
+    text.replace(
+        "Run:\n\n```bash\njust check-tests\ngit add --all\ngit commit --message \"",
+        "Run:\n\n```bash\njust format\njust check-all\ngit add --all\ngit commit --message \"",
+    )
+}
+
+fn rewrite_touch_creation_checkpoints(text: &str) -> String {
+    let fenced_block_re = Regex::new(r"(?s)```bash\n(?P<body>.*?)\n```").expect("valid fenced bash regex");
+
+    fenced_block_re
+        .replace_all(text, |captures: &regex::Captures| {
+            let body = captures
+                .name("body")
+                .map(|value| value.as_str())
+                .unwrap_or_default();
+
+            if !body.lines().any(|line| line.starts_with("touch ")) {
+                return captures
+                    .get(0)
+                    .map(|value| value.as_str())
+                    .unwrap_or_default()
+                    .to_string();
+            }
+
+            let rewritten_body = body
+                .lines()
+                .flat_map(|line| {
+                    if line.starts_with("touch ") {
+                        vec![
+                            line.to_string(),
+                            "just format".to_string(),
+                            "just check-all".to_string(),
+                            "git add --all".to_string(),
+                            format!("git commit --message '{}'", line),
+                        ]
+                    } else {
+                        vec![line.to_string()]
+                    }
+                })
+                .collect::<Vec<_>>()
+                .join("\n");
+
+            format!("```bash\n{rewritten_body}\n```")
+        })
+        .to_string()
 }
 
 fn generic_contracts_tutorial(spec: &OutputRepoSpec, spec_body: &str) -> String {
     let contract_section = extract_section(spec_body, "Core Logic Contract").unwrap_or_else(|| {
         "Define the shared interfaces, request and response types, enums, and small value objects that both the code layer and adapter layer need.".to_string()
     });
+    let body = format!(
+        "{}\n\nUse this file to define the shared contracts that the code layer implements and the adapter layer depends on.\n\nDo not add tests here. Keep this layer limited to interfaces, request and response types, enums, and small shared value objects.\n\n## Core Logic Contract\n\n{}\n\nAfter the contract files are in place, run:\n\n```bash\njust format\ngit add --all\ngit commit --message \"Define contracts\"\n```",
+        render_output_repo_contracts_scaffold(spec),
+        normalize_text(&contract_section)
+    );
 
     tutorial_file_markdown(
         "Contracts",
-        &format!(
-            "{}\n\nUse this file to define the shared contracts that the code layer implements and the adapter layer depends on.\n\nDo not add tests here. Keep this layer limited to interfaces, request and response types, enums, and small shared value objects.\n\n## Core Logic Contract\n\n{}",
-            render_output_repo_contracts_scaffold(spec),
-            normalize_text(&contract_section)
-        ),
+        &rewrite_stage_commit_checkpoints(&body),
     )
+}
+
+fn rewrite_stage_commit_checkpoints(text: &str) -> String {
+    let fenced_block_re = Regex::new(r"(?s)```bash\n(?P<body>.*?)\n```").expect("valid fenced bash regex");
+
+    fenced_block_re
+        .replace_all(text, |captures: &regex::Captures| {
+            let body = captures
+                .name("body")
+                .map(|value| value.as_str())
+                .unwrap_or_default();
+
+            if !body.lines().any(|line| line.starts_with("git commit")) {
+                return captures
+                    .get(0)
+                    .map(|value| value.as_str())
+                    .unwrap_or_default()
+                    .to_string();
+            }
+
+            let mut lines = body
+                .lines()
+                .map(|line| {
+                    if line.starts_with("git add ") {
+                        "git add --all".to_string()
+                    } else if line.starts_with("git commit -m ") {
+                        line.replacen("git commit -m ", "git commit --message ", 1)
+                    } else {
+                        line.to_string()
+                    }
+                })
+                .collect::<Vec<_>>();
+
+            if !lines.iter().any(|line| line == "just format") {
+                if let Some(insert_index) = lines.iter().position(|line| line.starts_with("git add ")) {
+                    lines.insert(insert_index, "just format".to_string());
+                }
+            }
+
+            if !lines.iter().any(|line| line == "just check-all") {
+                if let Some(insert_index) = lines.iter().position(|line| line.starts_with("git add ")) {
+                    lines.insert(insert_index, "just check-all".to_string());
+                }
+            }
+
+            format!("```bash\n{}\n```", lines.join("\n"))
+        })
+        .to_string()
 }
 
 fn rewrite_for_single_repo_tutorial(text: &str) -> String {
@@ -1376,7 +1711,7 @@ fn rewrite_output_repo_test_checkpoints(text: &str) -> String {
         rewritten.push_str(&text[last_index..section_start]);
         let section_text = &text[section_start..section_end];
         let replacement = format!(
-            "Run:\n\n```bash\njust check-tests\ngit add --all\ngit commit --message \"{title}\"\n```"
+            "Run:\n\n```bash\njust format\njust check-all\ngit add --all\ngit commit --message \"{title}\"\n```"
         );
         rewritten.push_str(&section_text.replace("Run:\n\n```bash\ndotnet test\n```", &replacement));
         last_index = section_end;
@@ -1390,7 +1725,18 @@ fn render_output_repo_finish_content(spec: &OutputRepoSpec) -> String {
     if is_go_saying_hello_output_repo(spec) {
         return tutorial_file_markdown(
             "Finish",
-            "Start the API server from the repository root:\n\n```bash\njust run\n```\n\nIn another terminal, try these requests:\n\n```bash\ncurl \"http://localhost:25616/api/greeting\"\ncurl \"http://localhost:25616/api/greeting?name=Ada\"\n```\n\nYou should get:\n\n```json\n{\"message\":\"Hello!\"}\n```\n\nand:\n\n```json\n{\"message\":\"Hello, Ada!\"}\n```",
+            &format!(
+                "Start the API server from the repository root:\n\n```bash\njust run\n```\n\nIn another terminal, try these requests:\n\n```bash\ncurl \"http://localhost:{FOR_ALL_API_PORT}/api/greeting\"\ncurl \"http://localhost:{FOR_ALL_API_PORT}/api/greeting?name=Ada\"\n```\n\nYou should get:\n\n```json\n{{\"message\":\"Hello!\"}}\n```\n\nand:\n\n```json\n{{\"message\":\"Hello, Ada!\"}}\n```"
+            ),
+        );
+    }
+
+    if is_astro_saying_hello_output_repo(spec) {
+        return tutorial_file_markdown(
+            "Finish",
+            &format!(
+                "Make sure the matching Saying Hello API is running at `http://localhost:{FOR_ALL_API_PORT}`.\n\nThen start the Astro app from the repository root:\n\n```bash\njust run\n```\n\nOpen `http://localhost:{FOR_ALL_FRONTEND_PORT}` in your browser.\n\nTry these inputs:\n\n- submit the form with `Ada` and expect `Hello, Ada!`\n- submit the form with an empty input and expect `Hello!`\n\nIf the API is unavailable, the page should show `Sorry, the greeting API is unavailable right now.`"
+            ),
         );
     }
 
@@ -1432,9 +1778,18 @@ fn render_output_repo_contracts_scaffold(spec: &OutputRepoSpec) -> String {
     let solution_name = workspace_solution_name(&spec.project_slug);
     let project_name = contracts_project_name(&spec.project_slug);
     let project_path = format!("workspace/src/{project_name}");
+    let commands = vec![
+        format!(
+            "dotnet new classlib --language C# --output {project_path} --name {project_name}"
+        ),
+        format!(
+            "dotnet sln workspace/{solution_name}.sln add {project_path}/{project_name}.csproj"
+        ),
+    ];
 
     format!(
-        "From the repository root, run:\n\n```bash\ndotnet new classlib --language C# --output {project_path} --name {project_name}\ndotnet sln workspace/{solution_name}.sln add {project_path}/{project_name}.csproj\n```"
+        "From the repository root, run:\n\n```bash\n{}\n```",
+        render_checkpointed_command_sequence(&commands)
     )
 }
 
@@ -1447,9 +1802,33 @@ fn render_output_repo_code_scaffold(spec: &OutputRepoSpec) -> String {
     let test_project_path = format!("workspace/tests/{test_project_name}");
     let contracts_project_path =
         format!("workspace/src/{contracts_project_name}/{contracts_project_name}.csproj");
+    let commands = vec![
+        format!(
+            "dotnet new classlib --language C# --output {library_project_path} --name {library_project_name}"
+        ),
+        format!(
+            "dotnet new xunit --language C# --output {test_project_path} --name {test_project_name}"
+        ),
+        format!(
+            "dotnet sln workspace/{solution_name}.sln add {library_project_path}/{library_project_name}.csproj"
+        ),
+        format!(
+            "dotnet sln workspace/{solution_name}.sln add {test_project_path}/{test_project_name}.csproj"
+        ),
+        format!(
+            "dotnet add {library_project_path}/{library_project_name}.csproj reference {contracts_project_path}"
+        ),
+        format!(
+            "dotnet add {test_project_path}/{test_project_name}.csproj reference {contracts_project_path}"
+        ),
+        format!(
+            "dotnet add {test_project_path}/{test_project_name}.csproj reference {library_project_path}/{library_project_name}.csproj"
+        ),
+    ];
 
     format!(
-        "Both the code library and the code test library should reference the contracts library.\n\nFrom the repository root, run:\n\n```bash\ndotnet new classlib --language C# --output {library_project_path} --name {library_project_name}\ndotnet new xunit --language C# --output {test_project_path} --name {test_project_name}\ndotnet sln workspace/{solution_name}.sln add {library_project_path}/{library_project_name}.csproj\ndotnet sln workspace/{solution_name}.sln add {test_project_path}/{test_project_name}.csproj\ndotnet add {library_project_path}/{library_project_name}.csproj reference {contracts_project_path}\ndotnet add {test_project_path}/{test_project_name}.csproj reference {contracts_project_path}\ndotnet add {test_project_path}/{test_project_name}.csproj reference {library_project_path}/{library_project_name}.csproj\n```"
+        "Both the code library and the code test library should reference the contracts library.\n\nFrom the repository root, run:\n\n```bash\n{}\n```",
+        render_checkpointed_command_sequence(&commands)
     )
 }
 
@@ -1464,10 +1843,50 @@ fn render_output_repo_adapter_scaffold(spec: &OutputRepoSpec) -> String {
     let contracts_project_path =
         format!("workspace/src/{contracts_project_name}/{contracts_project_name}.csproj");
     let code_project_path = format!("workspace/src/{code_project_name}/{code_project_name}.csproj");
+    let commands = vec![
+        format!(
+            "dotnet new console --language C# --output {adapter_project_path} --name {adapter_project_name}"
+        ),
+        format!(
+            "dotnet new xunit --language C# --output {adapter_test_project_path} --name {adapter_test_project_name}"
+        ),
+        format!(
+            "dotnet sln workspace/{solution_name}.sln add {adapter_project_path}/{adapter_project_name}.csproj"
+        ),
+        format!(
+            "dotnet sln workspace/{solution_name}.sln add {adapter_test_project_path}/{adapter_test_project_name}.csproj"
+        ),
+        format!(
+            "dotnet add {adapter_project_path}/{adapter_project_name}.csproj reference {contracts_project_path}"
+        ),
+        format!(
+            "dotnet add {adapter_test_project_path}/{adapter_test_project_name}.csproj reference {contracts_project_path}"
+        ),
+        format!(
+            "dotnet add {adapter_project_path}/{adapter_project_name}.csproj reference {code_project_path}"
+        ),
+        format!(
+            "dotnet add {adapter_test_project_path}/{adapter_test_project_name}.csproj reference {adapter_project_path}/{adapter_project_name}.csproj"
+        ),
+    ];
 
     format!(
-        "Both the adapter library and the adapter test library should reference the contracts library. The adapter library should also reference the code library.\n\nFrom the repository root, run:\n\n```bash\ndotnet new console --language C# --output {adapter_project_path} --name {adapter_project_name}\ndotnet new xunit --language C# --output {adapter_test_project_path} --name {adapter_test_project_name}\ndotnet sln workspace/{solution_name}.sln add {adapter_project_path}/{adapter_project_name}.csproj\ndotnet sln workspace/{solution_name}.sln add {adapter_test_project_path}/{adapter_test_project_name}.csproj\ndotnet add {adapter_project_path}/{adapter_project_name}.csproj reference {contracts_project_path}\ndotnet add {adapter_test_project_path}/{adapter_test_project_name}.csproj reference {contracts_project_path}\ndotnet add {adapter_project_path}/{adapter_project_name}.csproj reference {code_project_path}\ndotnet add {adapter_test_project_path}/{adapter_test_project_name}.csproj reference {adapter_project_path}/{adapter_project_name}.csproj\n```"
+        "Both the adapter library and the adapter test library should reference the contracts library. The adapter library should also reference the code library.\n\nFrom the repository root, run:\n\n```bash\n{}\n```",
+        render_checkpointed_command_sequence(&commands)
     )
+}
+
+fn render_checkpointed_command_sequence(commands: &[String]) -> String {
+    commands
+        .iter()
+        .map(|command| {
+            format!(
+                "{command}\njust format\njust check-all\ngit add --all\ngit commit --message '{}'",
+                command
+            )
+        })
+        .collect::<Vec<_>>()
+        .join("\n")
 }
 
 fn mit_license_text(owner: &str) -> String {
@@ -3321,10 +3740,16 @@ fn output_repo_description(project_title: &str, selections: &OutputRepoSelection
 
 fn repo_choice_display(value: &str) -> String {
     match value {
+        "javascript" => "JavaScript".to_string(),
+        "typescript" => "TypeScript".to_string(),
         "dotnet" => ".NET".to_string(),
         "csharp" => "C#".to_string(),
+        "vitest" => "Vitest".to_string(),
+        "vitest-built-in" => "Vitest built-in".to_string(),
         "xunit" => "xUnit".to_string(),
         "nsubstitute" => "NSubstitute".to_string(),
+        "api" => "API".to_string(),
+        "astro" => "Astro".to_string(),
         "http-json" => "http-json".to_string(),
         "testify-mock" => "testify-mock".to_string(),
         other => other.to_string(),
@@ -3593,6 +4018,402 @@ git commit --message "4. Green: Wire The Server Entry Point"
     )
 }
 
+fn render_astro_saying_hello_contracts_content(_spec: &OutputRepoSpec) -> String {
+    tutorial_file_markdown(
+        "Contracts",
+        &rewrite_touch_creation_checkpoints(
+            "Create the shared contract files:\n\n```bash\ntouch workspace/src/contracts/greeting-response.ts\ntouch workspace/src/contracts/greeting-api.ts\n```\n\nPut this exact content in `workspace/src/contracts/greeting-response.ts`:\n\n```ts\nexport interface GreetingResponse {\n  message: string;\n}\n```\n\nPut this exact content in `workspace/src/contracts/greeting-api.ts`:\n\n```ts\nimport type { GreetingResponse } from './greeting-response';\n\nexport interface GreetingApi {\n  getGreeting(name: string): Promise<GreetingResponse>;\n}\n```\n\nDo not add tests here. Keep this layer limited to interfaces and small shared types.\n\nThen run:\n\n```bash\njust format\ngit add --all\ngit commit --message \"Define greeting contracts\"\n```",
+        ),
+    )
+}
+
+fn render_astro_saying_hello_code_content(_spec: &OutputRepoSpec) -> String {
+    tutorial_file_markdown(
+        "Code",
+        &rewrite_touch_creation_checkpoints(
+            "### 1. Red: Add The First Failing Code Test\n\nCreate the first code test file:\n\n```bash\ntouch workspace/src/code/load-greeting.test.ts\n```\n\nPut this exact content in `workspace/src/code/load-greeting.test.ts`:\n\n```ts\nimport { describe, expect, it, vi } from 'vitest';\n\nimport type { GreetingApi } from '../contracts/greeting-api';\nimport { loadGreeting } from './load-greeting';\n\ndescribe('loadGreeting', () => {\n  it('returns the personalized greeting for a non-empty name', async () => {\n    const getGreeting = vi.fn().mockResolvedValue({ message: 'Hello, Ada!' });\n    const api: GreetingApi = { getGreeting };\n\n    const result = await loadGreeting('Ada', api);\n\n    expect(getGreeting).toHaveBeenCalledWith('Ada');\n    expect(result).toEqual({\n      submittedName: 'Ada',\n      message: 'Hello, Ada!',\n    });\n  });\n});\n```\n\nRun:\n\n```bash\njust check-tests\ngit add --all\ngit commit --message \"1. Red: Add The First Failing Code Test\"\n```\n\n### 2. Green: Return The Personalized Greeting\n\nCreate the first production file:\n\n```bash\ntouch workspace/src/code/load-greeting.ts\n```\n\nPut this exact content in `workspace/src/code/load-greeting.ts`:\n\n```ts\nimport type { GreetingApi } from '../contracts/greeting-api';\n\nexport async function loadGreeting(name: string, api: GreetingApi) {\n  const response = await api.getGreeting(name);\n\n  return {\n    submittedName: name,\n    message: response.message,\n  };\n}\n```\n\nRun:\n\n```bash\njust check-tests\ngit add --all\ngit commit --message \"2. Green: Return The Personalized Greeting\"\n```\n\n### 3. Red: Trim The Name Before Calling The API\n\nReplace `workspace/src/code/load-greeting.test.ts` with:\n\n```ts\nimport { describe, expect, it, vi } from 'vitest';\n\nimport type { GreetingApi } from '../contracts/greeting-api';\nimport { loadGreeting } from './load-greeting';\n\ndescribe('loadGreeting', () => {\n  it('returns the personalized greeting for a non-empty name', async () => {\n    const getGreeting = vi.fn().mockResolvedValue({ message: 'Hello, Ada!' });\n    const api: GreetingApi = { getGreeting };\n\n    const result = await loadGreeting('Ada', api);\n\n    expect(getGreeting).toHaveBeenCalledWith('Ada');\n    expect(result).toEqual({\n      submittedName: 'Ada',\n      message: 'Hello, Ada!',\n    });\n  });\n\n  it('trims the name before calling the API', async () => {\n    const getGreeting = vi.fn().mockResolvedValue({ message: 'Hello, Ada!' });\n    const api: GreetingApi = { getGreeting };\n\n    const result = await loadGreeting('  Ada  ', api);\n\n    expect(getGreeting).toHaveBeenCalledWith('Ada');\n    expect(result).toEqual({\n      submittedName: 'Ada',\n      message: 'Hello, Ada!',\n    });\n  });\n});\n```\n\nRun:\n\n```bash\njust check-tests\ngit add --all\ngit commit --message \"3. Red: Trim The Name Before Calling The API\"\n```\n\n### 4. Green: Trim The Name Before Calling The API\n\nReplace `workspace/src/code/load-greeting.ts` with:\n\n```ts\nimport type { GreetingApi } from '../contracts/greeting-api';\n\nexport async function loadGreeting(name: string, api: GreetingApi) {\n  const submittedName = name.trim();\n  const response = await api.getGreeting(submittedName);\n\n  return {\n    submittedName,\n    message: response.message,\n  };\n}\n```\n\nRun:\n\n```bash\njust check-tests\ngit add --all\ngit commit --message \"4. Green: Trim The Name Before Calling The API\"\n```\n\n### 5. Red: Return A Friendly Message When The API Is Unavailable\n\nReplace `workspace/src/code/load-greeting.test.ts` with:\n\n```ts\nimport { describe, expect, it, vi } from 'vitest';\n\nimport type { GreetingApi } from '../contracts/greeting-api';\nimport { loadGreeting } from './load-greeting';\n\ndescribe('loadGreeting', () => {\n  it('returns the personalized greeting for a non-empty name', async () => {\n    const getGreeting = vi.fn().mockResolvedValue({ message: 'Hello, Ada!' });\n    const api: GreetingApi = { getGreeting };\n\n    const result = await loadGreeting('Ada', api);\n\n    expect(getGreeting).toHaveBeenCalledWith('Ada');\n    expect(result).toEqual({\n      submittedName: 'Ada',\n      message: 'Hello, Ada!',\n    });\n  });\n\n  it('trims the name before calling the API', async () => {\n    const getGreeting = vi.fn().mockResolvedValue({ message: 'Hello, Ada!' });\n    const api: GreetingApi = { getGreeting };\n\n    const result = await loadGreeting('  Ada  ', api);\n\n    expect(getGreeting).toHaveBeenCalledWith('Ada');\n    expect(result).toEqual({\n      submittedName: 'Ada',\n      message: 'Hello, Ada!',\n    });\n  });\n\n  it('returns a friendly message when the API is unavailable', async () => {\n    const getGreeting = vi.fn().mockRejectedValue(new Error('network error'));\n    const api: GreetingApi = { getGreeting };\n\n    const result = await loadGreeting('Ada', api);\n\n    expect(getGreeting).toHaveBeenCalledWith('Ada');\n    expect(result).toEqual({\n      submittedName: 'Ada',\n      message: 'Sorry, the greeting API is unavailable right now.',\n    });\n  });\n});\n```\n\nRun:\n\n```bash\njust check-tests\ngit add --all\ngit commit --message \"5. Red: Return A Friendly Message When The API Is Unavailable\"\n```\n\n### 6. Green: Return A Friendly Message When The API Is Unavailable\n\nReplace `workspace/src/code/load-greeting.ts` with:\n\n```ts\nimport type { GreetingApi } from '../contracts/greeting-api';\n\nexport async function loadGreeting(name: string, api: GreetingApi) {\n  const submittedName = name.trim();\n\n  try {\n    const response = await api.getGreeting(submittedName);\n\n    return {\n      submittedName,\n      message: response.message,\n    };\n  } catch {\n    return {\n      submittedName,\n      message: 'Sorry, the greeting API is unavailable right now.',\n    };\n  }\n}\n```\n\nRun:\n\n```bash\njust check-tests\ngit add --all\ngit commit --message \"6. Green: Return A Friendly Message When The API Is Unavailable\"\n```",
+        ),
+    )
+}
+
+/*
+fn render_astro_saying_hello_adapter_content(_spec: &OutputRepoSpec) -> String {
+    tutorial_file_markdown(
+        "Adapter",
+        &format!(
+            "### 1. Red: Add The First Failing HTTP Adapter Test\n\nCreate the first adapter test file:\n\n```bash\ntouch workspace/src/adapter/http-greeting-api.test.ts\n```\n\nPut this exact content in `workspace/src/adapter/http-greeting-api.test.ts`:\n\n```ts\nimport {{ afterEach, describe, expect, it, vi }} from 'vitest';\n\nimport {{ HttpGreetingApi }} from './http-greeting-api';\n\ndescribe('HttpGreetingApi', () => {{\n  afterEach(() => {{\n    vi.unstubAllGlobals();\n  }});\n\n  it('requests the canonical greeting endpoint', async () => {{\n    const fetchMock = vi.fn().mockResolvedValue({{\n      json: vi.fn().mockResolvedValue({{ message: 'Hello, Ada!' }}),\n    }});\n    vi.stubGlobal('fetch', fetchMock);\n\n    const api = new HttpGreetingApi('http://localhost:{FOR_ALL_API_PORT}');\n    const result = await api.getGreeting('Ada');\n\n    expect(fetchMock).toHaveBeenCalledWith('http://localhost:{FOR_ALL_API_PORT}/api/greeting?name=Ada');\n    expect(result).toEqual({{ message: 'Hello, Ada!' }});\n  }});\n}});\n```\n\nRun:\n\n```bash\njust check-tests\ngit add --all\ngit commit --message \"1. Red: Add The First Failing HTTP Adapter Test\"\n```\n\n### 2. Green: Request The Canonical Greeting Endpoint\n\nCreate the first adapter production file:\n\n```bash\ntouch workspace/src/adapter/http-greeting-api.ts\n```\n\nPut this exact content in `workspace/src/adapter/http-greeting-api.ts`:\n\n```ts\nimport type {{ GreetingApi }} from '../contracts/greeting-api';\nimport type {{ GreetingResponse }} from '../contracts/greeting-response';\n\nexport class HttpGreetingApi implements GreetingApi {{\n  constructor(private readonly baseUrl: string) {{}}\n\n  async getGreeting(name: string): Promise<GreetingResponse> {{\n    const response = await fetch(\n      `${{this.baseUrl}}/api/greeting?name=${{encodeURIComponent(name)}}`,\n    );\n\n    return (await response.json()) as GreetingResponse;\n  }}\n}}\n```\n\nRun:\n\n```bash\njust check-tests\ngit add --all\ngit commit --message \"2. Green: Request The Canonical Greeting Endpoint\"\n```\n\n### 3. Red: Omit The Query String For Empty Input\n\nReplace `workspace/src/adapter/http-greeting-api.test.ts` with:\n\n```ts\nimport {{ afterEach, describe, expect, it, vi }} from 'vitest';\n\nimport {{ HttpGreetingApi }} from './http-greeting-api';\n\ndescribe('HttpGreetingApi', () => {{\n  afterEach(() => {{\n    vi.unstubAllGlobals();\n  }});\n\n  it('requests the canonical greeting endpoint', async () => {{\n    const fetchMock = vi.fn().mockResolvedValue({{\n      json: vi.fn().mockResolvedValue({{ message: 'Hello, Ada!' }}),\n    }});\n    vi.stubGlobal('fetch', fetchMock);\n\n    const api = new HttpGreetingApi('http://localhost:{FOR_ALL_API_PORT}');\n    const result = await api.getGreeting('Ada');\n\n    expect(fetchMock).toHaveBeenCalledWith('http://localhost:{FOR_ALL_API_PORT}/api/greeting?name=Ada');\n    expect(result).toEqual({{ message: 'Hello, Ada!' }});\n  }});\n\n  it('omits the query string for empty input', async () => {{\n    const fetchMock = vi.fn().mockResolvedValue({{\n      json: vi.fn().mockResolvedValue({{ message: 'Hello!' }}),\n    }});\n    vi.stubGlobal('fetch', fetchMock);\n\n    const api = new HttpGreetingApi('http://localhost:{FOR_ALL_API_PORT}');\n    const result = await api.getGreeting('');\n\n    expect(fetchMock).toHaveBeenCalledWith('http://localhost:{FOR_ALL_API_PORT}/api/greeting');\n    expect(result).toEqual({{ message: 'Hello!' }});\n  }});\n}});\n```\n\nRun:\n\n```bash\njust check-tests\ngit add --all\ngit commit --message \"3. Red: Omit The Query String For Empty Input\"\n```\n\n### 4. Green: Omit The Query String For Empty Input\n\nReplace `workspace/src/adapter/http-greeting-api.ts` with:\n\n```ts\nimport type {{ GreetingApi }} from '../contracts/greeting-api';\nimport type {{ GreetingResponse }} from '../contracts/greeting-response';\n\nexport class HttpGreetingApi implements GreetingApi {{\n  constructor(private readonly baseUrl: string) {{}}\n\n  async getGreeting(name: string): Promise<GreetingResponse> {{\n    const url =\n      name === ''\n        ? `${{this.baseUrl}}/api/greeting`\n        : `${{this.baseUrl}}/api/greeting?name=${{encodeURIComponent(name)}}`;\n\n    const response = await fetch(url);\n\n    return (await response.json()) as GreetingResponse;\n  }}\n}}\n```\n\nRun:\n\n```bash\njust check-tests\ngit add --all\ngit commit --message \"4. Green: Omit The Query String For Empty Input\"\n```\n\n### 5. Red: Add The Browser Binding Test\n\nCreate the browser binding test file:\n\n```bash\ntouch workspace/src/adapter/bind-greeting-form.test.ts\n```\n\nPut this exact content in `workspace/src/adapter/bind-greeting-form.test.ts`:\n\n```ts\nimport {{ describe, expect, it, vi }} from 'vitest';\n\nimport type {{ GreetingApi }} from '../contracts/greeting-api';\nimport {{ bindGreetingForm }} from './bind-greeting-form';\n\ndescribe('bindGreetingForm', () => {{\n  it('renders the greeting returned by the API', async () => {{\n    document.body.innerHTML = `\n      <form data-greeting-form>\n        <input data-greeting-name />\n        <button type=\"submit\">Say hello</button>\n      </form>\n      <p data-greeting-output></p>\n    `;\n\n    const form = document.querySelector('[data-greeting-form]') as HTMLFormElement;\n    const nameInput = document.querySelector('[data-greeting-name]') as HTMLInputElement;\n    const output = document.querySelector('[data-greeting-output]') as HTMLParagraphElement;\n    const getGreeting = vi.fn().mockResolvedValue({{ message: 'Hello, Ada!' }});\n    const api: GreetingApi = {{ getGreeting }};\n\n    bindGreetingForm({{ form, nameInput, output, api }});\n\n    nameInput.value = 'Ada';\n    form.dispatchEvent(new Event('submit', {{ bubbles: true, cancelable: true }}));\n    await new Promise((resolve) => setTimeout(resolve, 0));\n\n    expect(getGreeting).toHaveBeenCalledWith('Ada');\n    expect(output.textContent).toBe('Hello, Ada!');\n  }});\n}});\n```\n\nRun:\n\n```bash\njust check-tests\ngit add --all\ngit commit --message \"5. Red: Add The Browser Binding Test\"\n```\n\n### 6. Green: Bind The Browser Form\n\nCreate the browser binding file:\n\n```bash\ntouch workspace/src/adapter/bind-greeting-form.ts\n```\n\nPut this exact content in `workspace/src/adapter/bind-greeting-form.ts`:\n\n```ts\nimport type {{ GreetingApi }} from '../contracts/greeting-api';\nimport {{ loadGreeting }} from '../code/load-greeting';\n\ntype BindGreetingFormOptions = {{\n  form: HTMLFormElement;\n  nameInput: HTMLInputElement;\n  output: HTMLElement;\n  api: GreetingApi;\n}};\n\nexport function bindGreetingForm({{\n  form,\n  nameInput,\n  output,\n  api,\n}}: BindGreetingFormOptions) {{\n  form.addEventListener('submit', async (event) => {{\n    event.preventDefault();\n\n    const result = await loadGreeting(nameInput.value, api);\n    output.textContent = result.message;\n  }});\n}}\n```\n\nRun:\n\n```bash\njust check-tests\ngit add --all\ngit commit --message \"6. Green: Bind The Browser Form\"\n```\n\n### 7. Red: Add The Astro Page Test\n\nCreate the Astro page test file:\n\n```bash\ntouch workspace/src/adapter/index-page.test.ts\n```\n\nPut this exact content in `workspace/src/adapter/index-page.test.ts`:\n\n```ts\nimport {{ experimental_AstroContainer as AstroContainer }} from 'astro/container';\nimport {{ describe, expect, it }} from 'vitest';\n\nimport IndexPage from '../pages/index.astro';\n\ndescribe('index page', () => {{\n  it('renders the greeting form and API endpoint', async () => {{\n    const container = await AstroContainer.create();\n    const result = await container.renderToString(IndexPage);\n\n    expect(result).toContain('data-greeting-form');\n    expect(result).toContain('data-greeting-name');\n    expect(result).toContain('data-greeting-output');\n    expect(result).toContain('http://localhost:{FOR_ALL_API_PORT}');\n  }});\n}});\n```\n\nRun:\n\n```bash\njust check-tests\ngit add --all\ngit commit --message \"7. Red: Add The Astro Page Test\"\n```\n\n### 8. Green: Wire The Astro Page\n\nCreate the Astro page:\n\n```bash\ntouch workspace/src/pages/index.astro\n```\n\nPut this exact content in `workspace/src/pages/index.astro`:\n\n```astro\n---\nconst apiBaseUrl = 'http://localhost:{FOR_ALL_API_PORT}';\n---\n\n<html lang=\"en\">\n  <head>\n    <meta charset=\"utf-8\" />\n    <meta name=\"viewport\" content=\"width=device-width\" />\n    <title>Saying Hello</title>\n  </head>\n  <body>\n    <main>\n      <h1>Saying Hello</h1>\n      <form data-greeting-form>\n        <label for=\"name-input\">Name</label>\n        <input data-greeting-name id=\"name-input\" name=\"name\" type=\"text\" />\n        <button type=\"submit\">Say hello</button>\n      </form>\n      <p data-greeting-output aria-live=\"polite\"></p>\n    </main>\n\n    <script>\n      import {{ HttpGreetingApi }} from '../adapter/http-greeting-api';\n      import {{ bindGreetingForm }} from '../adapter/bind-greeting-form';\n\n      const form = document.querySelector('[data-greeting-form]');\n      const nameInput = document.querySelector('[data-greeting-name]');\n      const output = document.querySelector('[data-greeting-output]');\n\n      if (\n        form instanceof HTMLFormElement &&\n        nameInput instanceof HTMLInputElement &&\n        output instanceof HTMLElement\n      ) {{\n        bindGreetingForm({{\n          form,\n          nameInput,\n          output,\n          api: new HttpGreetingApi('{format!("http://localhost:{FOR_ALL_API_PORT}")}'),\n        }});\n      }}\n    </script>\n  </body>\n</html>\n```\n\nRun:\n\n```bash\njust check-tests\ngit add --all\ngit commit --message \"8. Green: Wire The Astro Page\"\n```"
+        ),
+    )
+}
+*/
+
+fn render_astro_saying_hello_adapter_content(_spec: &OutputRepoSpec) -> String {
+    let body = r#"### 1. Red: Add The First Failing HTTP Adapter Test
+
+Create the first adapter test file:
+
+```bash
+touch workspace/src/adapter/http-greeting-api.test.ts
+```
+
+Put this exact content in `workspace/src/adapter/http-greeting-api.test.ts`:
+
+```ts
+import { afterEach, describe, expect, it, vi } from 'vitest';
+
+import { HttpGreetingApi } from './http-greeting-api';
+
+describe('HttpGreetingApi', () => {
+  afterEach(() => {
+    vi.unstubAllGlobals();
+  });
+
+  it('requests the canonical greeting endpoint', async () => {
+    const fetchMock = vi.fn().mockResolvedValue({
+      json: vi.fn().mockResolvedValue({ message: 'Hello, Ada!' }),
+    });
+    vi.stubGlobal('fetch', fetchMock);
+
+    const api = new HttpGreetingApi('http://localhost:__API_PORT__');
+    const result = await api.getGreeting('Ada');
+
+    expect(fetchMock).toHaveBeenCalledWith('http://localhost:__API_PORT__/api/greeting?name=Ada');
+    expect(result).toEqual({ message: 'Hello, Ada!' });
+  });
+});
+```
+
+Run:
+
+```bash
+just check-tests
+git add --all
+git commit --message "1. Red: Add The First Failing HTTP Adapter Test"
+```
+
+### 2. Green: Request The Canonical Greeting Endpoint
+
+Create the first adapter production file:
+
+```bash
+touch workspace/src/adapter/http-greeting-api.ts
+```
+
+Put this exact content in `workspace/src/adapter/http-greeting-api.ts`:
+
+```ts
+import type { GreetingApi } from '../contracts/greeting-api';
+import type { GreetingResponse } from '../contracts/greeting-response';
+
+export class HttpGreetingApi implements GreetingApi {
+  constructor(private readonly baseUrl: string) {}
+
+  async getGreeting(name: string): Promise<GreetingResponse> {
+    const response = await fetch(
+      `${this.baseUrl}/api/greeting?name=${encodeURIComponent(name)}`,
+    );
+
+    return (await response.json()) as GreetingResponse;
+  }
+}
+```
+
+Run:
+
+```bash
+just check-tests
+git add --all
+git commit --message "2. Green: Request The Canonical Greeting Endpoint"
+```
+
+### 3. Red: Omit The Query String For Empty Input
+
+Replace `workspace/src/adapter/http-greeting-api.test.ts` with:
+
+```ts
+import { afterEach, describe, expect, it, vi } from 'vitest';
+
+import { HttpGreetingApi } from './http-greeting-api';
+
+describe('HttpGreetingApi', () => {
+  afterEach(() => {
+    vi.unstubAllGlobals();
+  });
+
+  it('requests the canonical greeting endpoint', async () => {
+    const fetchMock = vi.fn().mockResolvedValue({
+      json: vi.fn().mockResolvedValue({ message: 'Hello, Ada!' }),
+    });
+    vi.stubGlobal('fetch', fetchMock);
+
+    const api = new HttpGreetingApi('http://localhost:__API_PORT__');
+    const result = await api.getGreeting('Ada');
+
+    expect(fetchMock).toHaveBeenCalledWith('http://localhost:__API_PORT__/api/greeting?name=Ada');
+    expect(result).toEqual({ message: 'Hello, Ada!' });
+  });
+
+  it('omits the query string for empty input', async () => {
+    const fetchMock = vi.fn().mockResolvedValue({
+      json: vi.fn().mockResolvedValue({ message: 'Hello!' }),
+    });
+    vi.stubGlobal('fetch', fetchMock);
+
+    const api = new HttpGreetingApi('http://localhost:__API_PORT__');
+    const result = await api.getGreeting('');
+
+    expect(fetchMock).toHaveBeenCalledWith('http://localhost:__API_PORT__/api/greeting');
+    expect(result).toEqual({ message: 'Hello!' });
+  });
+});
+```
+
+Run:
+
+```bash
+just check-tests
+git add --all
+git commit --message "3. Red: Omit The Query String For Empty Input"
+```
+
+### 4. Green: Omit The Query String For Empty Input
+
+Replace `workspace/src/adapter/http-greeting-api.ts` with:
+
+```ts
+import type { GreetingApi } from '../contracts/greeting-api';
+import type { GreetingResponse } from '../contracts/greeting-response';
+
+export class HttpGreetingApi implements GreetingApi {
+  constructor(private readonly baseUrl: string) {}
+
+  async getGreeting(name: string): Promise<GreetingResponse> {
+    const url =
+      name === ''
+        ? `${this.baseUrl}/api/greeting`
+        : `${this.baseUrl}/api/greeting?name=${encodeURIComponent(name)}`;
+
+    const response = await fetch(url);
+
+    return (await response.json()) as GreetingResponse;
+  }
+}
+```
+
+Run:
+
+```bash
+just check-tests
+git add --all
+git commit --message "4. Green: Omit The Query String For Empty Input"
+```
+
+### 5. Red: Add The Browser Binding Test
+
+Create the browser binding test file:
+
+```bash
+touch workspace/src/adapter/bind-greeting-form.test.ts
+```
+
+Put this exact content in `workspace/src/adapter/bind-greeting-form.test.ts`:
+
+```ts
+// @vitest-environment jsdom
+
+import { describe, expect, it, vi } from 'vitest';
+
+import type { GreetingApi } from '../contracts/greeting-api';
+import { bindGreetingForm } from './bind-greeting-form';
+
+describe('bindGreetingForm', () => {
+  it('renders the greeting returned by the API', async () => {
+    document.body.innerHTML = `
+      <form data-greeting-form>
+        <input data-greeting-name />
+        <button type="submit">Say hello</button>
+      </form>
+      <p data-greeting-output></p>
+    `;
+
+    const form = document.querySelector('[data-greeting-form]') as HTMLFormElement;
+    const nameInput = document.querySelector('[data-greeting-name]') as HTMLInputElement;
+    const output = document.querySelector('[data-greeting-output]') as HTMLParagraphElement;
+    const getGreeting = vi.fn().mockResolvedValue({ message: 'Hello, Ada!' });
+    const api: GreetingApi = { getGreeting };
+
+    bindGreetingForm({ form, nameInput, output, api });
+
+    nameInput.value = 'Ada';
+    form.dispatchEvent(new Event('submit', { bubbles: true, cancelable: true }));
+    await new Promise((resolve) => setTimeout(resolve, 0));
+
+    expect(getGreeting).toHaveBeenCalledWith('Ada');
+    expect(output.textContent).toBe('Hello, Ada!');
+  });
+});
+```
+
+Run:
+
+```bash
+just check-tests
+git add --all
+git commit --message "5. Red: Add The Browser Binding Test"
+```
+
+### 6. Green: Bind The Browser Form
+
+Create the browser binding file:
+
+```bash
+touch workspace/src/adapter/bind-greeting-form.ts
+```
+
+Put this exact content in `workspace/src/adapter/bind-greeting-form.ts`:
+
+```ts
+import type { GreetingApi } from '../contracts/greeting-api';
+import { loadGreeting } from '../code/load-greeting';
+
+type BindGreetingFormOptions = {
+  form: HTMLFormElement;
+  nameInput: HTMLInputElement;
+  output: HTMLElement;
+  api: GreetingApi;
+};
+
+export function bindGreetingForm({
+  form,
+  nameInput,
+  output,
+  api,
+}: BindGreetingFormOptions) {
+  form.addEventListener('submit', async (event) => {
+    event.preventDefault();
+
+    const result = await loadGreeting(nameInput.value, api);
+    output.textContent = result.message;
+  });
+}
+```
+
+Run:
+
+```bash
+just check-tests
+git add --all
+git commit --message "6. Green: Bind The Browser Form"
+```
+
+### 7. Red: Add The Astro Page Test
+
+Create the Astro page test file:
+
+```bash
+touch workspace/src/adapter/index-page.test.ts
+```
+
+Put this exact content in `workspace/src/adapter/index-page.test.ts`:
+
+```ts
+import { experimental_AstroContainer as AstroContainer } from 'astro/container';
+import { describe, expect, it } from 'vitest';
+
+import IndexPage from '../pages/index.astro';
+
+describe('index page', () => {
+  it('renders the greeting form and API endpoint', async () => {
+    const container = await AstroContainer.create();
+    const result = await container.renderToString(IndexPage);
+
+    expect(result).toContain('data-greeting-form');
+    expect(result).toContain('data-greeting-name');
+    expect(result).toContain('data-greeting-output');
+    expect(result).toContain('http://localhost:__API_PORT__');
+  });
+});
+```
+
+Run:
+
+```bash
+just check-tests
+git add --all
+git commit --message "7. Red: Add The Astro Page Test"
+```
+
+### 8. Green: Wire The Astro Page
+
+Create the Astro page:
+
+```bash
+touch workspace/src/pages/index.astro
+```
+
+Put this exact content in `workspace/src/pages/index.astro`:
+
+```astro
+---
+const apiBaseUrl = 'http://localhost:__API_PORT__';
+---
+
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width" />
+    <title>Saying Hello</title>
+  </head>
+  <body>
+    <main>
+      <h1>Saying Hello</h1>
+      <form data-greeting-form>
+        <label for="name-input">Name</label>
+        <input data-greeting-name id="name-input" name="name" type="text" />
+        <button type="submit">Say hello</button>
+      </form>
+      <p data-greeting-output aria-live="polite"></p>
+    </main>
+
+    <script>
+      import { HttpGreetingApi } from '../adapter/http-greeting-api';
+      import { bindGreetingForm } from '../adapter/bind-greeting-form';
+
+      const form = document.querySelector('[data-greeting-form]');
+      const nameInput = document.querySelector('[data-greeting-name]');
+      const output = document.querySelector('[data-greeting-output]');
+
+      if (
+        form instanceof HTMLFormElement &&
+        nameInput instanceof HTMLInputElement &&
+        output instanceof HTMLElement
+      ) {
+        bindGreetingForm({
+          form,
+          nameInput,
+          output,
+          api: new HttpGreetingApi(apiBaseUrl),
+        });
+      }
+    </script>
+  </body>
+</html>
+```
+
+Run:
+
+```bash
+just check-tests
+git add --all
+git commit --message "8. Green: Wire The Astro Page"
+```"#;
+
+    tutorial_file_markdown(
+        "Adapter",
+        &rewrite_touch_creation_checkpoints(&body.replace("__API_PORT__", FOR_ALL_API_PORT)),
+    )
+}
+
 fn render_matching_core_tutorial_link(project_slug: &str, output: &CompiledOutput) -> String {
     let testing = testing_selection(output).unwrap_or("xunit");
     let core_tutorial_path = format!(
@@ -3843,6 +4664,56 @@ mod tests {
         }
     }
 
+    fn sample_astro_output_repo_spec() -> OutputRepoSpec {
+        OutputRepoSpec {
+            repo_name: "fa_tut_saying-hello".to_string(),
+            repo_description:
+                "Tutorial workspace for the Saying Hello project with JavaScript / TypeScript / Vitest / Vitest built-in / no-storage / web / front-end / Astro / http-json choices."
+                    .to_string(),
+            project_slug: "saying-hello".to_string(),
+            selections: OutputRepoSelections {
+                ecosystem: "javascript".to_string(),
+                language: "typescript".to_string(),
+                testing: "vitest".to_string(),
+                mocking: "vitest-built-in".to_string(),
+                storage: "no-storage".to_string(),
+                surface: "web".to_string(),
+                target: "front-end".to_string(),
+                framework: "astro".to_string(),
+                protocol: Some("http-json".to_string()),
+            },
+        }
+    }
+
+    fn sample_dotnet_output_repo_spec() -> OutputRepoSpec {
+        OutputRepoSpec {
+            repo_name: "fa_tut_saying-hello".to_string(),
+            repo_description:
+                "Tutorial workspace for the Saying Hello project with .NET / C# / xUnit / NSubstitute / no-storage / command-line / all / no-framework choices."
+                    .to_string(),
+            project_slug: "saying-hello".to_string(),
+            selections: OutputRepoSelections {
+                ecosystem: "dotnet".to_string(),
+                language: "csharp".to_string(),
+                testing: "xunit".to_string(),
+                mocking: "nsubstitute".to_string(),
+                storage: "no-storage".to_string(),
+                surface: "command-line".to_string(),
+                target: "all".to_string(),
+                framework: "no-framework".to_string(),
+                protocol: None,
+            },
+        }
+    }
+
+    fn app_root_for_tests() -> PathBuf {
+        Path::new(ROOT)
+            .parent()
+            .and_then(Path::parent)
+            .expect("application root")
+            .to_path_buf()
+    }
+
     #[test]
     fn output_repo_selection_overrides_allow_switching_saying_hello_back_to_dotnet() {
         let overrides = BootstrapSelectionOverrides {
@@ -3892,6 +4763,25 @@ mod tests {
     }
 
     #[test]
+    fn output_repo_selection_overrides_allow_switching_saying_hello_to_astro() {
+        let overrides = BootstrapSelectionOverrides {
+            ecosystem: Some("javascript".to_string()),
+            ..BootstrapSelectionOverrides::default()
+        };
+
+        let selections = output_repo_selections_for_project("saying-hello", &overrides)
+            .expect("astro saying-hello should be supported");
+
+        assert_eq!(selections.ecosystem, "javascript");
+        assert_eq!(selections.language, "typescript");
+        assert_eq!(selections.testing, "vitest");
+        assert_eq!(selections.mocking, "vitest-built-in");
+        assert_eq!(selections.target, "front-end");
+        assert_eq!(selections.framework, "astro");
+        assert_eq!(selections.protocol, Some("http-json".to_string()));
+    }
+
+    #[test]
     fn output_repo_root_justfile_uses_go_commands_and_run_recipe() {
         let spec = sample_output_repo_spec();
 
@@ -3924,7 +4814,7 @@ mod tests {
         let readme = render_output_repo_tutorial_readme_content(&spec);
 
         assert!(readme.contains("- Ecosystem: `go`"));
-        assert!(readme.contains("- Target: `api`"));
+        assert!(readme.contains("- Target: `API`"));
         assert!(readme.contains("- Protocol: `http-json`"));
         assert!(readme.contains("- Port: `25616`"));
     }
@@ -3964,7 +4854,8 @@ mod tests {
         assert!(adapter.contains("\tservice.AssertExpectations(t)"));
         assert!(adapter.contains("e.GET(\"/api/greeting\", handler.GetGreeting)"));
         assert!(adapter.contains("service.On(\"Greet\", \"Ada\").Return(\"Hello, Ada!\")"));
-        assert!(adapter.contains("just check-tests"));
+        assert!(adapter.contains("just format"));
+        assert!(adapter.contains("just check-all"));
     }
 
     #[test]
@@ -3976,6 +4867,184 @@ mod tests {
         assert!(finish.contains("just run"));
         assert!(finish.contains("http://localhost:25616/api/greeting?name=Ada"));
         assert!(finish.contains("{\"message\":\"Hello, Ada!\"}"));
+    }
+
+    #[test]
+    fn dotnet_output_repo_tutorials_include_checkpoint_commands() {
+        let app_root = app_root_for_tests();
+        let spec = sample_dotnet_output_repo_spec();
+        let files = build_output_repo_tutorial_files(&app_root, &spec);
+
+        let setup = String::from_utf8(
+            files
+                .iter()
+                .find(|file| file.relative_path == "tutorial/setup.md")
+                .expect("setup tutorial")
+                .contents
+                .clone(),
+        )
+        .expect("setup utf8");
+        let contracts = String::from_utf8(
+            files
+                .iter()
+                .find(|file| file.relative_path == "tutorial/contracts.md")
+                .expect("contracts tutorial")
+                .contents
+                .clone(),
+        )
+        .expect("contracts utf8");
+        let code = String::from_utf8(
+            files
+                .iter()
+                .find(|file| file.relative_path == "tutorial/code.md")
+                .expect("code tutorial")
+                .contents
+                .clone(),
+        )
+        .expect("code utf8");
+        let adapter = String::from_utf8(
+            files
+                .iter()
+                .find(|file| file.relative_path == "tutorial/adapter.md")
+                .expect("adapter tutorial")
+                .contents
+                .clone(),
+        )
+        .expect("adapter utf8");
+
+        assert!(setup.contains("git commit --message \"mkdir -p workspace\""));
+        assert!(setup.contains("dotnet new sln --format sln --name SayingHello --output workspace\njust format\ngit add --all"));
+        assert!(contracts.contains("dotnet new classlib --language C# --output workspace/src/SayingHello.Contracts --name SayingHello.Contracts\njust format\njust check-all\ngit add --all\ngit commit --message 'dotnet new classlib --language C# --output workspace/src/SayingHello.Contracts --name SayingHello.Contracts'"));
+        assert!(contracts.contains("dotnet sln workspace/SayingHello.sln add workspace/src/SayingHello.Contracts/SayingHello.Contracts.csproj\njust format\njust check-all\ngit add --all\ngit commit --message 'dotnet sln workspace/SayingHello.sln add workspace/src/SayingHello.Contracts/SayingHello.Contracts.csproj'"));
+        assert!(contracts.contains("git commit --message 'touch workspace/src/SayingHello.Contracts/IGreetingService.cs'"));
+        assert!(contracts.contains("just format\njust check-all\ngit add --all\ngit commit --message \"Define Greeting Service Contract\""));
+        assert!(code.contains("dotnet new classlib --language C# --output workspace/src/SayingHello --name SayingHello\njust format\njust check-all\ngit add --all\ngit commit --message 'dotnet new classlib --language C# --output workspace/src/SayingHello --name SayingHello'"));
+        assert!(code.contains("git commit --message 'touch workspace/src/SayingHello/GreetingService.cs'"));
+        assert!(code.contains("just format\njust check-all\ngit add --all\ngit commit --message 'touch workspace/src/SayingHello/GreetingService.cs'"));
+        assert!(code.contains("just format\njust check-all\ngit add --all\ngit commit --message \"1. Red: Add The First Failing Test\""));
+        assert!(adapter.contains("dotnet new console --language C# --output workspace/src/SayingHello.CommandLine --name SayingHello.CommandLine\njust format\njust check-all\ngit add --all\ngit commit --message 'dotnet new console --language C# --output workspace/src/SayingHello.CommandLine --name SayingHello.CommandLine'"));
+        assert!(adapter.contains("git commit --message 'touch workspace/src/SayingHello.CommandLine/CommandLineGreeting.cs'"));
+        assert!(adapter.contains("just format\njust check-all\ngit add --all\ngit commit --message 'touch workspace/src/SayingHello.CommandLine/CommandLineGreeting.cs'"));
+        assert!(adapter.contains("just format\njust check-all\ngit add --all\ngit commit --message \"1. Red: Add The First Failing Adapter Test\""));
+    }
+
+    #[test]
+    fn astro_output_repo_root_justfile_uses_npm_commands_and_run_recipe() {
+        let spec = sample_astro_output_repo_spec();
+
+        let justfile = render_output_repo_root_justfile_content(&spec);
+
+        assert!(justfile.contains("npm --prefix {{workspace}} run format"));
+        assert!(justfile.contains("npm --prefix {{workspace}} run test"));
+        assert!(justfile.contains("\nrun:\n"));
+        assert!(justfile.contains("npm --prefix {{workspace}} run dev"));
+    }
+
+    #[test]
+    fn astro_output_repo_ci_workflow_targets_workspace_package_lock() {
+        let spec = sample_astro_output_repo_spec();
+
+        let workflow = render_output_repo_ci_workflow_content(&spec);
+
+        assert!(workflow.contains("uses: actions/setup-node@v6"));
+        assert!(workflow.contains("hashFiles('workspace/package-lock.json')"));
+        assert!(workflow.contains("working-directory: workspace"));
+        assert!(workflow.contains("run: npm ci"));
+        assert!(workflow.contains("run: npm run check-formatting"));
+        assert!(workflow.contains("run: npm test"));
+    }
+
+    #[test]
+    fn astro_output_repo_tutorial_readme_lists_front_end_http_json_choices() {
+        let spec = sample_astro_output_repo_spec();
+
+        let readme = render_output_repo_tutorial_readme_content(&spec);
+
+        assert!(readme.contains("- Ecosystem: `JavaScript`"));
+        assert!(readme.contains("- Language: `TypeScript`"));
+        assert!(readme.contains("- Testing: `Vitest`"));
+        assert!(readme.contains("- Mocking: `Vitest built-in`"));
+        assert!(readme.contains("- Target: `front-end`"));
+        assert!(readme.contains("- Framework: `Astro`"));
+        assert!(readme.contains("- Protocol: `http-json`"));
+        assert!(readme.contains("- API Port: `25616`"));
+        assert!(readme.contains("- App Port: `25617`"));
+    }
+
+    #[test]
+    fn astro_output_repo_setup_content_uses_astro_workspace_layout() {
+        let spec = sample_astro_output_repo_spec();
+
+        let setup = render_output_repo_setup_content(&spec);
+        let gitignore_download = setup
+            .find("curl -L -s https://raw.githubusercontent.com/github/gitignore/refs/heads/main/Node.gitignore > workspace/.gitignore")
+            .expect("expected Node.gitignore download command");
+        let astro_install = setup
+            .find("npm install astro")
+            .expect("expected astro install command");
+        let format_script = setup
+            .find("(cd workspace && npm pkg set scripts.format=\"prettier --write .\")")
+            .expect("expected format script command");
+
+        assert!(gitignore_download < astro_install);
+        assert!(setup.contains("printf '\\n# Astro\\n.astro/\\ndist/\\n\\n# Vitest\\ncoverage/\\n' >> workspace/.gitignore"));
+        assert!(setup.contains("npm install --save-dev typescript vitest jsdom prettier @types/node"));
+        assert!(!setup.contains("mkdir -p workspace\njust format\ngit add --all"));
+        assert!(setup.contains("git commit --message \"(cd workspace && npm init --yes)\""));
+        assert!(setup.contains("(cd workspace && npm pkg set scripts.format=\"prettier --write .\")\njust format\ngit add --all"));
+        assert!(format_script < setup.find("touch workspace/astro.config.mjs\njust format\ngit add --all").expect("expected formatting before touched config staging"));
+        assert!(setup.contains("git commit --message \"touch workspace/astro.config.mjs\""));
+        assert!(setup.contains("git commit --message \"Add Astro workspace configuration files\""));
+        assert!(setup.contains("npm pkg set scripts.dev=\"astro dev --host 0.0.0.0 --port 25617\""));
+        assert!(setup.contains("workspace/vitest.config.ts"));
+        assert!(setup.contains("environment: 'node'"));
+        assert!(setup.contains("opts into `jsdom` explicitly"));
+        assert!(setup.contains("workspace/src/pages"));
+        assert!(!setup.contains("touch workspace/.gitignore"));
+        assert!(!setup.contains("Put this exact content in `workspace/.gitignore`:"));
+    }
+
+    #[test]
+    fn astro_saying_hello_contracts_code_and_adapter_tutorials_are_concrete() {
+        let spec = sample_astro_output_repo_spec();
+
+        let contracts = render_astro_saying_hello_contracts_content(&spec);
+        let code = render_astro_saying_hello_code_content(&spec);
+        let adapter = render_astro_saying_hello_adapter_content(&spec);
+
+        assert!(contracts.contains("export interface GreetingApi"));
+        assert!(contracts.contains("export interface GreetingResponse"));
+        assert!(contracts.contains("git commit --message 'touch workspace/src/contracts/greeting-response.ts'"));
+        assert!(contracts.contains("git commit --message 'touch workspace/src/contracts/greeting-api.ts'"));
+        assert!(contracts.contains("just format\ngit add --all\ngit commit --message \"Define greeting contracts\""));
+        assert!(code.contains("touch workspace/src/code/load-greeting.test.ts"));
+        assert!(code.contains("git commit --message 'touch workspace/src/code/load-greeting.test.ts'"));
+        assert!(code.contains("git commit --message 'touch workspace/src/code/load-greeting.ts'"));
+        assert!(code.contains("### 2. Green: Return The Personalized Greeting"));
+        assert!(code.contains("Sorry, the greeting API is unavailable right now."));
+        assert!(adapter.contains("touch workspace/src/adapter/http-greeting-api.test.ts"));
+        assert!(adapter.contains("git commit --message 'touch workspace/src/adapter/http-greeting-api.test.ts'"));
+        assert!(adapter.contains("git commit --message 'touch workspace/src/adapter/bind-greeting-form.test.ts'"));
+        assert!(adapter.contains("git commit --message 'touch workspace/src/pages/index.astro'"));
+        assert!(adapter.contains("Create the browser binding test file:"));
+        assert!(adapter.contains("// @vitest-environment jsdom"));
+        assert!(adapter.contains("experimental_AstroContainer as AstroContainer"));
+        assert!(adapter.contains("const apiBaseUrl = 'http://localhost:25616';"));
+        assert!(adapter.contains("api: new HttpGreetingApi(apiBaseUrl)"));
+        assert!(adapter.contains("just format"));
+        assert!(adapter.contains("just check-all"));
+    }
+
+    #[test]
+    fn astro_output_repo_finish_content_uses_front_end_and_api_ports() {
+        let spec = sample_astro_output_repo_spec();
+
+        let finish = render_output_repo_finish_content(&spec);
+
+        assert!(finish.contains("http://localhost:25616"));
+        assert!(finish.contains("http://localhost:25617"));
+        assert!(finish.contains("Hello, Ada!"));
+        assert!(finish.contains("Sorry, the greeting API is unavailable right now."));
     }
 
     #[test]
