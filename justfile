@@ -224,6 +224,18 @@ bootstrap-output-repos-astro repos_root="../output-repos" owner="intrepion" sync
       --set bootstrap_protocol http-json \
       bootstrap-output-repos "{{repos_root}}" "{{owner}}" "{{sync_branch_name}}" "{{project}}"
 
+bootstrap-output-repos-flutter repos_root="../output-repos" owner="intrepion" sync_branch_name="" project="saying-hello":
+    just --set bootstrap_ecosystem dart \
+      --set bootstrap_language dart \
+      --set bootstrap_testing test \
+      --set bootstrap_mocking mocktail \
+      --set bootstrap_storage no-storage \
+      --set bootstrap_surface web \
+      --set bootstrap_target front-end \
+      --set bootstrap_framework flutter \
+      --set bootstrap_protocol http-json \
+      bootstrap-output-repos "{{repos_root}}" "{{owner}}" "{{sync_branch_name}}" "{{project}}"
+
 cleanup-output-repos apply="false" repos_root="../output-repos" owner="intrepion":
     #!/usr/bin/env bash
     set -euo pipefail
