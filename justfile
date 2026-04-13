@@ -77,28 +77,21 @@ clone-output-repos repos_root="../output-repos" owner="intrepion":
       --owner "$normalized_owner"
 
 [private]
-_bootstrap-output-repos repos_root="../output-repos" owner="intrepion" sync_branch_name="" project="saying-hello":
+_bs owner="intrepion" project="saying-hello":
     #!/usr/bin/env bash
     set -euo pipefail
-    normalized_repos_root='{{repos_root}}'
-    normalized_repos_root="${normalized_repos_root#\"}"
-    normalized_repos_root="${normalized_repos_root%\"}"
-    normalized_repos_root="${normalized_repos_root#repos_root=}"
-
     normalized_owner='{{owner}}'
     normalized_owner="${normalized_owner#\"}"
     normalized_owner="${normalized_owner%\"}"
     normalized_owner="${normalized_owner#owner=}"
 
-    normalized_sync_branch_name='{{sync_branch_name}}'
-    normalized_sync_branch_name="${normalized_sync_branch_name#\"}"
-    normalized_sync_branch_name="${normalized_sync_branch_name%\"}"
-    normalized_sync_branch_name="${normalized_sync_branch_name#sync_branch_name=}"
-
     normalized_project='{{project}}'
     normalized_project="${normalized_project#\"}"
     normalized_project="${normalized_project%\"}"
     normalized_project="${normalized_project#project=}"
+
+    normalized_repos_root='../output-repos'
+    normalized_sync_branch_name=''
 
     normalized_ecosystem='{{bootstrap_ecosystem}}'
     normalized_ecosystem="${normalized_ecosystem#\"}"
@@ -190,7 +183,7 @@ _bootstrap-output-repos repos_root="../output-repos" owner="intrepion" sync_bran
 
     "${args[@]}"
 
-bootstrap-output-repos-dotnet repos_root="../output-repos" owner="intrepion" sync_branch_name="" project="saying-hello":
+bs-dotnet owner="intrepion" project="saying-hello":
     just --set bootstrap_ecosystem dotnet \
       --set bootstrap_language csharp \
       --set bootstrap_testing xunit \
@@ -199,9 +192,9 @@ bootstrap-output-repos-dotnet repos_root="../output-repos" owner="intrepion" syn
       --set bootstrap_surface command-line \
       --set bootstrap_target all \
       --set bootstrap_framework no-framework \
-      _bootstrap-output-repos "{{repos_root}}" "{{owner}}" "{{sync_branch_name}}" "{{project}}"
+      _bs "{{owner}}" "{{project}}"
 
-bootstrap-output-repos-go repos_root="../output-repos" owner="intrepion" sync_branch_name="" project="saying-hello":
+bs-echo owner="intrepion" project="saying-hello":
     just --set bootstrap_ecosystem go \
       --set bootstrap_language go \
       --set bootstrap_testing testify \
@@ -211,9 +204,9 @@ bootstrap-output-repos-go repos_root="../output-repos" owner="intrepion" sync_br
       --set bootstrap_target api \
       --set bootstrap_framework echo \
       --set bootstrap_protocol http-json \
-      _bootstrap-output-repos "{{repos_root}}" "{{owner}}" "{{sync_branch_name}}" "{{project}}"
+      _bs "{{owner}}" "{{project}}"
 
-bootstrap-output-repos-astro repos_root="../output-repos" owner="intrepion" sync_branch_name="" project="saying-hello":
+bs-astro owner="intrepion" project="saying-hello":
     just --set bootstrap_ecosystem javascript \
       --set bootstrap_language typescript \
       --set bootstrap_testing vitest \
@@ -223,9 +216,9 @@ bootstrap-output-repos-astro repos_root="../output-repos" owner="intrepion" sync
       --set bootstrap_target front-end \
       --set bootstrap_framework astro \
       --set bootstrap_protocol http-json \
-      _bootstrap-output-repos "{{repos_root}}" "{{owner}}" "{{sync_branch_name}}" "{{project}}"
+      _bs "{{owner}}" "{{project}}"
 
-bootstrap-output-repos-flutter-local repos_root="../output-repos" owner="intrepion" sync_branch_name="" project="saying-hello":
+bs-flutter-local owner="intrepion" project="saying-hello":
     just --set bootstrap_ecosystem dart \
       --set bootstrap_language dart \
       --set bootstrap_testing test \
@@ -235,9 +228,9 @@ bootstrap-output-repos-flutter-local repos_root="../output-repos" owner="intrepi
       --set bootstrap_target all \
       --set bootstrap_framework flutter \
       --set bootstrap_protocol none \
-      _bootstrap-output-repos "{{repos_root}}" "{{owner}}" "{{sync_branch_name}}" "{{project}}"
+      _bs "{{owner}}" "{{project}}"
 
-bootstrap-output-repos-flutter-http-json repos_root="../output-repos" owner="intrepion" sync_branch_name="" project="saying-hello":
+bs-flutter-http-json owner="intrepion" project="saying-hello":
     just --set bootstrap_ecosystem dart \
       --set bootstrap_language dart \
       --set bootstrap_testing test \
@@ -247,7 +240,7 @@ bootstrap-output-repos-flutter-http-json repos_root="../output-repos" owner="int
       --set bootstrap_target all \
       --set bootstrap_framework flutter \
       --set bootstrap_protocol http-json \
-      _bootstrap-output-repos "{{repos_root}}" "{{owner}}" "{{sync_branch_name}}" "{{project}}"
+      _bs "{{owner}}" "{{project}}"
 
 cleanup-output-repos apply="false" repos_root="../output-repos" owner="intrepion":
     #!/usr/bin/env bash
