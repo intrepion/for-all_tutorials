@@ -1825,7 +1825,7 @@ fn render_output_repo_setup_content(spec: &OutputRepoSpec) -> String {
         return tutorial_file_markdown(
             "Setup",
             &format!(
-                "Keep the repository root for shared files like `README.md`, `LICENSE`, `.gitignore`, `.github/`, `justfile`, and `tutorial/`.\n\nPut all Flutter code inside a single `workspace/` folder.\n\nFrom the repository root, run each setup command and checkpoint it before moving to the next one:\n\n```bash\n{}\n```\n\nWhen the full workspace is finished, it should contain these files:\n\n```text\n{}\n```\n\nBefore you try `just run`, make sure Flutter can see a supported mobile device.\n\nOn macOS for iOS, open the simulator and then list devices:\n\n```bash\nopen -a Simulator\njust devices\n```\n\nFor Android, list available emulators, launch one, and then list devices again:\n\n```bash\njust emulators\nflutter emulators --launch <emulator-id>\njust devices\n```\n\nOnce `just devices` shows a supported iOS simulator or Android emulator, run the app with:\n\n```bash\njust run\n```\n\nIf you want to target a specific device id or name, use:\n\n```bash\njust run device=\"<device-id-or-name>\"\n```",
+                "Keep the repository root for shared files like `README.md`, `LICENSE`, `.gitignore`, `.github/`, `justfile`, and `tutorial/`.\n\nPut all Flutter code inside a single `workspace/` folder.\n\nFrom the repository root, run each setup command and checkpoint it before moving to the next one:\n\n```bash\n{}\n```\n\nWhen the full workspace is finished, it should contain these files:\n\n```text\n{}\n```\n\nBefore you try `just run`, make sure Flutter can see a supported mobile device.\n\nOn macOS for iOS, install CocoaPods first if you have not already:\n\n```bash\nsudo gem install cocoapods\n```\n\nThen open the simulator and list devices:\n\n```bash\nopen -a Simulator\njust devices\n```\n\nFor Android, list available emulators, launch one, and then list devices again:\n\n```bash\njust emulators\nflutter emulators --launch <emulator-id>\njust devices\n```\n\nOnce `just devices` shows a supported iOS simulator or Android emulator, run the app with:\n\n```bash\njust run\n```\n\nIf you want to target a specific device id or name, use:\n\n```bash\njust run device=\"<device-id-or-name>\"\n```\n\nAfter your first successful iOS run, if CocoaPods added shared iOS project files like these:\n\n- `workspace/ios/Runner.xcodeproj/project.pbxproj`\n- `workspace/ios/Runner.xcworkspace/contents.xcworkspacedata`\n- `workspace/ios/Podfile.lock`\n\nthen run:\n\n```bash\ngit add --all\ngit commit --message \"Add iOS CocoaPods workspace files\"\n```\n\nDo not commit local machine output like these:\n\n- `workspace/ios/Pods/`\n- `workspace/build/`\n- `workspace/.dart_tool/`\n\nFor Android, a normal first run usually should not add shared tracked files. If it does change shared files under `workspace/android/`, review them carefully and commit only the project-level changes. Do not commit machine-specific files like:\n\n- `workspace/android/local.properties`\n- `workspace/.gradle/`\n- `workspace/build/`",
                 render_setup_commands_with_commits(&setup_commands, 1),
                 workspace_tree
             ),
@@ -2140,10 +2140,10 @@ fn render_output_repo_finish_content(spec: &OutputRepoSpec) -> String {
             )
         } else if is_flutter_mobile_http_saying_hello_output_repo(spec) {
             format!(
-                "Make sure the matching Saying Hello API is running on your development machine at port `{FOR_ALL_API_PORT}`.\n\nThen start the Flutter mobile app from the repository root:\n\n```bash\njust run\n```\n\nIf you want to target a specific device, use:\n\n```bash\njust run device=\"<device-id-or-name>\"\n```\n\nIf you are running on Android and need to reach the host machine, use:\n\n```bash\njust --set api_base_url http://10.0.2.2:{FOR_ALL_API_PORT} run device=\"<android-device-id-or-name>\"\n```\n\nTry these inputs:\n\n- enter `Ada` and expect `Hello, Ada!`\n- submit an empty value and expect `Hello!`\n\nIf the API is unavailable, the app should show `Sorry, the greeting API is unavailable right now.`"
+                "Make sure the matching Saying Hello API is running on your development machine at port `{FOR_ALL_API_PORT}`.\n\nThen start the Flutter mobile app from the repository root:\n\n```bash\njust run\n```\n\nIf you want to target a specific device, use:\n\n```bash\njust run device=\"<device-id-or-name>\"\n```\n\nIf you are running on Android and need to reach the host machine, use:\n\n```bash\njust --set api_base_url http://10.0.2.2:{FOR_ALL_API_PORT} run device=\"<android-device-id-or-name>\"\n```\n\nAfter the first successful iOS run, if CocoaPods added shared iOS project files like these:\n\n- `workspace/ios/Runner.xcodeproj/project.pbxproj`\n- `workspace/ios/Runner.xcworkspace/contents.xcworkspacedata`\n- `workspace/ios/Podfile.lock`\n\nthen run:\n\n```bash\ngit add --all\ngit commit --message \"Add iOS CocoaPods workspace files\"\n```\n\nA normal Android run usually should not add shared tracked files. Do not commit machine-specific files like `workspace/android/local.properties`, `workspace/.gradle/`, or `workspace/build/`.\n\nTry these inputs:\n\n- enter `Ada` and expect `Hello, Ada!`\n- submit an empty value and expect `Hello!`\n\nIf the API is unavailable, the app should show `Sorry, the greeting API is unavailable right now.`"
             )
         } else {
-            "Start the Flutter mobile app from the repository root:\n\n```bash\njust run\n```\n\nIf you want to target a specific device, use:\n\n```bash\njust run device=\"<device-id-or-name>\"\n```\n\nTry these inputs:\n\n- enter `Ada` and expect `Hello, Ada!`\n- submit an empty value and expect `Hello!`".to_string()
+            "Start the Flutter mobile app from the repository root:\n\n```bash\njust run\n```\n\nIf you want to target a specific device, use:\n\n```bash\njust run device=\"<device-id-or-name>\"\n```\n\nAfter the first successful iOS run, if CocoaPods added shared iOS project files like these:\n\n- `workspace/ios/Runner.xcodeproj/project.pbxproj`\n- `workspace/ios/Runner.xcworkspace/contents.xcworkspacedata`\n- `workspace/ios/Podfile.lock`\n\nthen run:\n\n```bash\ngit add --all\ngit commit --message \"Add iOS CocoaPods workspace files\"\n```\n\nA normal Android run usually should not add shared tracked files. Do not commit machine-specific files like `workspace/android/local.properties`, `workspace/.gradle/`, or `workspace/build/`.\n\nTry these inputs:\n\n- enter `Ada` and expect `Hello, Ada!`\n- submit an empty value and expect `Hello!`".to_string()
         };
         return tutorial_file_markdown("Finish", &body);
     }
@@ -6813,11 +6813,19 @@ mod tests {
         assert!(setup.contains("flutter pub add --dev mocktail"));
         assert!(setup.contains("default_greeting_service.dart"));
         assert!(setup.contains("greeting_service.dart"));
+        assert!(setup.contains("sudo gem install cocoapods"));
         assert!(setup.contains("open -a Simulator"));
         assert!(setup.contains("just devices"));
         assert!(setup.contains("just emulators"));
         assert!(setup.contains("flutter emulators --launch <emulator-id>"));
         assert!(setup.contains("just run device=\"<device-id-or-name>\""));
+        assert!(setup.contains("workspace/ios/Runner.xcodeproj/project.pbxproj"));
+        assert!(setup.contains("workspace/ios/Runner.xcworkspace/contents.xcworkspacedata"));
+        assert!(setup.contains("workspace/ios/Podfile.lock"));
+        assert!(setup.contains("git add --all"));
+        assert!(setup.contains("git commit --message \"Add iOS CocoaPods workspace files\""));
+        assert!(setup.contains("workspace/android/local.properties"));
+        assert!(setup.contains("workspace/.gradle/"));
     }
 
     #[test]
@@ -6830,8 +6838,13 @@ mod tests {
         assert!(setup.contains("flutter pub add http"));
         assert!(setup.contains("load_greeting.dart"));
         assert!(setup.contains("http_greeting_api.dart"));
+        assert!(setup.contains("sudo gem install cocoapods"));
         assert!(setup.contains("open -a Simulator"));
         assert!(setup.contains("flutter emulators --launch <emulator-id>"));
+        assert!(setup.contains("workspace/ios/Podfile.lock"));
+        assert!(setup.contains("git add --all"));
+        assert!(setup.contains("git commit --message \"Add iOS CocoaPods workspace files\""));
+        assert!(setup.contains("workspace/android/local.properties"));
     }
 
     #[test]
@@ -6887,6 +6900,11 @@ mod tests {
         assert!(adapter.contains("DefaultGreetingService()"));
         assert!(!adapter.contains("HttpGreetingApi"));
         assert!(finish.contains("just run device=\"<device-id-or-name>\""));
+        assert!(finish.contains("workspace/ios/Runner.xcodeproj/project.pbxproj"));
+        assert!(finish.contains("workspace/ios/Podfile.lock"));
+        assert!(finish.contains("git add --all"));
+        assert!(finish.contains("git commit --message \"Add iOS CocoaPods workspace files\""));
+        assert!(finish.contains("workspace/android/local.properties"));
         assert!(!finish.contains("API is running"));
     }
 
@@ -6901,6 +6919,11 @@ mod tests {
         assert!(adapter.contains("const apiBaseUrl = String.fromEnvironment("));
         assert!(finish.contains("just run device=\"<device-id-or-name>\""));
         assert!(finish.contains("just --set api_base_url http://10.0.2.2:25664 run device=\"<android-device-id-or-name>\""));
+        assert!(finish.contains("workspace/ios/Runner.xcodeproj/project.pbxproj"));
+        assert!(finish.contains("workspace/ios/Podfile.lock"));
+        assert!(finish.contains("git add --all"));
+        assert!(finish.contains("git commit --message \"Add iOS CocoaPods workspace files\""));
+        assert!(finish.contains("workspace/android/local.properties"));
         assert!(finish.contains("matching Saying Hello API is running"));
     }
 
