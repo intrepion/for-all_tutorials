@@ -429,45 +429,31 @@ fn is_astro_saying_hello_output_repo(spec: &OutputRepoSpec) -> bool {
 }
 
 fn is_flutter_saying_hello_output_repo(spec: &OutputRepoSpec) -> bool {
-    is_flutter_web_saying_hello_output_repo(spec)
-        || is_flutter_mobile_saying_hello_output_repo(spec)
-        || is_flutter_mobile_http_saying_hello_output_repo(spec)
+    is_flutter_local_saying_hello_output_repo(spec)
+        || is_flutter_http_saying_hello_output_repo(spec)
 }
 
-fn is_flutter_web_saying_hello_output_repo(spec: &OutputRepoSpec) -> bool {
+fn is_flutter_local_saying_hello_output_repo(spec: &OutputRepoSpec) -> bool {
     spec.project_slug == "saying-hello"
         && spec.selections.ecosystem == "dart"
         && spec.selections.language == "dart"
         && spec.selections.testing == "test"
         && spec.selections.mocking == "mocktail"
         && spec.selections.storage == "no-storage"
-        && spec.selections.surface == "web"
-        && spec.selections.target == "front-end"
-        && spec.selections.framework == "flutter"
-        && spec.selections.protocol.as_deref() == Some("http-json")
-}
-
-fn is_flutter_mobile_saying_hello_output_repo(spec: &OutputRepoSpec) -> bool {
-    spec.project_slug == "saying-hello"
-        && spec.selections.ecosystem == "dart"
-        && spec.selections.language == "dart"
-        && spec.selections.testing == "test"
-        && spec.selections.mocking == "mocktail"
-        && spec.selections.storage == "no-storage"
-        && spec.selections.surface == "mobile"
+        && spec.selections.surface == "client"
         && spec.selections.target == "all"
         && spec.selections.framework == "flutter"
         && spec.selections.protocol.is_none()
 }
 
-fn is_flutter_mobile_http_saying_hello_output_repo(spec: &OutputRepoSpec) -> bool {
+fn is_flutter_http_saying_hello_output_repo(spec: &OutputRepoSpec) -> bool {
     spec.project_slug == "saying-hello"
         && spec.selections.ecosystem == "dart"
         && spec.selections.language == "dart"
         && spec.selections.testing == "test"
         && spec.selections.mocking == "mocktail"
         && spec.selections.storage == "no-storage"
-        && spec.selections.surface == "mobile"
+        && spec.selections.surface == "client"
         && spec.selections.target == "all"
         && spec.selections.framework == "flutter"
         && spec.selections.protocol.as_deref() == Some("http-json")
@@ -608,8 +594,8 @@ fn supported_output_repo_selections(
             testing: "test".to_string(),
             mocking: "mocktail".to_string(),
             storage: "no-storage".to_string(),
-            surface: "web".to_string(),
-            target: "front-end".to_string(),
+            surface: "client".to_string(),
+            target: "all".to_string(),
             framework: "flutter".to_string(),
             protocol: Some("http-json".to_string()),
         }),
@@ -656,40 +642,28 @@ fn validate_output_repo_selections(
         protocol: Some("http-json".to_string()),
     };
 
-    let supported_flutter = OutputRepoSelections {
+    let supported_flutter_http = OutputRepoSelections {
         ecosystem: "dart".to_string(),
         language: "dart".to_string(),
         testing: "test".to_string(),
         mocking: "mocktail".to_string(),
         storage: "no-storage".to_string(),
-        surface: "web".to_string(),
-        target: "front-end".to_string(),
+        surface: "client".to_string(),
         framework: "flutter".to_string(),
+        target: "all".to_string(),
         protocol: Some("http-json".to_string()),
     };
 
-    let supported_flutter_mobile = OutputRepoSelections {
+    let supported_flutter_local = OutputRepoSelections {
         ecosystem: "dart".to_string(),
         language: "dart".to_string(),
         testing: "test".to_string(),
         mocking: "mocktail".to_string(),
         storage: "no-storage".to_string(),
-        surface: "mobile".to_string(),
+        surface: "client".to_string(),
         target: "all".to_string(),
         framework: "flutter".to_string(),
         protocol: None,
-    };
-
-    let supported_flutter_mobile_http = OutputRepoSelections {
-        ecosystem: "dart".to_string(),
-        language: "dart".to_string(),
-        testing: "test".to_string(),
-        mocking: "mocktail".to_string(),
-        storage: "no-storage".to_string(),
-        surface: "mobile".to_string(),
-        target: "all".to_string(),
-        framework: "flutter".to_string(),
-        protocol: Some("http-json".to_string()),
     };
 
     let supported_dotnet = OutputRepoSelections {
@@ -716,15 +690,11 @@ fn validate_output_repo_selections(
         return Ok(());
     }
 
-    if project_slug == "saying-hello" && selections == &supported_flutter {
+    if project_slug == "saying-hello" && selections == &supported_flutter_http {
         return Ok(());
     }
 
-    if project_slug == "saying-hello" && selections == &supported_flutter_mobile {
-        return Ok(());
-    }
-
-    if project_slug == "saying-hello" && selections == &supported_flutter_mobile_http {
+    if project_slug == "saying-hello" && selections == &supported_flutter_local {
         return Ok(());
     }
 
@@ -1145,27 +1115,25 @@ check-all:\n\
     }
 
     if is_flutter_saying_hello_output_repo(spec) {
-        let extra_variable = if is_flutter_mobile_http_saying_hello_output_repo(spec) {
+        let extra_variable = if is_flutter_http_saying_hello_output_repo(spec) {
             format!("api_base_url := \"http://localhost:{FOR_ALL_API_PORT}\"\n\n")
         } else {
             String::new()
         };
-        let extra_recipe = if is_flutter_web_saying_hello_output_repo(spec) {
-            String::new()
+        let web_define = if is_flutter_http_saying_hello_output_repo(spec) {
+            " --dart-define=API_BASE_URL={{api_base_url}}"
         } else {
-            "devices:\n\t(cd {{workspace}} && flutter devices)\n\nemulators:\n\t(cd {{workspace}} && flutter emulators)\n\n".to_string()
+            ""
         };
-        let run_recipe = if is_flutter_web_saying_hello_output_repo(spec) {
-            format!("(cd {{{{workspace}}}} && flutter run -d chrome --web-port {FOR_ALL_FRONTEND_PORT})")
+        let desktop_define = if is_flutter_http_saying_hello_output_repo(spec) {
+            " --dart-define=API_BASE_URL={{api_base_url}}"
         } else {
-            String::new()
+            ""
         };
-        let run_block = if is_flutter_web_saying_hello_output_repo(spec) {
-            format!("run:\n\t{run_recipe}\n\n")
-        } else if is_flutter_mobile_http_saying_hello_output_repo(spec) {
-            "run device=\"\":\n\t#!/usr/bin/env bash\n\tset -euo pipefail\n\tnormalized_device='{{device}}'\n\tnormalized_device=\"${normalized_device#\\\"}\"\n\tnormalized_device=\"${normalized_device%\\\"}\"\n\tnormalized_device=\"${normalized_device#device=}\"\n\tif [ -n \"$normalized_device\" ]; then\n\t  (cd {{workspace}} && flutter run -d \"$normalized_device\" --dart-define=API_BASE_URL={{api_base_url}})\n\telse\n\t  (cd {{workspace}} && flutter run --dart-define=API_BASE_URL={{api_base_url}})\n\tfi\n\n".to_string()
+        let mobile_define = if is_flutter_http_saying_hello_output_repo(spec) {
+            " --dart-define=API_BASE_URL={{api_base_url}}"
         } else {
-            "run device=\"\":\n\t#!/usr/bin/env bash\n\tset -euo pipefail\n\tnormalized_device='{{device}}'\n\tnormalized_device=\"${normalized_device#\\\"}\"\n\tnormalized_device=\"${normalized_device%\\\"}\"\n\tnormalized_device=\"${normalized_device#device=}\"\n\tif [ -n \"$normalized_device\" ]; then\n\t  (cd {{workspace}} && flutter run -d \"$normalized_device\")\n\telse\n\t  (cd {{workspace}} && flutter run)\n\tfi\n\n".to_string()
+            ""
         };
 
         return format!(
@@ -1180,8 +1148,45 @@ check-formatting:\n\
 \t(cd {{{{workspace}}}} && dart format --output=none --set-exit-if-changed lib test integration_test)\n\n\
 check-tests:\n\
 \t(cd {{{{workspace}}}} && flutter test)\n\n\
-{extra_recipe}\
-{run_block}\
+devices:\n\
+\t(cd {{{{workspace}}}} && flutter devices)\n\n\
+emulators:\n\
+\t(cd {{{{workspace}}}} && flutter emulators)\n\n\
+run:\n\
+\tjust run-web\n\n\
+run-web:\n\
+\t(cd {{{{workspace}}}} && flutter run -d chrome --web-port {FOR_ALL_FRONTEND_PORT}{web_define})\n\n\
+run-ios device=\"\":\n\
+\t#!/usr/bin/env bash\n\
+\tset -euo pipefail\n\
+\tnormalized_device='{{{{device}}}}'\n\
+\tnormalized_device=\"${{normalized_device#\\\"}}\"\n\
+\tnormalized_device=\"${{normalized_device%\\\"}}\"\n\
+\tnormalized_device=\"${{normalized_device#device=}}\"\n\
+\tif [ -n \"$normalized_device\" ]; then\n\
+\t  (cd {{{{workspace}}}} && flutter run -d \"$normalized_device\"{mobile_define})\n\
+\telse\n\
+\t  (cd {{{{workspace}}}} && flutter run -d ios{mobile_define})\n\
+\tfi\n\n\
+run-android device=\"\":\n\
+\t#!/usr/bin/env bash\n\
+\tset -euo pipefail\n\
+\tnormalized_device='{{{{device}}}}'\n\
+\tnormalized_device=\"${{normalized_device#\\\"}}\"\n\
+\tnormalized_device=\"${{normalized_device%\\\"}}\"\n\
+\tnormalized_device=\"${{normalized_device#device=}}\"\n\
+\tif [ -n \"$normalized_device\" ]; then\n\
+\t  (cd {{{{workspace}}}} && flutter run -d \"$normalized_device\"{mobile_define})\n\
+\telse\n\
+\t  echo 'Use `just devices` and rerun with device=\"<android-device-id-or-name>\".' >&2\n\
+\t  exit 1\n\
+\tfi\n\n\
+run-macos:\n\
+\t(cd {{{{workspace}}}} && flutter run -d macos{desktop_define})\n\n\
+run-windows:\n\
+\t(cd {{{{workspace}}}} && flutter run -d windows{desktop_define})\n\n\
+run-linux:\n\
+\t(cd {{{{workspace}}}} && flutter run -d linux{desktop_define})\n\n\
 check-all:\n\
 \tjust check-formatting\n\
 \tjust check-tests\n"
@@ -1648,21 +1653,18 @@ fn render_output_repo_tutorial_readme_content(spec: &OutputRepoSpec) -> String {
                 repo_choice_display(&spec.selections.target)
             ),
             "- Framework: `Flutter`".to_string(),
+            "- Platforms: `web`, `ios`, `android`, `macos`, `windows`, `linux`".to_string(),
         ];
 
         if let Some(protocol) = &spec.selections.protocol {
             choices.push(format!("- Protocol: `{}`", repo_choice_display(protocol)));
         }
 
-        if is_flutter_web_saying_hello_output_repo(spec)
-            || is_flutter_mobile_http_saying_hello_output_repo(spec)
-        {
+        if is_flutter_http_saying_hello_output_repo(spec) {
             choices.push(format!("- API Port: `{FOR_ALL_API_PORT}`"));
         }
 
-        if is_flutter_web_saying_hello_output_repo(spec) {
-            choices.push(format!("- App Port: `{FOR_ALL_FRONTEND_PORT}`"));
-        }
+        choices.push(format!("- App Port: `{FOR_ALL_FRONTEND_PORT}`"));
 
         return format!(
             "# Tutorial\n\nChoices for this repo:\n\n{}\n\nWork through these files in order:\n\n1. [Spec](spec.md)\n2. [Setup](setup.md)\n3. [Contracts](contracts.md)\n4. [Code](code.md)\n5. [Adapter](adapter.md)\n6. [Finish](finish.md)\n",
@@ -1756,11 +1758,7 @@ fn render_output_repo_setup_content(spec: &OutputRepoSpec) -> String {
 
     if is_flutter_saying_hello_output_repo(spec) {
         let mut setup_commands = vec![
-            if is_flutter_web_saying_hello_output_repo(spec) {
-                "flutter create --platforms=web --org com.intrepion --project-name saying_hello workspace".to_string()
-            } else {
-                "flutter create --platforms=android,ios --org com.intrepion --project-name saying_hello workspace".to_string()
-            },
+            "flutter create --platforms=web,android,ios,macos,windows,linux --org com.intrepion --project-name saying_hello workspace".to_string(),
             "rm workspace/test/widget_test.dart".to_string(),
             "mkdir -p workspace/integration_test".to_string(),
             "mkdir -p workspace/lib/contracts".to_string(),
@@ -1773,13 +1771,11 @@ fn render_output_repo_setup_content(spec: &OutputRepoSpec) -> String {
             "(cd workspace && flutter pub add --dev integration_test --sdk flutter)".to_string(),
         ];
 
-        if is_flutter_web_saying_hello_output_repo(spec)
-            || is_flutter_mobile_http_saying_hello_output_repo(spec)
-        {
+        if is_flutter_http_saying_hello_output_repo(spec) {
             setup_commands.insert(8, "(cd workspace && flutter pub add http)".to_string());
         }
 
-        let workspace_tree = if is_flutter_mobile_saying_hello_output_repo(spec) {
+        let workspace_tree = if is_flutter_local_saying_hello_output_repo(spec) {
             r#"workspace/
   pubspec.yaml
   lib/
@@ -1817,17 +1813,27 @@ fn render_output_repo_setup_content(spec: &OutputRepoSpec) -> String {
       http_greeting_api_test.dart
       greeting_page_test.dart
   integration_test/
-    app_test.dart
+      app_test.dart
   lib/main.dart"#
                 .to_string()
+        };
+
+        let android_http_note = if is_flutter_http_saying_hello_output_repo(spec) {
+            format!(
+                "\nIf you are running the `http-json` variant on Android, use the host-machine override when you launch the app:\n\n```bash\njust --set api_base_url http://10.0.2.2:{FOR_ALL_API_PORT} run-android device=\"<android-device-id-or-name>\"\n```"
+            )
+        } else {
+            String::new()
         };
 
         return tutorial_file_markdown(
             "Setup",
             &format!(
-                "Keep the repository root for shared files like `README.md`, `LICENSE`, `.gitignore`, `.github/`, `justfile`, and `tutorial/`.\n\nPut all Flutter code inside a single `workspace/` folder.\n\nFrom the repository root, run each setup command and checkpoint it before moving to the next one:\n\n```bash\n{}\n```\n\nWhen the full workspace is finished, it should contain these files:\n\n```text\n{}\n```\n\nBefore you try `just run`, make sure Flutter can see a supported mobile device.\n\nOn macOS for iOS, install CocoaPods first if you have not already:\n\n```bash\nsudo gem install cocoapods\n```\n\nThen open the simulator and list devices:\n\n```bash\nopen -a Simulator\njust devices\n```\n\nFor Android, list available emulators, launch one, and then list devices again:\n\n```bash\njust emulators\nflutter emulators --launch <emulator-id>\njust devices\n```\n\nOnce `just devices` shows a supported iOS simulator or Android emulator, run the app with:\n\n```bash\njust run\n```\n\nIf you want to target a specific device id or name, use:\n\n```bash\njust run device=\"<device-id-or-name>\"\n```\n\nAfter your first successful iOS run, if CocoaPods added shared iOS project files like these:\n\n- `workspace/ios/Runner.xcodeproj/project.pbxproj`\n- `workspace/ios/Runner.xcworkspace/contents.xcworkspacedata`\n- `workspace/ios/Podfile.lock`\n\nthen run:\n\n```bash\ngit add --all\ngit commit --message \"Add iOS CocoaPods workspace files\"\n```\n\nDo not commit local machine output like these:\n\n- `workspace/ios/Pods/`\n- `workspace/build/`\n- `workspace/.dart_tool/`\n\nFor Android, a normal first run usually should not add shared tracked files. If it does change shared files under `workspace/android/`, review them carefully and commit only the project-level changes. Do not commit machine-specific files like:\n\n- `workspace/android/local.properties`\n- `workspace/.gradle/`\n- `workspace/build/`",
+                "Keep the repository root for shared files like `README.md`, `LICENSE`, `.gitignore`, `.github/`, `justfile`, and `tutorial/`.\n\nPut all Flutter code inside a single `workspace/` folder.\n\nFrom the repository root, run each setup command and checkpoint it before moving to the next one:\n\n```bash\n{}\n```\n\nWhen the full workspace is finished, it should contain these files:\n\n```text\n{}\n```\n\nBefore you try any run command, make sure Flutter can see a supported target:\n\n```bash\njust devices\n```\n\nFor web, use the default web command:\n\n```bash\njust run\n```\n\nor, explicitly:\n\n```bash\njust run-web\n```\n\nOn macOS for iOS, install CocoaPods first if you have not already:\n\n```bash\nsudo gem install cocoapods\n```\n\nThen open the simulator, list devices, and run the iOS app:\n\n```bash\nopen -a Simulator\njust devices\njust run-ios\n```\n\nIf you want to target a specific iOS simulator id or name, use:\n\n```bash\njust run-ios device=\"<ios-device-id-or-name>\"\n```\n\nFor Android, list available emulators, launch one, list devices again, and then run the Android app:\n\n```bash\njust emulators\nflutter emulators --launch <emulator-id>\njust devices\njust run-android device=\"<android-device-id-or-name>\"\n```\n{}{newline}For macOS desktop, use:\n\n```bash\njust run-macos\n```\n\nFor Windows or Linux, run the matching command on that host platform:\n\n```bash\njust run-windows\njust run-linux\n```\n\nAfter your first successful iOS run, if CocoaPods added shared iOS project files like these:\n\n- `workspace/ios/Runner.xcodeproj/project.pbxproj`\n- `workspace/ios/Runner.xcworkspace/contents.xcworkspacedata`\n- `workspace/ios/Podfile.lock`\n\nthen run:\n\n```bash\ngit add --all\ngit commit --message \"Add iOS CocoaPods workspace files\"\n```\n\nDo not commit local machine output like these:\n\n- `workspace/ios/Pods/`\n- `workspace/build/`\n- `workspace/.dart_tool/`\n\nFor Android, a normal first run usually should not add shared tracked files. If it does change shared files under `workspace/android/`, review them carefully and commit only the project-level changes. Do not commit machine-specific files like:\n\n- `workspace/android/local.properties`\n- `workspace/.gradle/`\n- `workspace/build/`",
                 render_setup_commands_with_commits(&setup_commands, 1),
-                workspace_tree
+                workspace_tree,
+                android_http_note,
+                newline = if android_http_note.is_empty() { "" } else { "\n" },
             ),
         );
     }
@@ -2134,16 +2140,14 @@ fn render_output_repo_finish_content(spec: &OutputRepoSpec) -> String {
     }
 
     if is_flutter_saying_hello_output_repo(spec) {
-        let body = if is_flutter_web_saying_hello_output_repo(spec) {
+        let body = if is_flutter_http_saying_hello_output_repo(spec) {
             format!(
-                "Make sure the matching Saying Hello API is running at `http://localhost:{FOR_ALL_API_PORT}`.\n\nThen start the Flutter web app from the repository root:\n\n```bash\njust run\n```\n\nOpen `http://localhost:{FOR_ALL_FRONTEND_PORT}` in your browser.\n\nTry these inputs:\n\n- submit the form with `Ada` and expect `Hello, Ada!`\n- submit the form with an empty input and expect `Hello!`\n\nIf the API is unavailable, the page should show `Sorry, the greeting API is unavailable right now.`"
-            )
-        } else if is_flutter_mobile_http_saying_hello_output_repo(spec) {
-            format!(
-                "Make sure the matching Saying Hello API is running on your development machine at port `{FOR_ALL_API_PORT}`.\n\nThen start the Flutter mobile app from the repository root:\n\n```bash\njust run\n```\n\nIf you want to target a specific device, use:\n\n```bash\njust run device=\"<device-id-or-name>\"\n```\n\nIf you are running on Android and need to reach the host machine, use:\n\n```bash\njust --set api_base_url http://10.0.2.2:{FOR_ALL_API_PORT} run device=\"<android-device-id-or-name>\"\n```\n\nAfter the first successful iOS run, if CocoaPods added shared iOS project files like these:\n\n- `workspace/ios/Runner.xcodeproj/project.pbxproj`\n- `workspace/ios/Runner.xcworkspace/contents.xcworkspacedata`\n- `workspace/ios/Podfile.lock`\n\nthen run:\n\n```bash\ngit add --all\ngit commit --message \"Add iOS CocoaPods workspace files\"\n```\n\nA normal Android run usually should not add shared tracked files. Do not commit machine-specific files like `workspace/android/local.properties`, `workspace/.gradle/`, or `workspace/build/`.\n\nTry these inputs:\n\n- enter `Ada` and expect `Hello, Ada!`\n- submit an empty value and expect `Hello!`\n\nIf the API is unavailable, the app should show `Sorry, the greeting API is unavailable right now.`"
+                "Make sure the matching Saying Hello API is running on your development machine at port `{FOR_ALL_API_PORT}`.\n\nFor web, start the Flutter app from the repository root with:\n\n```bash\njust run\n```\n\nor:\n\n```bash\njust run-web\n```\n\nThen open `http://localhost:{FOR_ALL_FRONTEND_PORT}` in your browser.\n\nFor iOS, use:\n\n```bash\njust run-ios\n```\n\nor target a specific simulator:\n\n```bash\njust run-ios device=\"<ios-device-id-or-name>\"\n```\n\nFor Android, use:\n\n```bash\njust --set api_base_url http://10.0.2.2:{FOR_ALL_API_PORT} run-android device=\"<android-device-id-or-name>\"\n```\n\nFor macOS desktop, use:\n\n```bash\njust run-macos\n```\n\nFor Windows or Linux, run the matching command on that host platform:\n\n```bash\njust run-windows\njust run-linux\n```\n\nAfter the first successful iOS run, if CocoaPods added shared iOS project files like these:\n\n- `workspace/ios/Runner.xcodeproj/project.pbxproj`\n- `workspace/ios/Runner.xcworkspace/contents.xcworkspacedata`\n- `workspace/ios/Podfile.lock`\n\nthen run:\n\n```bash\ngit add --all\ngit commit --message \"Add iOS CocoaPods workspace files\"\n```\n\nA normal Android run usually should not add shared tracked files. Do not commit machine-specific files like `workspace/android/local.properties`, `workspace/.gradle/`, or `workspace/build/`.\n\nTry these inputs:\n\n- enter `Ada` and expect `Hello, Ada!`\n- submit an empty value and expect `Hello!`\n\nIf the API is unavailable, the app should show `Sorry, the greeting API is unavailable right now.`"
             )
         } else {
-            "Start the Flutter mobile app from the repository root:\n\n```bash\njust run\n```\n\nIf you want to target a specific device, use:\n\n```bash\njust run device=\"<device-id-or-name>\"\n```\n\nAfter the first successful iOS run, if CocoaPods added shared iOS project files like these:\n\n- `workspace/ios/Runner.xcodeproj/project.pbxproj`\n- `workspace/ios/Runner.xcworkspace/contents.xcworkspacedata`\n- `workspace/ios/Podfile.lock`\n\nthen run:\n\n```bash\ngit add --all\ngit commit --message \"Add iOS CocoaPods workspace files\"\n```\n\nA normal Android run usually should not add shared tracked files. Do not commit machine-specific files like `workspace/android/local.properties`, `workspace/.gradle/`, or `workspace/build/`.\n\nTry these inputs:\n\n- enter `Ada` and expect `Hello, Ada!`\n- submit an empty value and expect `Hello!`".to_string()
+            format!(
+                "For web, start the Flutter app from the repository root with:\n\n```bash\njust run\n```\n\nor:\n\n```bash\njust run-web\n```\n\nThen open `http://localhost:{FOR_ALL_FRONTEND_PORT}` in your browser.\n\nFor iOS, use:\n\n```bash\njust run-ios\n```\n\nor target a specific simulator:\n\n```bash\njust run-ios device=\"<ios-device-id-or-name>\"\n```\n\nFor Android, use:\n\n```bash\njust run-android device=\"<android-device-id-or-name>\"\n```\n\nFor macOS desktop, use:\n\n```bash\njust run-macos\n```\n\nFor Windows or Linux, run the matching command on that host platform:\n\n```bash\njust run-windows\njust run-linux\n```\n\nAfter the first successful iOS run, if CocoaPods added shared iOS project files like these:\n\n- `workspace/ios/Runner.xcodeproj/project.pbxproj`\n- `workspace/ios/Runner.xcworkspace/contents.xcworkspacedata`\n- `workspace/ios/Podfile.lock`\n\nthen run:\n\n```bash\ngit add --all\ngit commit --message \"Add iOS CocoaPods workspace files\"\n```\n\nA normal Android run usually should not add shared tracked files. Do not commit machine-specific files like `workspace/android/local.properties`, `workspace/.gradle/`, or `workspace/build/`.\n\nTry these inputs:\n\n- enter `Ada` and expect `Hello, Ada!`\n- submit an empty value and expect `Hello!`"
+            )
         };
         return tutorial_file_markdown("Finish", &body);
     }
@@ -4448,7 +4452,7 @@ git commit --message "4. Green: Wire The Server Entry Point"
 }
 
 fn render_flutter_saying_hello_contracts_content(_spec: &OutputRepoSpec) -> String {
-    if is_flutter_mobile_saying_hello_output_repo(_spec) {
+    if is_flutter_local_saying_hello_output_repo(_spec) {
         return tutorial_file_markdown(
             "Contracts",
             &rewrite_stage_commit_checkpoints(&rewrite_touch_creation_stage_only(
@@ -4525,7 +4529,7 @@ git commit --message "Define greeting contracts"
 }
 
 fn render_flutter_saying_hello_code_content(spec: &OutputRepoSpec) -> String {
-    if is_flutter_mobile_saying_hello_output_repo(spec) {
+    if is_flutter_local_saying_hello_output_repo(spec) {
         return tutorial_file_markdown(
             "Code",
             &rewrite_touch_creation_stage_only(
@@ -5008,7 +5012,7 @@ git commit --message "6. Green: Return A Friendly Message When The API Is Unavai
 }
 
 fn render_flutter_saying_hello_adapter_content(spec: &OutputRepoSpec) -> String {
-    if is_flutter_mobile_saying_hello_output_repo(spec) {
+    if is_flutter_local_saying_hello_output_repo(spec) {
         return tutorial_file_markdown(
             "Adapter",
             &rewrite_touch_creation_stage_only(
@@ -5531,7 +5535,7 @@ git commit --message "6. Green: Wire The Real Application"
 ```"#
             );
 
-    if is_flutter_mobile_http_saying_hello_output_repo(spec) {
+    if is_flutter_http_saying_hello_output_repo(spec) {
         body = body.replace(
             &format!(
                 "import 'package:flutter/material.dart';\n\nimport 'adapter/greeting_page.dart';\nimport 'adapter/http_greeting_api.dart';\n\nvoid main() {{\n  runApp(const SayingHelloApp());\n}}\n\nclass SayingHelloApp extends StatelessWidget {{\n  const SayingHelloApp({{super.key}});\n\n  @override\n  Widget build(BuildContext context) {{\n    return MaterialApp(\n      title: 'Saying Hello',\n      home: GreetingPage(\n        api: HttpGreetingApi(baseUrl: 'http://localhost:{FOR_ALL_API_PORT}'),\n      ),\n    );\n  }}\n}}"
@@ -6219,7 +6223,7 @@ mod tests {
         OutputRepoSpec {
             repo_name: "fa_tut_saying-hello".to_string(),
             repo_description:
-                "Tutorial workspace for the Saying Hello project with Dart / Dart / test / mocktail / no-storage / web / front-end / Flutter / http-json choices."
+                "Tutorial workspace for the Saying Hello project with Dart / Dart / test / mocktail / no-storage / client / all / Flutter / http-json choices."
                     .to_string(),
             project_slug: "saying-hello".to_string(),
             selections: OutputRepoSelections {
@@ -6228,19 +6232,19 @@ mod tests {
                 testing: "test".to_string(),
                 mocking: "mocktail".to_string(),
                 storage: "no-storage".to_string(),
-                surface: "web".to_string(),
-                target: "front-end".to_string(),
+                surface: "client".to_string(),
+                target: "all".to_string(),
                 framework: "flutter".to_string(),
                 protocol: Some("http-json".to_string()),
             },
         }
     }
 
-    fn sample_flutter_mobile_output_repo_spec() -> OutputRepoSpec {
+    fn sample_flutter_local_output_repo_spec() -> OutputRepoSpec {
         OutputRepoSpec {
             repo_name: "fa_tut_saying-hello".to_string(),
             repo_description:
-                "Tutorial workspace for the Saying Hello project with Dart / Dart / test / mocktail / no-storage / mobile / all / Flutter choices."
+                "Tutorial workspace for the Saying Hello project with Dart / Dart / test / mocktail / no-storage / client / all / Flutter choices."
                     .to_string(),
             project_slug: "saying-hello".to_string(),
             selections: OutputRepoSelections {
@@ -6249,31 +6253,10 @@ mod tests {
                 testing: "test".to_string(),
                 mocking: "mocktail".to_string(),
                 storage: "no-storage".to_string(),
-                surface: "mobile".to_string(),
+                surface: "client".to_string(),
                 target: "all".to_string(),
                 framework: "flutter".to_string(),
                 protocol: None,
-            },
-        }
-    }
-
-    fn sample_flutter_mobile_http_output_repo_spec() -> OutputRepoSpec {
-        OutputRepoSpec {
-            repo_name: "fa_tut_saying-hello".to_string(),
-            repo_description:
-                "Tutorial workspace for the Saying Hello project with Dart / Dart / test / mocktail / no-storage / mobile / all / Flutter / http-json choices."
-                    .to_string(),
-            project_slug: "saying-hello".to_string(),
-            selections: OutputRepoSelections {
-                ecosystem: "dart".to_string(),
-                language: "dart".to_string(),
-                testing: "test".to_string(),
-                mocking: "mocktail".to_string(),
-                storage: "no-storage".to_string(),
-                surface: "mobile".to_string(),
-                target: "all".to_string(),
-                framework: "flutter".to_string(),
-                protocol: Some("http-json".to_string()),
             },
         }
     }
@@ -6388,46 +6371,47 @@ mod tests {
         assert_eq!(selections.language, "dart");
         assert_eq!(selections.testing, "test");
         assert_eq!(selections.mocking, "mocktail");
-        assert_eq!(selections.target, "front-end");
+        assert_eq!(selections.surface, "client");
+        assert_eq!(selections.target, "all");
         assert_eq!(selections.framework, "flutter");
         assert_eq!(selections.protocol, Some("http-json".to_string()));
     }
 
     #[test]
-    fn output_repo_selection_overrides_allow_switching_saying_hello_to_flutter_mobile() {
+    fn output_repo_selection_overrides_allow_switching_saying_hello_to_flutter_local() {
         let overrides = BootstrapSelectionOverrides {
             ecosystem: Some("dart".to_string()),
-            surface: Some("mobile".to_string()),
+            surface: Some("client".to_string()),
             target: Some("all".to_string()),
             protocol: Some("none".to_string()),
             ..BootstrapSelectionOverrides::default()
         };
 
         let selections = output_repo_selections_for_project("saying-hello", &overrides)
-            .expect("flutter mobile saying-hello should be supported");
+            .expect("flutter local saying-hello should be supported");
 
         assert_eq!(selections.ecosystem, "dart");
-        assert_eq!(selections.surface, "mobile");
+        assert_eq!(selections.surface, "client");
         assert_eq!(selections.target, "all");
         assert_eq!(selections.framework, "flutter");
         assert_eq!(selections.protocol, None);
     }
 
     #[test]
-    fn output_repo_selection_overrides_allow_switching_saying_hello_to_flutter_mobile_http_json() {
+    fn output_repo_selection_overrides_allow_switching_saying_hello_to_flutter_http_json() {
         let overrides = BootstrapSelectionOverrides {
             ecosystem: Some("dart".to_string()),
-            surface: Some("mobile".to_string()),
+            surface: Some("client".to_string()),
             target: Some("all".to_string()),
             protocol: Some("http-json".to_string()),
             ..BootstrapSelectionOverrides::default()
         };
 
         let selections = output_repo_selections_for_project("saying-hello", &overrides)
-            .expect("flutter mobile http saying-hello should be supported");
+            .expect("flutter http saying-hello should be supported");
 
         assert_eq!(selections.ecosystem, "dart");
-        assert_eq!(selections.surface, "mobile");
+        assert_eq!(selections.surface, "client");
         assert_eq!(selections.target, "all");
         assert_eq!(selections.framework, "flutter");
         assert_eq!(selections.protocol, Some("http-json".to_string()));
@@ -6628,12 +6612,19 @@ mod tests {
         assert!(justfile.contains("(cd {{workspace}} && dart format lib test integration_test)"));
         assert!(justfile.contains("(cd {{workspace}} && flutter test)"));
         assert!(justfile.contains("\nrun:\n"));
-        assert!(justfile.contains("(cd {{workspace}} && flutter run -d chrome --web-port 25616)"));
+        assert!(justfile.contains("\nrun-web:\n"));
+        assert!(justfile.contains("(cd {{workspace}} && flutter run -d chrome --web-port 25616 --dart-define=API_BASE_URL={{api_base_url}})"));
+        assert!(justfile.contains("\nrun-ios device=\"\":\n"));
+        assert!(justfile.contains("(cd {{workspace}} && flutter run -d ios --dart-define=API_BASE_URL={{api_base_url}})"));
+        assert!(justfile.contains("\nrun-android device=\"\":\n"));
+        assert!(justfile.contains("Use `just devices` and rerun with device=\"<android-device-id-or-name>\"."));
+        assert!(justfile.contains("\nrun-macos:\n"));
+        assert!(justfile.contains("(cd {{workspace}} && flutter run -d macos --dart-define=API_BASE_URL={{api_base_url}})"));
     }
 
     #[test]
-    fn flutter_mobile_output_repo_root_justfile_runs_mobile_app() {
-        let spec = sample_flutter_mobile_output_repo_spec();
+    fn flutter_local_output_repo_root_justfile_runs_across_platforms_without_api_base_url() {
+        let spec = sample_flutter_local_output_repo_spec();
 
         let justfile = render_output_repo_root_justfile_content(&spec);
 
@@ -6642,27 +6633,19 @@ mod tests {
         assert!(justfile.contains("\ndevices:\n"));
         assert!(justfile.contains("\nemulators:\n"));
         assert!(justfile.contains("(cd {{workspace}} && flutter emulators)"));
-        assert!(justfile.contains("run device=\"\":"));
+        assert!(justfile.contains("\nrun-web:\n"));
+        assert!(justfile.contains("(cd {{workspace}} && flutter run -d chrome --web-port 25616)"));
+        assert!(justfile.contains("\nrun-ios device=\"\":\n"));
         assert!(justfile.contains("normalized_device='{{device}}'"));
         assert!(justfile.contains("normalized_device=\"${normalized_device#device=}\""));
         assert!(justfile.contains("if [ -n \"$normalized_device\" ]; then"));
         assert!(justfile.contains("(cd {{workspace}} && flutter run -d \"$normalized_device\")"));
-        assert!(justfile.contains("(cd {{workspace}} && flutter run)"));
-        assert!(!justfile.contains("--web-port"));
+        assert!(justfile.contains("(cd {{workspace}} && flutter run -d ios)"));
+        assert!(justfile.contains("\nrun-android device=\"\":\n"));
+        assert!(justfile.contains("\nrun-macos:\n"));
+        assert!(justfile.contains("\nrun-windows:\n"));
+        assert!(justfile.contains("\nrun-linux:\n"));
         assert!(!justfile.contains("api_base_url :="));
-    }
-
-    #[test]
-    fn flutter_mobile_http_output_repo_root_justfile_uses_configurable_api_base_url() {
-        let spec = sample_flutter_mobile_http_output_repo_spec();
-
-        let justfile = render_output_repo_root_justfile_content(&spec);
-
-        assert!(justfile.contains("api_base_url := \"http://localhost:25664\""));
-        assert!(justfile.contains("run device=\"\":"));
-        assert!(justfile.contains("normalized_device='{{device}}'"));
-        assert!(justfile.contains("(cd {{workspace}} && flutter run -d \"$normalized_device\" --dart-define=API_BASE_URL={{api_base_url}})"));
-        assert!(justfile.contains("(cd {{workspace}} && flutter run --dart-define=API_BASE_URL={{api_base_url}})"));
     }
 
     #[test]
@@ -6710,7 +6693,7 @@ mod tests {
     }
 
     #[test]
-    fn flutter_output_repo_tutorial_readme_lists_front_end_http_json_choices() {
+    fn flutter_output_repo_tutorial_readme_lists_client_http_json_choices() {
         let spec = sample_flutter_output_repo_spec();
 
         let readme = render_output_repo_tutorial_readme_content(&spec);
@@ -6721,36 +6704,27 @@ mod tests {
         assert!(readme.contains("- Widget testing: `flutter_test`"));
         assert!(readme.contains("- Integration testing: `integration_test`"));
         assert!(readme.contains("- Mocking: `mocktail`"));
+        assert!(readme.contains("- Surface: `client`"));
+        assert!(readme.contains("- Target: `all`"));
         assert!(readme.contains("- Framework: `Flutter`"));
+        assert!(readme.contains("- Platforms: `web`, `ios`, `android`, `macos`, `windows`, `linux`"));
         assert!(readme.contains("- Protocol: `http-json`"));
         assert!(readme.contains("- API Port: `25664`"));
         assert!(readme.contains("- App Port: `25616`"));
     }
 
     #[test]
-    fn flutter_mobile_output_repo_tutorial_readme_lists_mobile_choices_without_protocol() {
-        let spec = sample_flutter_mobile_output_repo_spec();
+    fn flutter_local_output_repo_tutorial_readme_lists_client_choices_without_protocol() {
+        let spec = sample_flutter_local_output_repo_spec();
 
         let readme = render_output_repo_tutorial_readme_content(&spec);
 
-        assert!(readme.contains("- Surface: `mobile`"));
+        assert!(readme.contains("- Surface: `client`"));
         assert!(readme.contains("- Target: `all`"));
+        assert!(readme.contains("- Platforms: `web`, `ios`, `android`, `macos`, `windows`, `linux`"));
         assert!(!readme.contains("- Protocol:"));
         assert!(!readme.contains("- API Port:"));
-        assert!(!readme.contains("- App Port:"));
-    }
-
-    #[test]
-    fn flutter_mobile_http_output_repo_tutorial_readme_lists_mobile_http_json_choices() {
-        let spec = sample_flutter_mobile_http_output_repo_spec();
-
-        let readme = render_output_repo_tutorial_readme_content(&spec);
-
-        assert!(readme.contains("- Surface: `mobile`"));
-        assert!(readme.contains("- Target: `all`"));
-        assert!(readme.contains("- Protocol: `http-json`"));
-        assert!(readme.contains("- API Port: `25664`"));
-        assert!(!readme.contains("- App Port:"));
+        assert!(readme.contains("- App Port: `25616`"));
     }
 
     #[test]
@@ -6787,38 +6761,60 @@ mod tests {
     }
 
     #[test]
-    fn flutter_output_repo_setup_content_uses_flutter_workspace_layout() {
+    fn flutter_output_repo_setup_content_uses_cross_platform_flutter_workspace_layout() {
         let spec = sample_flutter_output_repo_spec();
 
         let setup = render_output_repo_setup_content(&spec);
 
-        assert!(setup.contains("flutter create --platforms=web --org com.intrepion --project-name saying_hello workspace"));
+        assert!(setup.contains("flutter create --platforms=web,android,ios,macos,windows,linux --org com.intrepion --project-name saying_hello workspace"));
         assert!(setup.contains("rm workspace/test/widget_test.dart"));
         assert!(setup.contains("flutter pub add http"));
         assert!(setup.contains("flutter pub add --dev mocktail"));
         assert!(setup.contains("flutter pub add --dev integration_test --sdk flutter"));
         assert!(setup.contains("workspace/test/adapter"));
         assert!(setup.contains("workspace/integration_test"));
+        assert!(setup.contains("just run-web"));
+        assert!(setup.contains("just run-ios"));
+        assert!(setup.contains("just run-android device=\"<android-device-id-or-name>\""));
+        assert!(setup.contains("just run-macos"));
+        assert!(setup.contains("just run-windows"));
+        assert!(setup.contains("just run-linux"));
+        assert!(setup.contains("load_greeting.dart"));
+        assert!(setup.contains("http_greeting_api.dart"));
+        assert!(setup.contains("sudo gem install cocoapods"));
+        assert!(setup.contains("open -a Simulator"));
+        assert!(setup.contains("flutter emulators --launch <emulator-id>"));
+        assert!(setup.contains("just --set api_base_url http://10.0.2.2:25664 run-android device=\"<android-device-id-or-name>\""));
+        assert!(setup.contains("workspace/ios/Podfile.lock"));
+        assert!(setup.contains("git add --all"));
+        assert!(setup.contains("git commit --message \"Add iOS CocoaPods workspace files\""));
+        assert!(setup.contains("workspace/android/local.properties"));
     }
 
     #[test]
-    fn flutter_mobile_output_repo_setup_content_uses_mobile_flutter_workspace_layout() {
-        let spec = sample_flutter_mobile_output_repo_spec();
+    fn flutter_local_output_repo_setup_content_uses_cross_platform_flutter_workspace_layout() {
+        let spec = sample_flutter_local_output_repo_spec();
 
         let setup = render_output_repo_setup_content(&spec);
 
-        assert!(setup.contains("flutter create --platforms=android,ios --org com.intrepion --project-name saying_hello workspace"));
+        assert!(setup.contains("flutter create --platforms=web,android,ios,macos,windows,linux --org com.intrepion --project-name saying_hello workspace"));
         assert!(setup.contains("rm workspace/test/widget_test.dart"));
         assert!(!setup.contains("flutter pub add http"));
         assert!(setup.contains("flutter pub add --dev mocktail"));
         assert!(setup.contains("default_greeting_service.dart"));
         assert!(setup.contains("greeting_service.dart"));
+        assert!(setup.contains("just run"));
+        assert!(setup.contains("just run-web"));
+        assert!(setup.contains("just run-ios"));
+        assert!(setup.contains("just run-android device=\"<android-device-id-or-name>\""));
+        assert!(setup.contains("just run-macos"));
+        assert!(setup.contains("just run-windows"));
+        assert!(setup.contains("just run-linux"));
         assert!(setup.contains("sudo gem install cocoapods"));
         assert!(setup.contains("open -a Simulator"));
         assert!(setup.contains("just devices"));
         assert!(setup.contains("just emulators"));
         assert!(setup.contains("flutter emulators --launch <emulator-id>"));
-        assert!(setup.contains("just run device=\"<device-id-or-name>\""));
         assert!(setup.contains("workspace/ios/Runner.xcodeproj/project.pbxproj"));
         assert!(setup.contains("workspace/ios/Runner.xcworkspace/contents.xcworkspacedata"));
         assert!(setup.contains("workspace/ios/Podfile.lock"));
@@ -6826,25 +6822,6 @@ mod tests {
         assert!(setup.contains("git commit --message \"Add iOS CocoaPods workspace files\""));
         assert!(setup.contains("workspace/android/local.properties"));
         assert!(setup.contains("workspace/.gradle/"));
-    }
-
-    #[test]
-    fn flutter_mobile_http_output_repo_setup_content_adds_http_dependency() {
-        let spec = sample_flutter_mobile_http_output_repo_spec();
-
-        let setup = render_output_repo_setup_content(&spec);
-
-        assert!(setup.contains("flutter create --platforms=android,ios --org com.intrepion --project-name saying_hello workspace"));
-        assert!(setup.contains("flutter pub add http"));
-        assert!(setup.contains("load_greeting.dart"));
-        assert!(setup.contains("http_greeting_api.dart"));
-        assert!(setup.contains("sudo gem install cocoapods"));
-        assert!(setup.contains("open -a Simulator"));
-        assert!(setup.contains("flutter emulators --launch <emulator-id>"));
-        assert!(setup.contains("workspace/ios/Podfile.lock"));
-        assert!(setup.contains("git add --all"));
-        assert!(setup.contains("git commit --message \"Add iOS CocoaPods workspace files\""));
-        assert!(setup.contains("workspace/android/local.properties"));
     }
 
     #[test]
@@ -6882,8 +6859,8 @@ mod tests {
     }
 
     #[test]
-    fn flutter_mobile_local_contracts_code_and_adapter_tutorials_are_concrete() {
-        let spec = sample_flutter_mobile_output_repo_spec();
+    fn flutter_local_contracts_code_and_adapter_tutorials_are_concrete() {
+        let spec = sample_flutter_local_output_repo_spec();
 
         let contracts = render_flutter_saying_hello_contracts_content(&spec);
         let code = render_flutter_saying_hello_code_content(&spec);
@@ -6899,7 +6876,9 @@ mod tests {
         assert!(adapter.contains("GreetingPage(service: service)"));
         assert!(adapter.contains("DefaultGreetingService()"));
         assert!(!adapter.contains("HttpGreetingApi"));
-        assert!(finish.contains("just run device=\"<device-id-or-name>\""));
+        assert!(finish.contains("just run-web"));
+        assert!(finish.contains("just run-ios"));
+        assert!(finish.contains("just run-android device=\"<android-device-id-or-name>\""));
         assert!(finish.contains("workspace/ios/Runner.xcodeproj/project.pbxproj"));
         assert!(finish.contains("workspace/ios/Podfile.lock"));
         assert!(finish.contains("git add --all"));
@@ -6909,16 +6888,17 @@ mod tests {
     }
 
     #[test]
-    fn flutter_mobile_http_adapter_and_finish_use_api_base_url() {
-        let spec = sample_flutter_mobile_http_output_repo_spec();
+    fn flutter_http_adapter_and_finish_use_api_base_url() {
+        let spec = sample_flutter_output_repo_spec();
 
         let adapter = render_flutter_saying_hello_adapter_content(&spec);
         let finish = render_output_repo_finish_content(&spec);
 
         assert!(adapter.contains("HttpGreetingApi(baseUrl: apiBaseUrl)"));
         assert!(adapter.contains("const apiBaseUrl = String.fromEnvironment("));
-        assert!(finish.contains("just run device=\"<device-id-or-name>\""));
-        assert!(finish.contains("just --set api_base_url http://10.0.2.2:25664 run device=\"<android-device-id-or-name>\""));
+        assert!(finish.contains("just run-web"));
+        assert!(finish.contains("just run-ios"));
+        assert!(finish.contains("just --set api_base_url http://10.0.2.2:25664 run-android device=\"<android-device-id-or-name>\""));
         assert!(finish.contains("workspace/ios/Runner.xcodeproj/project.pbxproj"));
         assert!(finish.contains("workspace/ios/Podfile.lock"));
         assert!(finish.contains("git add --all"));
