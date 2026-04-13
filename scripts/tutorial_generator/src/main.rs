@@ -14,8 +14,8 @@ const ROOT: &str = env!("CARGO_MANIFEST_DIR");
 const GITHUB_OWNER: &str = "intrepion";
 const OUTPUT_REPO_PREFIX: &str = "fa_tut";
 const GITHUB_REPO_CREATE_DELAY: Duration = Duration::from_secs(1);
-const FOR_ALL_API_PORT: &str = "25616";
-const FOR_ALL_FRONTEND_PORT: &str = "25617";
+const FOR_ALL_API_PORT: &str = "25664";
+const FOR_ALL_FRONTEND_PORT: &str = "25616";
 
 fn main() -> Result<(), AppError> {
     let app_root = Path::new(ROOT)
@@ -429,6 +429,12 @@ fn is_astro_saying_hello_output_repo(spec: &OutputRepoSpec) -> bool {
 }
 
 fn is_flutter_saying_hello_output_repo(spec: &OutputRepoSpec) -> bool {
+    is_flutter_web_saying_hello_output_repo(spec)
+        || is_flutter_mobile_saying_hello_output_repo(spec)
+        || is_flutter_mobile_http_saying_hello_output_repo(spec)
+}
+
+fn is_flutter_web_saying_hello_output_repo(spec: &OutputRepoSpec) -> bool {
     spec.project_slug == "saying-hello"
         && spec.selections.ecosystem == "dart"
         && spec.selections.language == "dart"
@@ -437,6 +443,32 @@ fn is_flutter_saying_hello_output_repo(spec: &OutputRepoSpec) -> bool {
         && spec.selections.storage == "no-storage"
         && spec.selections.surface == "web"
         && spec.selections.target == "front-end"
+        && spec.selections.framework == "flutter"
+        && spec.selections.protocol.as_deref() == Some("http-json")
+}
+
+fn is_flutter_mobile_saying_hello_output_repo(spec: &OutputRepoSpec) -> bool {
+    spec.project_slug == "saying-hello"
+        && spec.selections.ecosystem == "dart"
+        && spec.selections.language == "dart"
+        && spec.selections.testing == "test"
+        && spec.selections.mocking == "mocktail"
+        && spec.selections.storage == "no-storage"
+        && spec.selections.surface == "mobile"
+        && spec.selections.target == "all"
+        && spec.selections.framework == "flutter"
+        && spec.selections.protocol.is_none()
+}
+
+fn is_flutter_mobile_http_saying_hello_output_repo(spec: &OutputRepoSpec) -> bool {
+    spec.project_slug == "saying-hello"
+        && spec.selections.ecosystem == "dart"
+        && spec.selections.language == "dart"
+        && spec.selections.testing == "test"
+        && spec.selections.mocking == "mocktail"
+        && spec.selections.storage == "no-storage"
+        && spec.selections.surface == "mobile"
+        && spec.selections.target == "all"
         && spec.selections.framework == "flutter"
         && spec.selections.protocol.as_deref() == Some("http-json")
 }
@@ -517,7 +549,11 @@ fn output_repo_selections_for_project(
         selections.framework = value.clone();
     }
     if let Some(value) = &selection_overrides.protocol {
-        selections.protocol = Some(value.clone());
+        selections.protocol = if value == "none" {
+            None
+        } else {
+            Some(value.clone())
+        };
     }
 
     validate_output_repo_selections(project_slug, &selections)?;
@@ -632,6 +668,30 @@ fn validate_output_repo_selections(
         protocol: Some("http-json".to_string()),
     };
 
+    let supported_flutter_mobile = OutputRepoSelections {
+        ecosystem: "dart".to_string(),
+        language: "dart".to_string(),
+        testing: "test".to_string(),
+        mocking: "mocktail".to_string(),
+        storage: "no-storage".to_string(),
+        surface: "mobile".to_string(),
+        target: "all".to_string(),
+        framework: "flutter".to_string(),
+        protocol: None,
+    };
+
+    let supported_flutter_mobile_http = OutputRepoSelections {
+        ecosystem: "dart".to_string(),
+        language: "dart".to_string(),
+        testing: "test".to_string(),
+        mocking: "mocktail".to_string(),
+        storage: "no-storage".to_string(),
+        surface: "mobile".to_string(),
+        target: "all".to_string(),
+        framework: "flutter".to_string(),
+        protocol: Some("http-json".to_string()),
+    };
+
     let supported_dotnet = OutputRepoSelections {
         ecosystem: "dotnet".to_string(),
         language: "csharp".to_string(),
@@ -657,6 +717,14 @@ fn validate_output_repo_selections(
     }
 
     if project_slug == "saying-hello" && selections == &supported_flutter {
+        return Ok(());
+    }
+
+    if project_slug == "saying-hello" && selections == &supported_flutter_mobile {
+        return Ok(());
+    }
+
+    if project_slug == "saying-hello" && selections == &supported_flutter_mobile_http {
         return Ok(());
     }
 
@@ -1077,22 +1145,47 @@ check-all:\n\
     }
 
     if is_flutter_saying_hello_output_repo(spec) {
-        return "set shell := [\"bash\", \"-eu\", \"-c\"]\n\n\
+        let extra_variable = if is_flutter_mobile_http_saying_hello_output_repo(spec) {
+            format!("api_base_url := \"http://localhost:{FOR_ALL_API_PORT}\"\n\n")
+        } else {
+            String::new()
+        };
+        let extra_recipe = if is_flutter_web_saying_hello_output_repo(spec) {
+            String::new()
+        } else {
+            "devices:\n\t(cd {{workspace}} && flutter devices)\n\nemulators:\n\t(cd {{workspace}} && flutter emulators)\n\n".to_string()
+        };
+        let run_recipe = if is_flutter_web_saying_hello_output_repo(spec) {
+            format!("(cd {{{{workspace}}}} && flutter run -d chrome --web-port {FOR_ALL_FRONTEND_PORT})")
+        } else {
+            String::new()
+        };
+        let run_block = if is_flutter_web_saying_hello_output_repo(spec) {
+            format!("run:\n\t{run_recipe}\n\n")
+        } else if is_flutter_mobile_http_saying_hello_output_repo(spec) {
+            "run device=\"\":\n\t#!/usr/bin/env bash\n\tset -euo pipefail\n\tnormalized_device='{{device}}'\n\tnormalized_device=\"${normalized_device#\\\"}\"\n\tnormalized_device=\"${normalized_device%\\\"}\"\n\tnormalized_device=\"${normalized_device#device=}\"\n\tif [ -n \"$normalized_device\" ]; then\n\t  (cd {{workspace}} && flutter run -d \"$normalized_device\" --dart-define=API_BASE_URL={{api_base_url}})\n\telse\n\t  (cd {{workspace}} && flutter run --dart-define=API_BASE_URL={{api_base_url}})\n\tfi\n\n".to_string()
+        } else {
+            "run device=\"\":\n\t#!/usr/bin/env bash\n\tset -euo pipefail\n\tnormalized_device='{{device}}'\n\tnormalized_device=\"${normalized_device#\\\"}\"\n\tnormalized_device=\"${normalized_device%\\\"}\"\n\tnormalized_device=\"${normalized_device#device=}\"\n\tif [ -n \"$normalized_device\" ]; then\n\t  (cd {{workspace}} && flutter run -d \"$normalized_device\")\n\telse\n\t  (cd {{workspace}} && flutter run)\n\tfi\n\n".to_string()
+        };
+
+        return format!(
+            "set shell := [\"bash\", \"-eu\", \"-c\"]\n\n\
 workspace := \"workspace\"\n\n\
+{extra_variable}\
 restore:\n\
-\t(cd {{workspace}} && flutter pub get)\n\n\
+\t(cd {{{{workspace}}}} && flutter pub get)\n\n\
 format:\n\
-\t(cd {{workspace}} && dart format lib test integration_test)\n\n\
+\t(cd {{{{workspace}}}} && dart format lib test integration_test)\n\n\
 check-formatting:\n\
-\t(cd {{workspace}} && dart format --output=none --set-exit-if-changed lib test integration_test)\n\n\
+\t(cd {{{{workspace}}}} && dart format --output=none --set-exit-if-changed lib test integration_test)\n\n\
 check-tests:\n\
-\t(cd {{workspace}} && flutter test)\n\n\
-run:\n\
-\t(cd {{workspace}} && flutter run -d chrome --web-port 25617)\n\n\
+\t(cd {{{{workspace}}}} && flutter test)\n\n\
+{extra_recipe}\
+{run_block}\
 check-all:\n\
 \tjust check-formatting\n\
 \tjust check-tests\n"
-            .to_string();
+        );
     }
 
     if is_astro_saying_hello_output_repo(spec) {
@@ -1533,9 +1626,47 @@ fn build_astro_saying_hello_output_repo_tutorial_files(
 
 fn render_output_repo_tutorial_readme_content(spec: &OutputRepoSpec) -> String {
     if is_flutter_saying_hello_output_repo(spec) {
+        let mut choices = vec![
+            format!("- Project: `{}`", spec.project_slug),
+            "- Workspace folder: `workspace/`".to_string(),
+            "- Ecosystem: `Dart`".to_string(),
+            "- Language: `Dart`".to_string(),
+            "- Unit testing: `test`".to_string(),
+            "- Widget testing: `flutter_test`".to_string(),
+            "- Integration testing: `integration_test`".to_string(),
+            "- Mocking: `mocktail`".to_string(),
+            format!(
+                "- Storage: `{}`",
+                repo_choice_display(&spec.selections.storage)
+            ),
+            format!(
+                "- Surface: `{}`",
+                repo_choice_display(&spec.selections.surface)
+            ),
+            format!(
+                "- Target: `{}`",
+                repo_choice_display(&spec.selections.target)
+            ),
+            "- Framework: `Flutter`".to_string(),
+        ];
+
+        if let Some(protocol) = &spec.selections.protocol {
+            choices.push(format!("- Protocol: `{}`", repo_choice_display(protocol)));
+        }
+
+        if is_flutter_web_saying_hello_output_repo(spec)
+            || is_flutter_mobile_http_saying_hello_output_repo(spec)
+        {
+            choices.push(format!("- API Port: `{FOR_ALL_API_PORT}`"));
+        }
+
+        if is_flutter_web_saying_hello_output_repo(spec) {
+            choices.push(format!("- App Port: `{FOR_ALL_FRONTEND_PORT}`"));
+        }
+
         return format!(
-            "# Tutorial\n\nChoices for this repo:\n\n- Project: `{}`\n- Workspace folder: `workspace/`\n- Ecosystem: `Dart`\n- Language: `Dart`\n- Unit testing: `test`\n- Widget testing: `flutter_test`\n- Integration testing: `integration_test`\n- Mocking: `mocktail`\n- Storage: `no-storage`\n- Surface: `web`\n- Target: `front-end`\n- Framework: `Flutter`\n- Protocol: `http-json`\n- API Port: `{FOR_ALL_API_PORT}`\n- App Port: `{FOR_ALL_FRONTEND_PORT}`\n\nWork through these files in order:\n\n1. [Spec](spec.md)\n2. [Setup](setup.md)\n3. [Contracts](contracts.md)\n4. [Code](code.md)\n5. [Adapter](adapter.md)\n6. [Finish](finish.md)\n",
-            spec.project_slug
+            "# Tutorial\n\nChoices for this repo:\n\n{}\n\nWork through these files in order:\n\n1. [Spec](spec.md)\n2. [Setup](setup.md)\n3. [Contracts](contracts.md)\n4. [Code](code.md)\n5. [Adapter](adapter.md)\n6. [Finish](finish.md)\n",
+            choices.join("\n")
         );
     }
 
@@ -1581,7 +1712,8 @@ fn render_output_repo_tutorial_readme_content(spec: &OutputRepoSpec) -> String {
     }
 
     if is_go_saying_hello_output_repo(spec) {
-        choices.push(format!("- Port: `{FOR_ALL_API_PORT}`"));
+        choices.push(format!("- API Port: `{FOR_ALL_API_PORT}`"));
+        choices.push(format!("- App Port: `{FOR_ALL_FRONTEND_PORT}`"));
     }
 
     if is_astro_saying_hello_output_repo(spec) {
@@ -1603,6 +1735,7 @@ fn render_output_repo_setup_content(spec: &OutputRepoSpec) -> String {
         );
         let setup_commands = vec![
             "mkdir -p workspace".to_string(),
+            "curl -L -s https://raw.githubusercontent.com/github/gitignore/refs/heads/main/Go.gitignore > workspace/.gitignore".to_string(),
             format!("(cd workspace && go mod init {module_path})"),
             "(cd workspace && go get github.com/labstack/echo/v4)".to_string(),
             "(cd workspace && go get github.com/labstack/echo/v4/middleware)".to_string(),
@@ -1615,32 +1748,86 @@ fn render_output_repo_setup_content(spec: &OutputRepoSpec) -> String {
         return tutorial_file_markdown(
             "Setup",
             &format!(
-                "Keep the repository root for shared files like `README.md`, `LICENSE`, `.gitignore`, `.github/`, `justfile`, and `tutorial/`.\n\nPut all Go code inside a single `workspace/` folder.\n\nFrom the repository root, run each setup command and checkpoint it before moving to the next one:\n\n```bash\n{}\n```\n\nWhen the full workspace is finished, it should contain these files:\n\n```text\nworkspace/\n  go.mod\n  go.sum\n  cmd/\n    server/\n      main.go\n  internal/\n    contracts/\n      greeting.go\n    code/\n      greeting_service.go\n      greeting_service_test.go\n    adapter/\n      http/\n        greeting_handler.go\n        greeting_handler_test.go\n```",
+                "Keep the repository root for shared files like `README.md`, `LICENSE`, `.gitignore`, `.github/`, `justfile`, and `tutorial/`.\n\nPut all Go code inside a single `workspace/` folder.\n\nFrom the repository root, run each setup command and checkpoint it before moving to the next one:\n\n```bash\n{}\n```\n\nThis gives you:\n\n- a root-level `.gitignore` for operating-system noise and editor leftovers\n- a `workspace/.gitignore` for standard Go build output and local tooling files\n\nWhen the full workspace is finished, it should contain these files:\n\n```text\nworkspace/\n  .gitignore\n  go.mod\n  go.sum\n  cmd/\n    server/\n      main.go\n  internal/\n    contracts/\n      greeting.go\n    code/\n      greeting_service.go\n      greeting_service_test.go\n    adapter/\n      http/\n        greeting_handler.go\n        greeting_handler_test.go\n```",
                 render_setup_commands_with_commits(&setup_commands, 1)
             ),
         );
     }
 
     if is_flutter_saying_hello_output_repo(spec) {
-        let setup_commands = vec![
-            "flutter create --platforms=web --org com.intrepion --project-name saying_hello workspace".to_string(),
+        let mut setup_commands = vec![
+            if is_flutter_web_saying_hello_output_repo(spec) {
+                "flutter create --platforms=web --org com.intrepion --project-name saying_hello workspace".to_string()
+            } else {
+                "flutter create --platforms=android,ios --org com.intrepion --project-name saying_hello workspace".to_string()
+            },
+            "rm workspace/test/widget_test.dart".to_string(),
             "mkdir -p workspace/integration_test".to_string(),
             "mkdir -p workspace/lib/contracts".to_string(),
             "mkdir -p workspace/lib/code".to_string(),
             "mkdir -p workspace/lib/adapter".to_string(),
             "mkdir -p workspace/test/code".to_string(),
             "mkdir -p workspace/test/adapter".to_string(),
-            "(cd workspace && flutter pub add http)".to_string(),
             "(cd workspace && flutter pub add --dev test)".to_string(),
             "(cd workspace && flutter pub add --dev mocktail)".to_string(),
             "(cd workspace && flutter pub add --dev integration_test --sdk flutter)".to_string(),
         ];
 
+        if is_flutter_web_saying_hello_output_repo(spec)
+            || is_flutter_mobile_http_saying_hello_output_repo(spec)
+        {
+            setup_commands.insert(8, "(cd workspace && flutter pub add http)".to_string());
+        }
+
+        let workspace_tree = if is_flutter_mobile_saying_hello_output_repo(spec) {
+            r#"workspace/
+  pubspec.yaml
+  lib/
+    contracts/
+      greeting_service.dart
+    code/
+      default_greeting_service.dart
+    adapter/
+      greeting_page.dart
+  test/
+    code/
+      default_greeting_service_test.dart
+    adapter/
+      greeting_page_test.dart
+  integration_test/
+    app_test.dart
+  lib/main.dart"#
+                .to_string()
+        } else {
+            r#"workspace/
+  pubspec.yaml
+  lib/
+    contracts/
+      greeting_api.dart
+      greeting_response.dart
+    code/
+      load_greeting.dart
+    adapter/
+      http_greeting_api.dart
+      greeting_page.dart
+  test/
+    code/
+      load_greeting_test.dart
+    adapter/
+      http_greeting_api_test.dart
+      greeting_page_test.dart
+  integration_test/
+    app_test.dart
+  lib/main.dart"#
+                .to_string()
+        };
+
         return tutorial_file_markdown(
             "Setup",
             &format!(
-                "Keep the repository root for shared files like `README.md`, `LICENSE`, `.gitignore`, `.github/`, `justfile`, and `tutorial/`.\n\nPut all Flutter code inside a single `workspace/` folder.\n\nFrom the repository root, run each setup command and checkpoint it before moving to the next one:\n\n```bash\n{}\n```\n\nWhen the full workspace is finished, it should contain these files:\n\n```text\nworkspace/\n  pubspec.yaml\n  lib/\n    contracts/\n      greeting_api.dart\n      greeting_response.dart\n    code/\n      load_greeting.dart\n    adapter/\n      http_greeting_api.dart\n      greeting_page.dart\n  test/\n    code/\n      load_greeting_test.dart\n    adapter/\n      http_greeting_api_test.dart\n      greeting_page_test.dart\n  integration_test/\n    app_test.dart\n  lib/main.dart\n```",
-                render_setup_commands_with_commits(&setup_commands, 1)
+                "Keep the repository root for shared files like `README.md`, `LICENSE`, `.gitignore`, `.github/`, `justfile`, and `tutorial/`.\n\nPut all Flutter code inside a single `workspace/` folder.\n\nFrom the repository root, run each setup command and checkpoint it before moving to the next one:\n\n```bash\n{}\n```\n\nWhen the full workspace is finished, it should contain these files:\n\n```text\n{}\n```\n\nBefore you try `just run`, make sure Flutter can see a supported mobile device.\n\nOn macOS for iOS, open the simulator and then list devices:\n\n```bash\nopen -a Simulator\njust devices\n```\n\nFor Android, list available emulators, launch one, and then list devices again:\n\n```bash\njust emulators\nflutter emulators --launch <emulator-id>\njust devices\n```\n\nOnce `just devices` shows a supported iOS simulator or Android emulator, run the app with:\n\n```bash\njust run\n```\n\nIf you want to target a specific device id or name, use:\n\n```bash\njust run device=\"<device-id-or-name>\"\n```",
+                render_setup_commands_with_commits(&setup_commands, 1),
+                workspace_tree
             ),
         );
     }
@@ -1947,12 +2134,18 @@ fn render_output_repo_finish_content(spec: &OutputRepoSpec) -> String {
     }
 
     if is_flutter_saying_hello_output_repo(spec) {
-        return tutorial_file_markdown(
-            "Finish",
-            &format!(
+        let body = if is_flutter_web_saying_hello_output_repo(spec) {
+            format!(
                 "Make sure the matching Saying Hello API is running at `http://localhost:{FOR_ALL_API_PORT}`.\n\nThen start the Flutter web app from the repository root:\n\n```bash\njust run\n```\n\nOpen `http://localhost:{FOR_ALL_FRONTEND_PORT}` in your browser.\n\nTry these inputs:\n\n- submit the form with `Ada` and expect `Hello, Ada!`\n- submit the form with an empty input and expect `Hello!`\n\nIf the API is unavailable, the page should show `Sorry, the greeting API is unavailable right now.`"
-            ),
-        );
+            )
+        } else if is_flutter_mobile_http_saying_hello_output_repo(spec) {
+            format!(
+                "Make sure the matching Saying Hello API is running on your development machine at port `{FOR_ALL_API_PORT}`.\n\nThen start the Flutter mobile app from the repository root:\n\n```bash\njust run\n```\n\nIf you want to target a specific device, use:\n\n```bash\njust run device=\"<device-id-or-name>\"\n```\n\nIf you are running on Android and need to reach the host machine, use:\n\n```bash\njust --set api_base_url http://10.0.2.2:{FOR_ALL_API_PORT} run device=\"<android-device-id-or-name>\"\n```\n\nTry these inputs:\n\n- enter `Ada` and expect `Hello, Ada!`\n- submit an empty value and expect `Hello!`\n\nIf the API is unavailable, the app should show `Sorry, the greeting API is unavailable right now.`"
+            )
+        } else {
+            "Start the Flutter mobile app from the repository root:\n\n```bash\njust run\n```\n\nIf you want to target a specific device, use:\n\n```bash\njust run device=\"<device-id-or-name>\"\n```\n\nTry these inputs:\n\n- enter `Ada` and expect `Hello, Ada!`\n- submit an empty value and expect `Hello!`".to_string()
+        };
+        return tutorial_file_markdown("Finish", &body);
     }
 
     if is_astro_saying_hello_output_repo(spec) {
@@ -4230,14 +4423,14 @@ import (
 func main() {
 	e := echo.New()
 	e.Use(middleware.CORSWithConfig(middleware.CORSConfig{
-		AllowOrigins: []string{"http://localhost:25617"},
+		AllowOrigins: []string{"http://localhost:25616"},
 	}))
 	service := code.GreetingService{}
 	handler := httpadapter.NewGreetingHandler(service)
 
 	e.GET("/api/greeting", handler.GetGreeting)
 
-	log.Fatal(e.Start(":25616"))
+	log.Fatal(e.Start(":25664"))
 }
 ```
 
@@ -4255,6 +4448,36 @@ git commit --message "4. Green: Wire The Server Entry Point"
 }
 
 fn render_flutter_saying_hello_contracts_content(_spec: &OutputRepoSpec) -> String {
+    if is_flutter_mobile_saying_hello_output_repo(_spec) {
+        return tutorial_file_markdown(
+            "Contracts",
+            &rewrite_stage_commit_checkpoints(&rewrite_touch_creation_stage_only(
+                r#"Create the shared contract file:
+
+```bash
+touch workspace/lib/contracts/greeting_service.dart
+```
+
+Put this exact content in `workspace/lib/contracts/greeting_service.dart`:
+
+```dart
+abstract class GreetingService {
+  String greet(String name);
+}
+```
+
+Do not add tests here. Keep this layer limited to interfaces and small shared types.
+
+Then run:
+
+```bash
+git add --all
+git commit --message "Define greeting service contract"
+```"#,
+            )),
+        );
+    }
+
     tutorial_file_markdown(
         "Contracts",
         &rewrite_stage_commit_checkpoints(&rewrite_touch_creation_stage_only(
@@ -4301,7 +4524,214 @@ git commit --message "Define greeting contracts"
     )
 }
 
-fn render_flutter_saying_hello_code_content(_spec: &OutputRepoSpec) -> String {
+fn render_flutter_saying_hello_code_content(spec: &OutputRepoSpec) -> String {
+    if is_flutter_mobile_saying_hello_output_repo(spec) {
+        return tutorial_file_markdown(
+            "Code",
+            &rewrite_touch_creation_stage_only(
+                r#"### 1. Red: Add The First Failing Code Test
+
+Create the first code test file:
+
+```bash
+touch workspace/test/code/default_greeting_service_test.dart
+```
+
+Put this exact content in `workspace/test/code/default_greeting_service_test.dart`:
+
+```dart
+import 'package:saying_hello/code/default_greeting_service.dart';
+import 'package:test/test.dart';
+
+void main() {
+  test('returns the personalized greeting for a non-empty name', () {
+    final service = DefaultGreetingService();
+
+    final result = service.greet('Ada');
+
+    expect(result, 'Hello, Ada!');
+  });
+}
+```
+
+Run:
+
+```bash
+just check-tests
+git add --all
+git commit --message "1. Red: Add The First Failing Code Test"
+```
+
+### 2. Green: Return The Personalized Greeting
+
+Create the first production file:
+
+```bash
+touch workspace/lib/code/default_greeting_service.dart
+```
+
+Put this exact content in `workspace/lib/code/default_greeting_service.dart`:
+
+```dart
+import '../contracts/greeting_service.dart';
+
+class DefaultGreetingService implements GreetingService {
+  @override
+  String greet(String name) {
+    return 'Hello, $name!';
+  }
+}
+```
+
+Run:
+
+```bash
+just check-tests
+git add --all
+git commit --message "2. Green: Return The Personalized Greeting"
+```
+
+### 3. Red: Trim The Name Before Greeting
+
+Replace `workspace/test/code/default_greeting_service_test.dart` with:
+
+```dart
+import 'package:saying_hello/code/default_greeting_service.dart';
+import 'package:test/test.dart';
+
+void main() {
+  test('returns the personalized greeting for a non-empty name', () {
+    final service = DefaultGreetingService();
+
+    final result = service.greet('Ada');
+
+    expect(result, 'Hello, Ada!');
+  });
+
+  test('trims whitespace before greeting', () {
+    final service = DefaultGreetingService();
+
+    final result = service.greet('  Ada  ');
+
+    expect(result, 'Hello, Ada!');
+  });
+}
+```
+
+Run:
+
+```bash
+just check-tests
+git add --all
+git commit --message "3. Red: Trim The Name Before Greeting"
+```
+
+### 4. Green: Trim The Name Before Greeting
+
+Replace `workspace/lib/code/default_greeting_service.dart` with:
+
+```dart
+import '../contracts/greeting_service.dart';
+
+class DefaultGreetingService implements GreetingService {
+  @override
+  String greet(String name) {
+    final trimmedName = name.trim();
+    return 'Hello, $trimmedName!';
+  }
+}
+```
+
+Run:
+
+```bash
+just check-tests
+git add --all
+git commit --message "4. Green: Trim The Name Before Greeting"
+```
+
+### 5. Red: Return The Generic Greeting For Empty Input
+
+Replace `workspace/test/code/default_greeting_service_test.dart` with:
+
+```dart
+import 'package:saying_hello/code/default_greeting_service.dart';
+import 'package:test/test.dart';
+
+void main() {
+  test('returns the personalized greeting for a non-empty name', () {
+    final service = DefaultGreetingService();
+
+    final result = service.greet('Ada');
+
+    expect(result, 'Hello, Ada!');
+  });
+
+  test('trims whitespace before greeting', () {
+    final service = DefaultGreetingService();
+
+    final result = service.greet('  Ada  ');
+
+    expect(result, 'Hello, Ada!');
+  });
+
+  test('returns the generic greeting for empty input', () {
+    final service = DefaultGreetingService();
+
+    final result = service.greet('');
+
+    expect(result, 'Hello!');
+  });
+
+  test('returns the generic greeting for whitespace-only input', () {
+    final service = DefaultGreetingService();
+
+    final result = service.greet('   ');
+
+    expect(result, 'Hello!');
+  });
+}
+```
+
+Run:
+
+```bash
+just check-tests
+git add --all
+git commit --message "5. Red: Return The Generic Greeting For Empty Input"
+```
+
+### 6. Green: Return The Generic Greeting For Empty Input
+
+Replace `workspace/lib/code/default_greeting_service.dart` with:
+
+```dart
+import '../contracts/greeting_service.dart';
+
+class DefaultGreetingService implements GreetingService {
+  @override
+  String greet(String name) {
+    final trimmedName = name.trim();
+    if (trimmedName.isEmpty) {
+      return 'Hello!';
+    }
+
+    return 'Hello, $trimmedName!';
+  }
+}
+```
+
+Run:
+
+```bash
+just check-tests
+git add --all
+git commit --message "6. Green: Return The Generic Greeting For Empty Input"
+```"#,
+            ),
+        );
+    }
+
     tutorial_file_markdown(
         "Code",
         &rewrite_touch_creation_stage_only(
@@ -4577,11 +5007,215 @@ git commit --message "6. Green: Return A Friendly Message When The API Is Unavai
     )
 }
 
-fn render_flutter_saying_hello_adapter_content(_spec: &OutputRepoSpec) -> String {
-    tutorial_file_markdown(
-        "Adapter",
-        &rewrite_touch_creation_stage_only(
-            &format!(
+fn render_flutter_saying_hello_adapter_content(spec: &OutputRepoSpec) -> String {
+    if is_flutter_mobile_saying_hello_output_repo(spec) {
+        return tutorial_file_markdown(
+            "Adapter",
+            &rewrite_touch_creation_stage_only(
+                r#"### 1. Red: Add The Greeting Page Widget Test
+
+Create the widget test file:
+
+```bash
+touch workspace/test/adapter/greeting_page_test.dart
+```
+
+Put this exact content in `workspace/test/adapter/greeting_page_test.dart`:
+
+```dart
+import 'package:flutter/material.dart';
+import 'package:flutter_test/flutter_test.dart';
+import 'package:mocktail/mocktail.dart';
+import 'package:saying_hello/adapter/greeting_page.dart';
+import 'package:saying_hello/contracts/greeting_service.dart';
+
+class MockGreetingService extends Mock implements GreetingService {}
+
+void main() {
+  testWidgets('renders the greeting returned by the service', (tester) async {
+    final service = MockGreetingService();
+    when(() => service.greet('Ada')).thenReturn('Hello, Ada!');
+
+    await tester.pumpWidget(
+      MaterialApp(home: GreetingPage(service: service)),
+    );
+
+    await tester.enterText(find.byKey(const ValueKey('name-input')), 'Ada');
+    await tester.tap(find.byKey(const ValueKey('submit-button')));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Hello, Ada!'), findsOneWidget);
+  });
+}
+```
+
+Run:
+
+```bash
+just check-tests
+git add --all
+git commit --message "1. Red: Add The Greeting Page Widget Test"
+```
+
+### 2. Green: Build The Greeting Page
+
+Create the greeting page file:
+
+```bash
+touch workspace/lib/adapter/greeting_page.dart
+```
+
+Put this exact content in `workspace/lib/adapter/greeting_page.dart`:
+
+```dart
+import 'package:flutter/material.dart';
+
+import '../contracts/greeting_service.dart';
+
+class GreetingPage extends StatefulWidget {
+  final GreetingService service;
+
+  const GreetingPage({super.key, required this.service});
+
+  @override
+  State<GreetingPage> createState() => _GreetingPageState();
+}
+
+class _GreetingPageState extends State<GreetingPage> {
+  final _controller = TextEditingController();
+  String _message = '';
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  void _submit() {
+    final message = widget.service.greet(_controller.text);
+    setState(() {
+      _message = message;
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(title: const Text('Saying Hello')),
+      body: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            TextField(
+              key: const ValueKey('name-input'),
+              controller: _controller,
+              decoration: const InputDecoration(labelText: 'Name'),
+            ),
+            const SizedBox(height: 12),
+            ElevatedButton(
+              key: const ValueKey('submit-button'),
+              onPressed: _submit,
+              child: const Text('Say hello'),
+            ),
+            const SizedBox(height: 12),
+            Text(_message, key: const ValueKey('greeting-output')),
+          ],
+        ),
+      ),
+    );
+  }
+}
+```
+
+Run:
+
+```bash
+just check-tests
+git add --all
+git commit --message "2. Green: Build The Greeting Page"
+```
+
+### 3. Red: Add The Integration Test
+
+Create the integration test file:
+
+```bash
+touch workspace/integration_test/app_test.dart
+```
+
+Put this exact content in `workspace/integration_test/app_test.dart`:
+
+```dart
+import 'package:flutter/material.dart';
+import 'package:flutter_test/flutter_test.dart';
+import 'package:integration_test/integration_test.dart';
+import 'package:saying_hello/adapter/greeting_page.dart';
+import 'package:saying_hello/code/default_greeting_service.dart';
+
+void main() {
+  IntegrationTestWidgetsFlutterBinding.ensureInitialized();
+
+  testWidgets('submits the form and shows the greeting', (tester) async {
+    await tester.pumpWidget(
+      MaterialApp(home: GreetingPage(service: DefaultGreetingService())),
+    );
+    await tester.enterText(find.byKey(const ValueKey('name-input')), 'Ada');
+    await tester.tap(find.byKey(const ValueKey('submit-button')));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Hello, Ada!'), findsOneWidget);
+  });
+}
+```
+
+Run:
+
+```bash
+just check-tests
+git add --all
+git commit --message "3. Red: Add The Integration Test"
+```
+
+### 4. Green: Wire The Real Application
+
+Replace `workspace/lib/main.dart` with:
+
+```dart
+import 'package:flutter/material.dart';
+
+import 'adapter/greeting_page.dart';
+import 'code/default_greeting_service.dart';
+
+void main() {
+  runApp(const SayingHelloApp());
+}
+
+class SayingHelloApp extends StatelessWidget {
+  const SayingHelloApp({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return MaterialApp(
+      title: 'Saying Hello',
+      home: GreetingPage(service: DefaultGreetingService()),
+    );
+  }
+}
+```
+
+Run:
+
+```bash
+just check-tests
+git add --all
+git commit --message "4. Green: Wire The Real Application"
+```"#,
+            ),
+        );
+    }
+
+    let mut body = format!(
                 r#"### 1. Red: Add The HTTP Adapter Test
 
 Create the first adapter test file:
@@ -4895,9 +5529,20 @@ just check-tests
 git add --all
 git commit --message "6. Green: Wire The Real Application"
 ```"#
+            );
+
+    if is_flutter_mobile_http_saying_hello_output_repo(spec) {
+        body = body.replace(
+            &format!(
+                "import 'package:flutter/material.dart';\n\nimport 'adapter/greeting_page.dart';\nimport 'adapter/http_greeting_api.dart';\n\nvoid main() {{\n  runApp(const SayingHelloApp());\n}}\n\nclass SayingHelloApp extends StatelessWidget {{\n  const SayingHelloApp({{super.key}});\n\n  @override\n  Widget build(BuildContext context) {{\n    return MaterialApp(\n      title: 'Saying Hello',\n      home: GreetingPage(\n        api: HttpGreetingApi(baseUrl: 'http://localhost:{FOR_ALL_API_PORT}'),\n      ),\n    );\n  }}\n}}"
             ),
-        ),
-    )
+            &format!(
+                "import 'package:flutter/material.dart';\n\nimport 'adapter/greeting_page.dart';\nimport 'adapter/http_greeting_api.dart';\n\nconst apiBaseUrl = String.fromEnvironment(\n  'API_BASE_URL',\n  defaultValue: 'http://localhost:{FOR_ALL_API_PORT}',\n);\n\nvoid main() {{\n  runApp(const SayingHelloApp());\n}}\n\nclass SayingHelloApp extends StatelessWidget {{\n  const SayingHelloApp({{super.key}});\n\n  @override\n  Widget build(BuildContext context) {{\n    return MaterialApp(\n      title: 'Saying Hello',\n      home: GreetingPage(\n        api: HttpGreetingApi(baseUrl: apiBaseUrl),\n      ),\n    );\n  }}\n}}"
+            ),
+        );
+    }
+
+    tutorial_file_markdown("Adapter", &rewrite_touch_creation_stage_only(&body))
 }
 
 fn render_astro_saying_hello_contracts_content(_spec: &OutputRepoSpec) -> String {
@@ -5591,6 +6236,48 @@ mod tests {
         }
     }
 
+    fn sample_flutter_mobile_output_repo_spec() -> OutputRepoSpec {
+        OutputRepoSpec {
+            repo_name: "fa_tut_saying-hello".to_string(),
+            repo_description:
+                "Tutorial workspace for the Saying Hello project with Dart / Dart / test / mocktail / no-storage / mobile / all / Flutter choices."
+                    .to_string(),
+            project_slug: "saying-hello".to_string(),
+            selections: OutputRepoSelections {
+                ecosystem: "dart".to_string(),
+                language: "dart".to_string(),
+                testing: "test".to_string(),
+                mocking: "mocktail".to_string(),
+                storage: "no-storage".to_string(),
+                surface: "mobile".to_string(),
+                target: "all".to_string(),
+                framework: "flutter".to_string(),
+                protocol: None,
+            },
+        }
+    }
+
+    fn sample_flutter_mobile_http_output_repo_spec() -> OutputRepoSpec {
+        OutputRepoSpec {
+            repo_name: "fa_tut_saying-hello".to_string(),
+            repo_description:
+                "Tutorial workspace for the Saying Hello project with Dart / Dart / test / mocktail / no-storage / mobile / all / Flutter / http-json choices."
+                    .to_string(),
+            project_slug: "saying-hello".to_string(),
+            selections: OutputRepoSelections {
+                ecosystem: "dart".to_string(),
+                language: "dart".to_string(),
+                testing: "test".to_string(),
+                mocking: "mocktail".to_string(),
+                storage: "no-storage".to_string(),
+                surface: "mobile".to_string(),
+                target: "all".to_string(),
+                framework: "flutter".to_string(),
+                protocol: Some("http-json".to_string()),
+            },
+        }
+    }
+
     fn sample_dotnet_output_repo_spec() -> OutputRepoSpec {
         OutputRepoSpec {
             repo_name: "fa_tut_saying-hello".to_string(),
@@ -5707,6 +6394,46 @@ mod tests {
     }
 
     #[test]
+    fn output_repo_selection_overrides_allow_switching_saying_hello_to_flutter_mobile() {
+        let overrides = BootstrapSelectionOverrides {
+            ecosystem: Some("dart".to_string()),
+            surface: Some("mobile".to_string()),
+            target: Some("all".to_string()),
+            protocol: Some("none".to_string()),
+            ..BootstrapSelectionOverrides::default()
+        };
+
+        let selections = output_repo_selections_for_project("saying-hello", &overrides)
+            .expect("flutter mobile saying-hello should be supported");
+
+        assert_eq!(selections.ecosystem, "dart");
+        assert_eq!(selections.surface, "mobile");
+        assert_eq!(selections.target, "all");
+        assert_eq!(selections.framework, "flutter");
+        assert_eq!(selections.protocol, None);
+    }
+
+    #[test]
+    fn output_repo_selection_overrides_allow_switching_saying_hello_to_flutter_mobile_http_json() {
+        let overrides = BootstrapSelectionOverrides {
+            ecosystem: Some("dart".to_string()),
+            surface: Some("mobile".to_string()),
+            target: Some("all".to_string()),
+            protocol: Some("http-json".to_string()),
+            ..BootstrapSelectionOverrides::default()
+        };
+
+        let selections = output_repo_selections_for_project("saying-hello", &overrides)
+            .expect("flutter mobile http saying-hello should be supported");
+
+        assert_eq!(selections.ecosystem, "dart");
+        assert_eq!(selections.surface, "mobile");
+        assert_eq!(selections.target, "all");
+        assert_eq!(selections.framework, "flutter");
+        assert_eq!(selections.protocol, Some("http-json".to_string()));
+    }
+
+    #[test]
     fn output_repo_root_justfile_uses_go_commands_and_run_recipe() {
         let spec = sample_output_repo_spec();
 
@@ -5743,7 +6470,8 @@ mod tests {
         assert!(readme.contains("- Ecosystem: `go`"));
         assert!(readme.contains("- Target: `API`"));
         assert!(readme.contains("- Protocol: `http-json`"));
-        assert!(readme.contains("- Port: `25616`"));
+        assert!(readme.contains("- API Port: `25664`"));
+        assert!(readme.contains("- App Port: `25616`"));
     }
 
     #[test]
@@ -5756,9 +6484,11 @@ mod tests {
         assert!(setup.contains("go get github.com/labstack/echo/v4"));
         assert!(setup.contains("go get github.com/labstack/echo/v4/middleware"));
         assert!(setup.contains("go get github.com/stretchr/testify/assert github.com/stretchr/testify/mock"));
+        assert!(setup.contains("Go.gitignore > workspace/.gitignore"));
         assert!(setup.contains("workspace/internal/adapter/http"));
         assert!(setup.contains("run each setup command and checkpoint it before moving to the next one"));
         assert!(setup.contains("git commit --message \"mkdir -p workspace\""));
+        assert!(setup.contains("git commit --message \"curl -L -s https://raw.githubusercontent.com/github/gitignore/refs/heads/main/Go.gitignore > workspace/.gitignore\""));
         assert!(setup.contains("git commit --message \"(cd workspace && go mod init github.com/intrepion/fa_tut_saying-hello/workspace)\""));
         assert!(setup.contains("just format\ngit add --all\ngit commit --message \"(cd workspace && go get github.com/labstack/echo/v4)\""));
         assert!(setup.contains("just format\ngit add --all\ngit commit --message \"(cd workspace && go get github.com/labstack/echo/v4/middleware)\""));
@@ -5792,7 +6522,7 @@ mod tests {
         assert!(adapter.contains("git commit --message 'touch workspace/cmd/server/main.go'"));
         assert!(adapter.contains("\tservice.AssertExpectations(t)"));
         assert!(adapter.contains("middleware.CORSWithConfig"));
-        assert!(adapter.contains("AllowOrigins: []string{\"http://localhost:25617\"}"));
+        assert!(adapter.contains("AllowOrigins: []string{\"http://localhost:25616\"}"));
         assert!(adapter.contains("e.GET(\"/api/greeting\", handler.GetGreeting)"));
         assert!(adapter.contains("service.On(\"Greet\", \"Ada\").Return(\"Hello, Ada!\")"));
         assert!(adapter.contains("just format"));
@@ -5806,8 +6536,8 @@ mod tests {
         let finish = render_output_repo_finish_content(&spec);
 
         assert!(finish.contains("just run"));
-        assert!(finish.contains("http://localhost:25616/api/greeting?name=Ada"));
-        assert!(finish.contains("http://localhost:25617"));
+        assert!(finish.contains("http://localhost:25664/api/greeting?name=Ada"));
+        assert!(finish.contains("http://localhost:25616"));
         assert!(finish.contains("{\"message\":\"Hello, Ada!\"}"));
     }
 
@@ -5894,11 +6624,45 @@ mod tests {
         let justfile = render_output_repo_root_justfile_content(&spec);
 
         assert!(justfile.contains("\nrestore:\n"));
-        assert!(justfile.contains("flutter pub get"));
-        assert!(justfile.contains("dart format lib test integration_test"));
-        assert!(justfile.contains("flutter test"));
+        assert!(justfile.contains("(cd {{workspace}} && flutter pub get)"));
+        assert!(justfile.contains("(cd {{workspace}} && dart format lib test integration_test)"));
+        assert!(justfile.contains("(cd {{workspace}} && flutter test)"));
         assert!(justfile.contains("\nrun:\n"));
-        assert!(justfile.contains("flutter run -d chrome --web-port 25617"));
+        assert!(justfile.contains("(cd {{workspace}} && flutter run -d chrome --web-port 25616)"));
+    }
+
+    #[test]
+    fn flutter_mobile_output_repo_root_justfile_runs_mobile_app() {
+        let spec = sample_flutter_mobile_output_repo_spec();
+
+        let justfile = render_output_repo_root_justfile_content(&spec);
+
+        assert!(justfile.contains("(cd {{workspace}} && flutter pub get)"));
+        assert!(justfile.contains("(cd {{workspace}} && flutter test)"));
+        assert!(justfile.contains("\ndevices:\n"));
+        assert!(justfile.contains("\nemulators:\n"));
+        assert!(justfile.contains("(cd {{workspace}} && flutter emulators)"));
+        assert!(justfile.contains("run device=\"\":"));
+        assert!(justfile.contains("normalized_device='{{device}}'"));
+        assert!(justfile.contains("normalized_device=\"${normalized_device#device=}\""));
+        assert!(justfile.contains("if [ -n \"$normalized_device\" ]; then"));
+        assert!(justfile.contains("(cd {{workspace}} && flutter run -d \"$normalized_device\")"));
+        assert!(justfile.contains("(cd {{workspace}} && flutter run)"));
+        assert!(!justfile.contains("--web-port"));
+        assert!(!justfile.contains("api_base_url :="));
+    }
+
+    #[test]
+    fn flutter_mobile_http_output_repo_root_justfile_uses_configurable_api_base_url() {
+        let spec = sample_flutter_mobile_http_output_repo_spec();
+
+        let justfile = render_output_repo_root_justfile_content(&spec);
+
+        assert!(justfile.contains("api_base_url := \"http://localhost:25664\""));
+        assert!(justfile.contains("run device=\"\":"));
+        assert!(justfile.contains("normalized_device='{{device}}'"));
+        assert!(justfile.contains("(cd {{workspace}} && flutter run -d \"$normalized_device\" --dart-define=API_BASE_URL={{api_base_url}})"));
+        assert!(justfile.contains("(cd {{workspace}} && flutter run --dart-define=API_BASE_URL={{api_base_url}})"));
     }
 
     #[test]
@@ -5941,8 +6705,8 @@ mod tests {
         assert!(readme.contains("- Target: `front-end`"));
         assert!(readme.contains("- Framework: `Astro`"));
         assert!(readme.contains("- Protocol: `http-json`"));
-        assert!(readme.contains("- API Port: `25616`"));
-        assert!(readme.contains("- App Port: `25617`"));
+        assert!(readme.contains("- API Port: `25664`"));
+        assert!(readme.contains("- App Port: `25616`"));
     }
 
     #[test]
@@ -5959,8 +6723,34 @@ mod tests {
         assert!(readme.contains("- Mocking: `mocktail`"));
         assert!(readme.contains("- Framework: `Flutter`"));
         assert!(readme.contains("- Protocol: `http-json`"));
-        assert!(readme.contains("- API Port: `25616`"));
-        assert!(readme.contains("- App Port: `25617`"));
+        assert!(readme.contains("- API Port: `25664`"));
+        assert!(readme.contains("- App Port: `25616`"));
+    }
+
+    #[test]
+    fn flutter_mobile_output_repo_tutorial_readme_lists_mobile_choices_without_protocol() {
+        let spec = sample_flutter_mobile_output_repo_spec();
+
+        let readme = render_output_repo_tutorial_readme_content(&spec);
+
+        assert!(readme.contains("- Surface: `mobile`"));
+        assert!(readme.contains("- Target: `all`"));
+        assert!(!readme.contains("- Protocol:"));
+        assert!(!readme.contains("- API Port:"));
+        assert!(!readme.contains("- App Port:"));
+    }
+
+    #[test]
+    fn flutter_mobile_http_output_repo_tutorial_readme_lists_mobile_http_json_choices() {
+        let spec = sample_flutter_mobile_http_output_repo_spec();
+
+        let readme = render_output_repo_tutorial_readme_content(&spec);
+
+        assert!(readme.contains("- Surface: `mobile`"));
+        assert!(readme.contains("- Target: `all`"));
+        assert!(readme.contains("- Protocol: `http-json`"));
+        assert!(readme.contains("- API Port: `25664`"));
+        assert!(!readme.contains("- App Port:"));
     }
 
     #[test]
@@ -5987,7 +6777,7 @@ mod tests {
         assert!(format_script < setup.find("touch workspace/astro.config.mjs\njust format\ngit add --all").expect("expected formatting before touched config staging"));
         assert!(setup.contains("git commit --message \"touch workspace/astro.config.mjs\""));
         assert!(setup.contains("git commit --message \"Add Astro workspace configuration files\""));
-        assert!(setup.contains("npm pkg set scripts.dev=\"astro dev --host 0.0.0.0 --port 25617\""));
+        assert!(setup.contains("npm pkg set scripts.dev=\"astro dev --host 0.0.0.0 --port 25616\""));
         assert!(setup.contains("workspace/vitest.config.ts"));
         assert!(setup.contains("environment: 'node'"));
         assert!(setup.contains("opts into `jsdom` explicitly"));
@@ -6003,11 +6793,45 @@ mod tests {
         let setup = render_output_repo_setup_content(&spec);
 
         assert!(setup.contains("flutter create --platforms=web --org com.intrepion --project-name saying_hello workspace"));
+        assert!(setup.contains("rm workspace/test/widget_test.dart"));
         assert!(setup.contains("flutter pub add http"));
         assert!(setup.contains("flutter pub add --dev mocktail"));
         assert!(setup.contains("flutter pub add --dev integration_test --sdk flutter"));
         assert!(setup.contains("workspace/test/adapter"));
         assert!(setup.contains("workspace/integration_test"));
+    }
+
+    #[test]
+    fn flutter_mobile_output_repo_setup_content_uses_mobile_flutter_workspace_layout() {
+        let spec = sample_flutter_mobile_output_repo_spec();
+
+        let setup = render_output_repo_setup_content(&spec);
+
+        assert!(setup.contains("flutter create --platforms=android,ios --org com.intrepion --project-name saying_hello workspace"));
+        assert!(setup.contains("rm workspace/test/widget_test.dart"));
+        assert!(!setup.contains("flutter pub add http"));
+        assert!(setup.contains("flutter pub add --dev mocktail"));
+        assert!(setup.contains("default_greeting_service.dart"));
+        assert!(setup.contains("greeting_service.dart"));
+        assert!(setup.contains("open -a Simulator"));
+        assert!(setup.contains("just devices"));
+        assert!(setup.contains("just emulators"));
+        assert!(setup.contains("flutter emulators --launch <emulator-id>"));
+        assert!(setup.contains("just run device=\"<device-id-or-name>\""));
+    }
+
+    #[test]
+    fn flutter_mobile_http_output_repo_setup_content_adds_http_dependency() {
+        let spec = sample_flutter_mobile_http_output_repo_spec();
+
+        let setup = render_output_repo_setup_content(&spec);
+
+        assert!(setup.contains("flutter create --platforms=android,ios --org com.intrepion --project-name saying_hello workspace"));
+        assert!(setup.contains("flutter pub add http"));
+        assert!(setup.contains("load_greeting.dart"));
+        assert!(setup.contains("http_greeting_api.dart"));
+        assert!(setup.contains("open -a Simulator"));
+        assert!(setup.contains("flutter emulators --launch <emulator-id>"));
     }
 
     #[test]
@@ -6035,13 +6859,49 @@ mod tests {
         assert!(adapter.contains("Create the browser binding test file:"));
         assert!(adapter.contains("// @vitest-environment jsdom"));
         assert!(adapter.contains("experimental_AstroContainer as AstroContainer"));
-        assert!(adapter.contains("const apiBaseUrl = 'http://localhost:25616';"));
+        assert!(adapter.contains("const apiBaseUrl = 'http://localhost:25664';"));
         assert!(adapter.contains("data-api-base-url={apiBaseUrl}"));
         assert!(adapter.contains("const apiBaseUrl = page?.getAttribute('data-api-base-url');"));
         assert!(adapter.contains("api: new HttpGreetingApi(apiBaseUrl)"));
-        assert!(adapter.contains("data-api-base-url=\"http://localhost:25616\""));
+        assert!(adapter.contains("data-api-base-url=\"http://localhost:25664\""));
         assert!(adapter.contains("just format"));
         assert!(adapter.contains("just check-all"));
+    }
+
+    #[test]
+    fn flutter_mobile_local_contracts_code_and_adapter_tutorials_are_concrete() {
+        let spec = sample_flutter_mobile_output_repo_spec();
+
+        let contracts = render_flutter_saying_hello_contracts_content(&spec);
+        let code = render_flutter_saying_hello_code_content(&spec);
+        let adapter = render_flutter_saying_hello_adapter_content(&spec);
+        let finish = render_output_repo_finish_content(&spec);
+
+        assert!(contracts.contains("abstract class GreetingService"));
+        assert!(contracts.contains("touch workspace/lib/contracts/greeting_service.dart"));
+        assert!(code.contains("touch workspace/test/code/default_greeting_service_test.dart"));
+        assert!(code.contains("touch workspace/lib/code/default_greeting_service.dart"));
+        assert!(code.contains("returns the generic greeting for empty input"));
+        assert!(adapter.contains("MockGreetingService"));
+        assert!(adapter.contains("GreetingPage(service: service)"));
+        assert!(adapter.contains("DefaultGreetingService()"));
+        assert!(!adapter.contains("HttpGreetingApi"));
+        assert!(finish.contains("just run device=\"<device-id-or-name>\""));
+        assert!(!finish.contains("API is running"));
+    }
+
+    #[test]
+    fn flutter_mobile_http_adapter_and_finish_use_api_base_url() {
+        let spec = sample_flutter_mobile_http_output_repo_spec();
+
+        let adapter = render_flutter_saying_hello_adapter_content(&spec);
+        let finish = render_output_repo_finish_content(&spec);
+
+        assert!(adapter.contains("HttpGreetingApi(baseUrl: apiBaseUrl)"));
+        assert!(adapter.contains("const apiBaseUrl = String.fromEnvironment("));
+        assert!(finish.contains("just run device=\"<device-id-or-name>\""));
+        assert!(finish.contains("just --set api_base_url http://10.0.2.2:25664 run device=\"<android-device-id-or-name>\""));
+        assert!(finish.contains("matching Saying Hello API is running"));
     }
 
     #[test]
@@ -6050,8 +6910,8 @@ mod tests {
 
         let finish = render_output_repo_finish_content(&spec);
 
+        assert!(finish.contains("http://localhost:25664"));
         assert!(finish.contains("http://localhost:25616"));
-        assert!(finish.contains("http://localhost:25617"));
         assert!(finish.contains("Hello, Ada!"));
         assert!(finish.contains("Sorry, the greeting API is unavailable right now."));
     }
