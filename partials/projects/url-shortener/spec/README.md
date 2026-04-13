@@ -11,13 +11,13 @@ Canonical project contract for the `url-shortener` project.
 
 Build a small project app that introduces:
 
-- accepting one long URL from a web form
+- accepting one long URL through an adapter-managed input flow
 - turning an adapter-chosen short code into a local short path
 - building a short-link record with an initial visit count
-- incrementing the visit count when the short path is visited
+- incrementing the visit count when the short path is resolved
 - formatting a deterministic statistics report for the short link
 - test-first short-link and formatting logic in small core functions
-- thin full-stack web adapters
+- thin adapters
 
 ## Canonical Sample Short-Link Record
 
@@ -96,25 +96,25 @@ This project does not include:
 
 This spec follows the shared surface and setup-path rules in [Projects](../../README.md#shared-spec-conventions).
 
-For this project, every tutorial run should use a full-stack web adapter and adapt the same short-link, visit-count, and stats behavior instead of redefining it.
+For this project, every tutorial run should adapt the same short-link, visit-count, and stats behavior instead of redefining it.
 
 Adapters should:
 
-- use a web full-stack surface
-- render a form that accepts one long URL
+- use one chosen surface and target path
+- collect one long URL through the chosen surface
 - generate a unique short code for a new record
 - pass the short code and long URL to `build_short_link_record`
 - persist the resulting short-link record in a permanent data store
-- render or expose the resulting short path using `format_short_link_path`
-- when `/<short_code>` is visited:
+- render, link to, or return the resulting short path using `format_short_link_path`
+- when `/<short_code>` is resolved through the chosen surface:
   - load the matching short-link record from storage
   - pass it to `increment_short_link_visit_count`
   - persist the updated record
-  - redirect the visitor to the stored `long_url`
-- when `/<short_code>/stats` is visited:
+  - transfer control to the stored `long_url` in the way the chosen surface requires
+- when `/<short_code>/stats` or an equivalent stats interaction is resolved:
   - load the matching short-link record from storage
   - pass it to `format_short_link_stats`
-  - render the returned lines in the form the web surface requires
+  - render or return the returned lines in the form the chosen surface requires
 
 ## Output Repository Expectations
 
@@ -134,5 +134,4 @@ Minimum test expectations:
 - a test that `format_short_link_path("abc1234")` returns `/abc1234`
 - a test that `increment_short_link_visit_count` preserves the exact short code and long URL while incrementing the count
 - a test that `format_short_link_stats` preserves the exact canonical three-line stats output
-- tests for every adapter built in the chosen run that prove it accepts the long URL from a form, persists the short-link record, redirects from the short path, increments and persists the visit count on each visit, and renders the stats page correctly
-
+- tests for every adapter built in the chosen run that prove it accepts the long URL through the chosen surface, persists the short-link record, resolves the short path correctly, increments and persists the visit count on each resolution, and renders the stats output correctly

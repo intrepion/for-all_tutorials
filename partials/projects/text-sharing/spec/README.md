@@ -11,14 +11,14 @@ Canonical project contract for the `text-sharing` project.
 
 Build a small project app that introduces:
 
-- accepting one text snippet from a web form
+- accepting one text snippet through an adapter-managed input flow
 - building a snippet record from an adapter-chosen snippet ID
 - generating a local share path for the saved snippet
 - generating a local edit path for that snippet
-- loading and displaying a saved snippet by URL
-- pre-filling the new-snippet interface with existing text for editing
+- loading and displaying a saved snippet through the chosen surface
+- pre-filling the chosen edit experience with existing text
 - test-first snippet and path logic in small core functions
-- thin full-stack web adapters
+- thin adapters
 
 ## Canonical Sample Snippet Record
 
@@ -94,24 +94,24 @@ This project does not include:
 
 This spec follows the shared surface and setup-path rules in [Projects](../../README.md#shared-spec-conventions).
 
-For this project, every tutorial run should use a full-stack web adapter and adapt the same snippet, share-path, edit-path, view, and edit-seed behavior instead of redefining it.
+For this project, every tutorial run should adapt the same snippet, share-path, edit-path, view, and edit-seed behavior instead of redefining it.
 
 Adapters should:
 
-- use a web full-stack surface
-- render a form with a text area for entering one text snippet
+- use one chosen surface and target path
+- collect one text snippet through the chosen surface
 - generate a unique snippet ID for a new record
 - pass the snippet ID and entered text to `build_text_snippet_record`
 - persist the resulting record in a permanent data store
-- expose the share URL using `format_text_snippet_path`
-- when `/<snippet_id>` is visited:
+- expose or return the share path using `format_text_snippet_path`
+- when the adapter resolves `/<snippet_id>` or an equivalent share interaction:
   - load the matching snippet record from storage
   - pass it to `format_text_snippet_view`
-  - render the returned content and an invitation to edit
-- when `/<snippet_id>/edit` is visited:
+  - render or return the returned content and an invitation to edit
+- when the adapter resolves `/<snippet_id>/edit` or an equivalent edit interaction:
   - load the matching snippet record from storage
   - pass it to `build_text_snippet_edit_seed`
-  - pre-fill the same create-snippet interface with the returned text
+  - pre-fill the chosen edit experience with the returned text
 
 Saving from the edit form may create a new snippet record with a new snippet ID rather than mutating the original saved record.
 
@@ -134,5 +134,4 @@ Minimum test expectations:
 - a test that `format_text_snippet_edit_path("abc1234")` returns `/abc1234/edit`
 - a test that `format_text_snippet_view` preserves the exact canonical two-line output
 - a test that `build_text_snippet_edit_seed` returns the exact canonical snippet text
-- tests for every adapter built in the chosen run that prove it accepts text from the form, persists the snippet record, exposes the share URL, loads and displays the snippet, and pre-fills the create form with existing text on the edit route
-
+- tests for every adapter built in the chosen run that prove it accepts text through the chosen surface, persists the snippet record, exposes the share path, loads and displays the snippet, and pre-fills the chosen edit experience with existing text

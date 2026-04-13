@@ -9,36 +9,35 @@ Project-specific adapter instruction fragment for the `text-sharing` adapter rep
 
 ### 1. Red: Add Adapter-Level Tests
 
-In a separate adapter repo, add failing tests that prove the chosen full-stack web adapter:
+In a separate adapter repo, add failing tests that prove the chosen adapter:
 
-- accepts one text snippet from a text area
+- accepts one text snippet through the chosen surface
 - generates a unique snippet ID
 - delegates snippet creation, path formatting, view formatting, and edit-seed behavior to the core logic
 - persists snippet records
-- exposes the share URL
-- loads and displays the saved snippet from the share route
-- pre-fills the create form with existing text on the edit route
+- exposes the share path
+- loads and displays the saved snippet from the share interaction
+- pre-fills the chosen edit experience with existing text on the edit interaction
 
-### 2. Green: Add The Thin Full-Stack Adapter
+### 2. Green: Add The Thin Adapter
 
-Add the thinnest possible full-stack web adapter:
+Add the thinnest possible adapter:
 
-- render a form with a text area for entering one text snippet
+- collect one text snippet through the chosen surface
 - generate a unique snippet ID for a new record
 - pass the snippet ID and text to `build_text_snippet_record`
 - persist the resulting record in a permanent data store
-- use `format_text_snippet_path` when showing or linking to the share URL
-- when `/<snippet_id>` is visited:
+- use `format_text_snippet_path` when showing, linking to, or returning the share path
+- when `/<snippet_id>` is resolved through the chosen surface:
   - load the matching record
   - pass it to `format_text_snippet_view`
-  - render the returned content and an invitation to edit
-- when `/<snippet_id>/edit` is visited:
+  - render or return the returned content and an invitation to edit
+- when `/<snippet_id>/edit` is resolved through the chosen surface:
   - load the matching record
   - pass it to `build_text_snippet_edit_seed`
-  - pre-fill the same create form with the returned text
-- keep routing, persistence, and form handling code out of the core snippet logic
+  - pre-fill the chosen edit experience with the returned text
+- keep routing, persistence, and surface interaction code out of the core snippet logic
 
 ### 3. Refactor
 
 Clean up any remaining duplication while keeping the full suite green.
-

@@ -11,14 +11,14 @@ Canonical project contract for the `todo-list` project.
 
 Build a small project app that introduces:
 
-- collecting repeated task input from the user
+- collecting repeated task input through an adapter-managed interaction flow
 - ending task entry when the user enters a blank task
-- persisting tasks in one permanent local JSON file
-- parsing and serializing a stored JSON task list
+- persisting tasks in a durable storage mechanism such as local-file JSON or a database
+- parsing and serializing a canonical JSON task-list representation
 - removing one completed task by exact text
 - formatting the current task list for display
 - test-first parsing, list, and formatting logic in small core functions
-- thin command-line adapters
+- thin adapters
 
 ## Canonical Sample Stored Task Data
 
@@ -98,7 +98,6 @@ Examples:
 
 This project does not include:
 
-- a graphical interface
 - due dates
 - priorities
 - categories or tags
@@ -106,29 +105,28 @@ This project does not include:
 - syncing tasks across machines
 - partial-match removal
 - task editing
-- network access
 
 ## Surface Expectations
 
 This spec follows the shared surface and setup-path rules in [Projects](../../README.md#shared-spec-conventions).
 
-For this project, every tutorial run should use a command-line adapter and adapt the same parsing, append, removal, formatting, and serialization behavior instead of redefining it.
+For this project, every tutorial run should adapt the same parsing, append, removal, formatting, and serialization behavior instead of redefining it.
 
 Adapters should:
 
-- use a command-line surface
-- read the existing stored tasks from one permanent local JSON file
-- pass the stored text to `parse_task_storage`
-- prompt repeatedly for chores or tasks
-- stop prompting for new tasks when the user enters a blank task
+- use one chosen surface and target path
+- load the existing stored tasks from the chosen durable storage mechanism in a form equivalent to the canonical JSON task array
+- pass equivalent stored JSON text to `parse_task_storage`
+- collect repeated chores or tasks through the chosen surface
+- stop task entry when the user enters a blank task
 - not pass the blank task to `append_task`
 - for each non-blank entered task:
   - pass the current task list and the entered task to `append_task`
 - display all tasks by passing the current task list to `format_task_list`
-- prompt for one task to remove
-- pass the current task list and the entered completed task to `remove_task_by_exact_text`
+- collect one task to remove through the chosen surface
+- pass the current task list and the chosen completed task to `remove_task_by_exact_text`
 - persist the final task list by passing it to `serialize_task_storage`
-- write the serialized JSON back to the same permanent local JSON file
+- if the chosen storage engine is not itself a local JSON file, translate the serialized JSON array into the chosen durable storage representation before saving it
 
 ## Output Repository Expectations
 
@@ -150,4 +148,4 @@ Minimum test expectations:
 - a test that `remove_task_by_exact_text` preserves the unchanged list for a non-matching task
 - a test that `format_task_list` preserves exact task text and order
 - a test that `serialize_task_storage` preserves exact task text and order in a JSON array document
-- tests for every adapter built in the chosen run that prove it reads from one permanent local JSON file, stops task entry on a blank task without storing it, displays the current tasks, removes the chosen completed task, and writes the final serialized JSON back to the same file
+- tests for every adapter built in the chosen run that prove it loads tasks from the chosen durable storage mechanism, stops task entry on a blank task without storing it, displays the current tasks, removes the chosen completed task, and persists the final task list without changing the canonical JSON task semantics

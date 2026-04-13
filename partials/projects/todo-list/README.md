@@ -18,12 +18,12 @@ Project home for the `todo-list` curriculum project.
 
 `todo-list` exists to teach:
 
-- collecting repeated prompt-driven task input
+- collecting repeated task input through an adapter-managed interaction flow
 - stopping an input loop with a blank entry
-- persisting task data in one permanent local JSON file
-- parsing and serializing a stored JSON task list
+- persisting task data in a durable storage mechanism such as local-file JSON or a database
+- parsing and serializing a canonical JSON task-list representation
 - removing a completed task by exact text
-- separating storage and prompt flow from deterministic list logic
+- separating storage and interaction flow from deterministic list logic
 - keeping adapters thin while the core owns the task-list rules
 
 This project follows the shared workflow and output model in [Projects](../README.md#shared-workflow) and [Projects](../README.md#shared-output-model).

@@ -119,6 +119,9 @@ Recommended sequence:
 Project specs in this folder share these rules:
 
 - a single run only needs one chosen surface and target path
+- project specs should describe the project behavior and adapter responsibilities without unnecessarily fixing one surface, target, framework, or local persistence shape
+- when persistence is part of a project and the project is not defined around a named external service, adapters may choose either local-file storage or database-backed storage
+- when a chosen storage engine is not itself raw JSON text, the adapter may translate between that storage representation and any canonical JSON examples used by the spec
 - the currently supported setup paths belong in `partials/setups/`, not in each spec
 - adapters must not redefine the core project rules
 

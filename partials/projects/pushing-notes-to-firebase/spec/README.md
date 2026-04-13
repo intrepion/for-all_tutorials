@@ -11,14 +11,14 @@ Canonical project contract for the `pushing-notes-to-firebase` project.
 
 Build a small project app that introduces:
 
-- handling two command-line commands
+- handling note-creation and note-listing behaviors through an adapter
 - saving a note through the Firebase Realtime Database REST API
 - reading a collection of saved notes from Firebase
 - parsing keyed JSON note records into structured note values
 - ordering notes by descending calendar date
 - formatting a notes report
 - test-first parsing, ordering, and formatting logic in small core functions
-- thin command-line adapters
+- thin adapters
 
 ## Canonical Sample API Response
 
@@ -89,7 +89,6 @@ Examples:
 
 This project does not include:
 
-- a graphical interface
 - editing or deleting notes
 - tagging or searching notes
 - offline storage
@@ -102,25 +101,25 @@ This project does not include:
 
 This spec follows the shared surface and setup-path rules in [Projects](../../README.md#shared-spec-conventions).
 
-For this project, every tutorial run should use a command-line adapter and adapt the same note-record, parsing, ordering, and formatting behavior instead of redefining it.
+For this project, every tutorial run should adapt the same note-record, parsing, ordering, and formatting behavior instead of redefining it.
 
 Adapters should:
 
-- use a command-line surface
-- support these commands:
+- use one chosen surface and target path
+- support note-creation and note-listing interactions equivalent to:
   - `mynotes new <note text>`
   - `mynotes show`
-- for `mynotes new <note text>`:
+- for the note-creation interaction:
   - determine the current calendar date in `YYYY-MM-DD` format
   - pass the note text and date to `build_note_record`
   - write the resulting note record to Firebase Realtime Database using its REST API
   - use HTTPS Firebase Realtime Database endpoints ending in `.json`
-  - render `format_note_saved_message()`
-- for `mynotes show`:
+  - render or return `format_note_saved_message()`
+- for the note-listing interaction:
   - read the notes collection from Firebase Realtime Database using its REST API
   - pass the response body to `parse_notes_collection_response`
   - pass the parsed notes to `format_notes_report`
-  - render the returned lines in order
+  - render or return the returned lines in the form the chosen surface requires
 - use direct REST requests instead of a premade Firebase client library
 
 ## Output Repository Expectations
@@ -142,5 +141,4 @@ Minimum test expectations:
 - a test that `parse_notes_collection_response` returns the canonical notes in descending date order
 - a test that `format_note_saved_message` preserves the exact canonical saved message
 - a test that `format_notes_report` preserves the exact canonical report lines
-- tests for every adapter built in the chosen run that prove it handles the `new` and `show` commands, uses direct Firebase REST requests, delegates note building/parsing/formatting to the core logic, and renders the canonical saved message and notes report correctly
-
+- tests for every adapter built in the chosen run that prove it handles note-creation and note-listing interactions equivalent to `new` and `show`, uses direct Firebase REST requests, delegates note building/parsing/formatting to the core logic, and renders the canonical saved message and notes report correctly

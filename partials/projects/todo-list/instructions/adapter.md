@@ -9,25 +9,25 @@ Project-specific adapter instruction fragment for the `todo-list` adapter repo.
 
 ### 1. Red: Add An Adapter-Level Test
 
-In a separate adapter repo, add a failing test that proves the chosen command-line adapter reads the stored tasks from one permanent local JSON file, prompts repeatedly for new tasks until a blank entry, delegates list parsing and updates to the core logic, displays the current tasks, removes one completed task, and writes the final serialized JSON back to the same file.
+In a separate adapter repo, add a failing test that proves the chosen adapter loads stored tasks from the chosen durable storage mechanism, collects repeated task input until a blank entry, delegates list parsing and updates to the core logic, displays the current tasks, removes one completed task, and persists the final task list without changing the canonical JSON task semantics.
 
-### 2. Green: Add The Thin Command-Line Adapter
+### 2. Green: Add The Thin Adapter
 
-Add the thinnest possible adapter for the command-line surface you are building:
+Add the thinnest possible adapter for the chosen surface and storage approach:
 
-- read stored task JSON from one permanent local JSON file
-- pass that text to `parse_task_storage`
-- prompt repeatedly for chores or tasks
-- stop prompting for new tasks when the user enters a blank task
+- load the stored tasks from the chosen durable storage mechanism in a form equivalent to the canonical JSON task array
+- pass equivalent stored JSON text to `parse_task_storage`
+- collect repeated chores or tasks through the chosen surface
+- stop task entry when the user enters a blank task
 - for each non-blank task:
   - pass the current list and the task to `append_task`
 - pass the resulting list to `format_task_list`
-- render the returned lines in order
-- prompt for one completed task to remove
+- render or return the resulting list in the form the chosen surface requires
+- collect one completed task to remove through the chosen surface
 - pass the current list and the removal text to `remove_task_by_exact_text`
 - pass the final list to `serialize_task_storage`
-- write the serialized JSON back to the same permanent local JSON file
-- keep prompt flow and file I/O code out of the core task logic
+- if the chosen storage engine is not itself a local JSON file, translate the serialized JSON array into the chosen durable storage representation before saving it
+- keep surface interaction and storage code out of the core task logic
 
 ### 3. Refactor
 
