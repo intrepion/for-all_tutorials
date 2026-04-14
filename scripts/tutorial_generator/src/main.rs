@@ -1971,7 +1971,6 @@ fn render_output_repo_setup_content(spec: &OutputRepoSpec) -> String {
             GITHUB_OWNER, spec.repo_name
         );
         let setup_commands = vec![
-            "mkdir -p workspace".to_string(),
             "curl -L -s https://raw.githubusercontent.com/github/gitignore/refs/heads/main/Go.gitignore > workspace/.gitignore".to_string(),
             format!("(cd workspace && go mod init {module_path})"),
             "(cd workspace && go get github.com/labstack/echo/v4)".to_string(),
@@ -1982,7 +1981,7 @@ fn render_output_repo_setup_content(spec: &OutputRepoSpec) -> String {
             "Setup",
             &format!(
                 "Keep the repository root for shared files like `README.md`, `LICENSE`, `.gitignore`, `.github/`, `justfile`, and `tutorial/`.\n\nPut all Go code inside a single `workspace/` folder.\n\nFrom the repository root, run each setup command and checkpoint it before moving to the next one:\n\n```bash\n{}\n```\n\nThis gives you:\n\n- a root-level `.gitignore` for operating-system noise and editor leftovers\n- a `workspace/.gitignore` for standard Go build output and local tooling files\n\nWhen the full workspace is finished, it should contain these files:\n\n```text\nworkspace/\n  .gitignore\n  go.mod\n  go.sum\n  cmd/\n    server/\n      main.go\n  internal/\n    contracts/\n      greeting.go\n    code/\n      greeting_service.go\n      greeting_service_test.go\n    adapter/\n      http/\n        greeting_handler.go\n        greeting_handler_test.go\n```",
-                render_setup_commands_with_commits(&setup_commands, 1)
+                render_setup_commands_with_commits(&setup_commands, 0)
             ),
         );
     }
@@ -1993,7 +1992,6 @@ fn render_output_repo_setup_content(spec: &OutputRepoSpec) -> String {
             GITHUB_OWNER, spec.repo_name
         );
         let setup_commands = vec![
-            "mkdir -p workspace".to_string(),
             "curl -L -s https://raw.githubusercontent.com/github/gitignore/refs/heads/main/Go.gitignore > workspace/.gitignore".to_string(),
             format!("(cd workspace && go mod init {module_path})"),
             "(cd workspace && go get github.com/labstack/echo/v4)".to_string(),
@@ -2006,7 +2004,7 @@ fn render_output_repo_setup_content(spec: &OutputRepoSpec) -> String {
             "Setup",
             &format!(
                 "Keep the repository root for shared files like `README.md`, `LICENSE`, `.gitignore`, `.github/`, `justfile`, and `tutorial/`.\n\nPut all Go code inside a single `workspace/` folder.\n\nFrom the repository root, run each setup command and checkpoint it before moving to the next one:\n\n```bash\n{}\n```\n\nThis gives you:\n\n- a root-level `.gitignore` for operating-system noise and editor leftovers\n- a `workspace/.gitignore` for standard Go build output and local tooling files\n- a `workspace/data/tasks.db` file path for the durable SQLite task store used by the REST API adapter\n\nWhen the full workspace is finished, it should contain these files:\n\n```text\nworkspace/\n  .gitignore\n  go.mod\n  go.sum\n  cmd/\n    server/\n      main.go\n  data/\n    tasks.db\n  internal/\n    contracts/\n      task_api.go\n    code/\n      task_service.go\n      task_service_test.go\n    adapter/\n      http/\n        task_handler.go\n        task_handler_test.go\n      storage/\n        sqlite_task_store.go\n        sqlite_task_store_test.go\n```",
-                render_setup_commands_with_commits(&setup_commands, 1)
+                render_setup_commands_with_commits(&setup_commands, 0)
             ),
         );
     }
@@ -2017,7 +2015,6 @@ fn render_output_repo_setup_content(spec: &OutputRepoSpec) -> String {
             GITHUB_OWNER, spec.repo_name
         );
         let setup_commands = vec![
-            "mkdir -p workspace".to_string(),
             "curl -L -s https://raw.githubusercontent.com/github/gitignore/refs/heads/main/Go.gitignore > workspace/.gitignore".to_string(),
             format!("(cd workspace && go mod init {module_path})"),
             "(cd workspace && go get github.com/labstack/echo/v4)".to_string(),
@@ -2029,7 +2026,7 @@ fn render_output_repo_setup_content(spec: &OutputRepoSpec) -> String {
             "Setup",
             &format!(
                 "Keep the repository root for shared files like `README.md`, `LICENSE`, `.gitignore`, `.github/`, `justfile`, and `tutorial/`.\n\nPut all Go code inside a single `workspace/` folder.\n\nFrom the repository root, run each setup command and checkpoint it before moving to the next one:\n\n```bash\n{}\n```\n\nThis gives you:\n\n- a root-level `.gitignore` for operating-system noise and editor leftovers\n- a `workspace/.gitignore` for standard Go build output and local tooling files\n- a `workspace/data/tasks.json` file path for the durable local JSON task store used by the API adapter\n\nWhen the full workspace is finished, it should contain these files:\n\n```text\nworkspace/\n  .gitignore\n  go.mod\n  go.sum\n  cmd/\n    server/\n      main.go\n  data/\n    tasks.json\n  internal/\n    contracts/\n      task_list_service.go\n    code/\n      task_list_service.go\n      task_list_service_test.go\n    adapter/\n      http/\n        task_handler.go\n        task_handler_test.go\n      storage/\n        json_task_store.go\n        json_task_store_test.go\n```",
-                render_setup_commands_with_commits(&setup_commands, 1)
+                render_setup_commands_with_commits(&setup_commands, 0)
             ),
         );
     }
@@ -2234,7 +2231,6 @@ git commit --message "Enable macOS network client entitlement"
 
     if is_astro_saying_hello_output_repo(spec) {
         let setup_commands = vec![
-            "mkdir -p workspace".to_string(),
             "curl -L -s https://raw.githubusercontent.com/github/gitignore/refs/heads/main/Node.gitignore > workspace/.gitignore".to_string(),
             "printf '\\n# Astro\\n.astro/\\ndist/\\n\\n# Vitest\\ncoverage/\\n' >> workspace/.gitignore".to_string(),
             "(cd workspace && npm init --yes)".to_string(),
@@ -2262,7 +2258,7 @@ git commit --message "Enable macOS network client entitlement"
             "Setup",
             &format!(
                 "Keep the repository root for shared files like `README.md`, `LICENSE`, `.gitignore`, `.github/`, `justfile`, and `tutorial/`.\n\nPut all Astro code inside a single `workspace/` folder.\n\nFrom the repository root, run each setup command and checkpoint it before moving to the next one:\n\n```bash\n{}\n```\n\nPut this exact content in `workspace/astro.config.mjs`:\n\n```js\nimport {{ defineConfig }} from 'astro/config';\n\nexport default defineConfig({{}});\n```\n\nPut this exact content in `workspace/tsconfig.json`:\n\n```json\n{{\n  \"extends\": \"astro/tsconfigs/strict\"\n}}\n```\n\nPut this exact content in `workspace/vitest.config.ts`:\n\n```ts\n/// <reference types=\"vitest/config\" />\n\nimport {{ getViteConfig }} from 'astro/config';\n\nexport default getViteConfig({{\n  test: {{\n    environment: 'node',\n  }},\n}});\n```\n\nPut this exact content in `workspace/src/env.d.ts`:\n\n```ts\n/// <reference types=\"astro/client\" />\n```\n\nAfter those setup files have their final contents, run:\n\n```bash\njust format\ngit add --all\ngit commit --message \"Add Astro workspace configuration files\"\n```\n\nThe browser-binding test later in `tutorial/adapter.md` opts into `jsdom` explicitly. Everything else can stay on the default Node test environment.\n\nWhen the full workspace is finished, it should contain these files:\n\n```text\nworkspace/\n  .gitignore\n  astro.config.mjs\n  package.json\n  package-lock.json\n  tsconfig.json\n  vitest.config.ts\n  src/\n    env.d.ts\n    contracts/\n      greeting-api.ts\n      greeting-response.ts\n    code/\n      load-greeting.ts\n      load-greeting.test.ts\n    adapter/\n      http-greeting-api.ts\n      http-greeting-api.test.ts\n      bind-greeting-form.ts\n      bind-greeting-form.test.ts\n      index-page.test.ts\n    pages/\n      index.astro\n```",
-                render_setup_commands_with_commits(&setup_commands, 12)
+                render_setup_commands_with_commits(&setup_commands, 11)
             ),
         );
     }
@@ -2274,7 +2270,6 @@ git commit --message "Enable macOS network client entitlement"
     let adapter_project_name = adapter_project_name(&spec.project_slug);
     let adapter_test_project_name = adapter_test_project_name(&spec.project_slug);
     let setup_commands = vec![
-        "mkdir -p workspace".to_string(),
         format!(
             "dotnet new sln --format sln --name {solution_name} --output workspace"
         ),
@@ -2285,38 +2280,42 @@ git commit --message "Enable macOS network client entitlement"
         "Setup",
         &format!(
             "Keep the repository root for shared files like `README.md`, `LICENSE`, `.gitignore`, `.github/`, and `tutorial/`.\n\nPut all .NET code inside a single `workspace/` folder.\n\nFrom the repository root, run each setup command and checkpoint it before moving to the next one:\n\n```bash\n{}\n```\n\nThis gives you:\n\n- a root-level `.gitignore` for operating-system noise and editor leftovers\n- a `workspace/.gitignore` for standard `.NET` build output and local tooling files\n\nWhen the full workspace is finished, it should contain these projects:\n\n- `workspace/src/{contracts_project_name}`\n- `workspace/src/{code_project_name}`\n- `workspace/tests/{code_test_project_name}`\n- `workspace/src/{adapter_project_name}`\n- `workspace/tests/{adapter_test_project_name}`\n\nThe next files assume this layout:\n\n```text\nworkspace/\n  .gitignore\n  {solution_name}.sln\n  src/\n    {contracts_project_name}/\n    {code_project_name}/\n    {adapter_project_name}/\n  tests/\n    {code_test_project_name}/\n    {adapter_test_project_name}/\n```",
-            render_setup_commands_with_commits(&setup_commands, 1)
+            render_setup_commands_with_commits(&setup_commands, 0)
         ),
     )
 }
 
 fn render_setup_commands_with_commits(commands: &[String], format_start_index: usize) -> String {
     let mut ensured_touch_dirs = BTreeSet::new();
+    let mut rendered_blocks = vec!["rm -rf workspace".to_string(), "mkdir -p workspace".to_string()];
 
-    commands
-        .iter()
-        .enumerate()
-        .map(|(index, command)| {
-            let mut command_lines = Vec::new();
-            if let Some(dir) = touch_parent_dir(command) {
-                if ensured_touch_dirs.insert(dir.clone()) {
-                    command_lines.push(format!("mkdir -p {dir}"));
-                }
+    for (index, command) in commands.iter().enumerate() {
+        let mut command_lines = Vec::new();
+        if let Some(dir) = touch_parent_dir(command) {
+            if ensured_touch_dirs.insert(dir.clone()) {
+                command_lines.push(format!("mkdir -p {dir}"));
             }
-            command_lines.push(command.clone());
-            let maybe_format = if index >= format_start_index {
-                "just format\n"
-            } else {
-                ""
-            };
-            format!(
-                "{}\n{maybe_format}git add --all\ngit commit --message \"{}\"",
-                command_lines.join("\n"),
-                escape_shell_double_quoted(command)
-            )
-        })
-        .collect::<Vec<_>>()
-        .join("\n\n")
+        }
+        command_lines.push(command.clone());
+
+        if command.starts_with("mkdir -p ") {
+            rendered_blocks.push(command_lines.join("\n"));
+            continue;
+        }
+
+        let maybe_format = if index >= format_start_index {
+            "just format\n"
+        } else {
+            ""
+        };
+        rendered_blocks.push(format!(
+            "{}\n{maybe_format}git add --all\ngit commit --message \"{}\"",
+            command_lines.join("\n"),
+            escape_shell_double_quoted(command)
+        ));
+    }
+
+    rendered_blocks.join("\n\n")
 }
 
 fn touch_parent_dir(command: &str) -> Option<String> {
@@ -10035,13 +10034,16 @@ mod tests {
 
         let setup = render_output_repo_setup_content(&spec);
 
+        assert!(setup.contains("rm -rf workspace"));
+        assert!(setup.contains("rm -rf workspace\n\nmkdir -p workspace"));
         assert!(setup.contains("go mod init github.com/intrepion/fa_tut_saying-hello/workspace"));
         assert!(setup.contains("go get github.com/labstack/echo/v4"));
         assert!(setup.contains("go get github.com/labstack/echo/v4/middleware"));
         assert!(setup.contains("go get github.com/stretchr/testify/assert github.com/stretchr/testify/mock"));
         assert!(setup.contains("Go.gitignore > workspace/.gitignore"));
         assert!(setup.contains("run each setup command and checkpoint it before moving to the next one"));
-        assert!(setup.contains("git commit --message \"mkdir -p workspace\""));
+        assert!(!setup.contains("git commit --message \"mkdir -p workspace\""));
+        assert!(!setup.contains("mkdir -p workspace\n\njust format"));
         assert!(setup.contains("git commit --message \"curl -L -s https://raw.githubusercontent.com/github/gitignore/refs/heads/main/Go.gitignore > workspace/.gitignore\""));
         assert!(setup.contains("git commit --message \"(cd workspace && go mod init github.com/intrepion/fa_tut_saying-hello/workspace)\""));
         assert!(setup.contains("just format\ngit add --all\ngit commit --message \"(cd workspace && go get github.com/labstack/echo/v4)\""));
@@ -10125,9 +10127,11 @@ mod tests {
         let setup = render_output_repo_setup_content(&spec);
         let finish = render_output_repo_finish_content(&spec);
 
+        assert!(setup.contains("rm -rf workspace"));
         assert!(setup.contains("go mod init github.com/intrepion/fa_tut_todo-list/workspace"));
         assert!(setup.contains("Go.gitignore > workspace/.gitignore"));
         assert!(setup.contains("mkdir -p workspace/data"));
+        assert!(!setup.contains("mkdir -p workspace/data\njust format"));
         assert!(setup.contains("workspace/data/tasks.json"));
         assert!(finish.contains("http://localhost:25664/api/tasks"));
         assert!(finish.contains("workspace/data/tasks.json"));
@@ -10190,9 +10194,11 @@ mod tests {
         let setup = render_output_repo_setup_content(&spec);
         let finish = render_output_repo_finish_content(&spec);
 
+        assert!(setup.contains("rm -rf workspace"));
         assert!(setup.contains("go mod init github.com/intrepion/fa_tut_todo-list/workspace"));
         assert!(setup.contains("go get modernc.org/sqlite"));
         assert!(setup.contains("workspace/data/tasks.db"));
+        assert!(!setup.contains("mkdir -p workspace/data\njust format"));
         assert!(finish.contains("http://localhost:25664/api/tasks"));
         assert!(finish.contains("workspace/data/tasks.db"));
         assert!(finish.contains("{\"tasks\":[]}"));
@@ -10293,7 +10299,9 @@ mod tests {
 
         assert!(justfile.contains("\nrestore:\n"));
         assert!(justfile.contains("dotnet restore {{workspace}}/{{solution}}"));
-        assert!(setup.contains("git commit --message \"mkdir -p workspace\""));
+        assert!(setup.contains("rm -rf workspace"));
+        assert!(!setup.contains("git commit --message \"mkdir -p workspace\""));
+        assert!(!setup.contains("mkdir -p workspace\n\njust format"));
         assert!(setup.contains("dotnet new sln --format sln --name SayingHello --output workspace\njust format\ngit add --all"));
         assert!(contracts.contains("dotnet new classlib --language C# --output workspace/src/SayingHello.Contracts --name SayingHello.Contracts\njust format\njust check-all\ngit add --all\ngit commit --message 'dotnet new classlib --language C# --output workspace/src/SayingHello.Contracts --name SayingHello.Contracts'"));
         assert!(contracts.contains("dotnet sln workspace/SayingHello.sln add workspace/src/SayingHello.Contracts/SayingHello.Contracts.csproj\njust format\njust check-all\ngit add --all\ngit commit --message 'dotnet sln workspace/SayingHello.sln add workspace/src/SayingHello.Contracts/SayingHello.Contracts.csproj'"));
