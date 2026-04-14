@@ -468,7 +468,7 @@ fn is_flutter_saying_hello_output_repo(spec: &OutputRepoSpec) -> bool {
         || is_flutter_http_saying_hello_output_repo(spec)
 }
 
-fn is_flutter_todo_list_http_output_repo(spec: &OutputRepoSpec) -> bool {
+fn is_flutter_todo_list_rest_json_output_repo(spec: &OutputRepoSpec) -> bool {
     spec.project_slug == "todo-list"
         && spec.selections.ecosystem == "dart"
         && spec.selections.language == "dart"
@@ -478,15 +478,19 @@ fn is_flutter_todo_list_http_output_repo(spec: &OutputRepoSpec) -> bool {
         && spec.selections.surface == "client"
         && spec.selections.target == "all"
         && spec.selections.framework == "flutter"
-        && spec.selections.protocol.as_deref() == Some("http-json")
+        && spec.selections.protocol.as_deref() == Some("rest-json")
+}
+
+fn is_flutter_todo_list_output_repo(spec: &OutputRepoSpec) -> bool {
+    is_flutter_todo_list_rest_json_output_repo(spec)
 }
 
 fn is_flutter_output_repo(spec: &OutputRepoSpec) -> bool {
-    is_flutter_saying_hello_output_repo(spec) || is_flutter_todo_list_http_output_repo(spec)
+    is_flutter_saying_hello_output_repo(spec) || is_flutter_todo_list_output_repo(spec)
 }
 
 fn is_flutter_http_output_repo(spec: &OutputRepoSpec) -> bool {
-    is_flutter_http_saying_hello_output_repo(spec) || is_flutter_todo_list_http_output_repo(spec)
+    is_flutter_http_saying_hello_output_repo(spec) || is_flutter_todo_list_output_repo(spec)
 }
 
 fn is_flutter_local_saying_hello_output_repo(spec: &OutputRepoSpec) -> bool {
@@ -675,7 +679,7 @@ fn supported_output_repo_selections(
             surface: "client".to_string(),
             target: "all".to_string(),
             framework: "flutter".to_string(),
-            protocol: Some("http-json".to_string()),
+            protocol: Some("rest-json".to_string()),
         }),
         (_, "dotnet") => Some(OutputRepoSelections {
             ecosystem: "dotnet".to_string(),
@@ -756,7 +760,7 @@ fn validate_output_repo_selections(
         protocol: Some("http-json".to_string()),
     };
 
-    let supported_flutter_todo_list_http = OutputRepoSelections {
+    let supported_flutter_todo_list_rest_json = OutputRepoSelections {
         ecosystem: "dart".to_string(),
         language: "dart".to_string(),
         testing: "test".to_string(),
@@ -765,7 +769,7 @@ fn validate_output_repo_selections(
         surface: "client".to_string(),
         target: "all".to_string(),
         framework: "flutter".to_string(),
-        protocol: Some("http-json".to_string()),
+        protocol: Some("rest-json".to_string()),
     };
 
     let supported_flutter_local = OutputRepoSelections {
@@ -816,7 +820,7 @@ fn validate_output_repo_selections(
         return Ok(());
     }
 
-    if project_slug == "todo-list" && selections == &supported_flutter_todo_list_http {
+    if project_slug == "todo-list" && selections == &supported_flutter_todo_list_rest_json {
         return Ok(());
     }
 
@@ -1550,8 +1554,8 @@ fn build_output_repo_tutorial_files(app_root: &Path, spec: &OutputRepoSpec) -> V
         return build_flutter_saying_hello_output_repo_tutorial_files(app_root, spec);
     }
 
-    if is_flutter_todo_list_http_output_repo(spec) {
-        return build_flutter_todo_list_http_output_repo_tutorial_files(app_root, spec);
+    if is_flutter_todo_list_output_repo(spec) {
+        return build_flutter_todo_list_output_repo_tutorial_files(app_root, spec);
     }
 
     if is_astro_saying_hello_output_repo(spec) {
@@ -1776,14 +1780,10 @@ fn build_flutter_saying_hello_output_repo_tutorial_files(
     ]
 }
 
-fn build_flutter_todo_list_http_output_repo_tutorial_files(
-    app_root: &Path,
+fn build_flutter_todo_list_output_repo_tutorial_files(
+    _app_root: &Path,
     spec: &OutputRepoSpec,
 ) -> Vec<ManagedRepoFile> {
-    let project_root = app_root.join("partials/projects").join(&spec.project_slug);
-    let spec_partial =
-        Partial::load(&project_root.join("spec/README.md")).expect("spec partial should exist");
-
     vec![
         ManagedRepoFile {
             relative_path: "tutorial/README.md".to_string(),
@@ -1795,23 +1795,19 @@ fn build_flutter_todo_list_http_output_repo_tutorial_files(
         },
         ManagedRepoFile {
             relative_path: "tutorial/spec.md".to_string(),
-            contents: tutorial_file_markdown(
-                "Spec",
-                &rewrite_for_single_repo_tutorial(&spec_partial.body),
-            )
-            .into_bytes(),
+            contents: render_go_todo_list_rest_json_sqlite_spec_content().into_bytes(),
         },
         ManagedRepoFile {
             relative_path: "tutorial/contracts.md".to_string(),
-            contents: render_flutter_todo_list_http_contracts_content(spec).into_bytes(),
+            contents: render_flutter_todo_list_rest_json_contracts_content(spec).into_bytes(),
         },
         ManagedRepoFile {
             relative_path: "tutorial/code.md".to_string(),
-            contents: render_flutter_todo_list_http_code_content(spec).into_bytes(),
+            contents: render_flutter_todo_list_rest_json_code_content(spec).into_bytes(),
         },
         ManagedRepoFile {
             relative_path: "tutorial/adapter.md".to_string(),
-            contents: render_flutter_todo_list_http_adapter_content(spec).into_bytes(),
+            contents: render_flutter_todo_list_rest_json_adapter_content(spec).into_bytes(),
         },
         ManagedRepoFile {
             relative_path: "tutorial/finish.md".to_string(),
@@ -2031,7 +2027,7 @@ fn render_output_repo_setup_content(spec: &OutputRepoSpec) -> String {
         );
     }
 
-    if is_flutter_todo_list_http_output_repo(spec) {
+    if is_flutter_todo_list_output_repo(spec) {
         let package_name = flutter_package_name(&spec.project_slug);
         let setup_commands = vec![
             format!("flutter create --platforms=web,android,ios,macos,windows,linux --org com.intrepion --project-name {package_name} workspace"),
@@ -2088,7 +2084,7 @@ git commit --message "Enable macOS network client entitlement"
         return tutorial_file_markdown(
             "Setup",
             &format!(
-                "Keep the repository root for shared files like `README.md`, `LICENSE`, `.gitignore`, `.github/`, `justfile`, and `tutorial/`.\n\nPut all Flutter code inside a single `workspace/` folder.\n\nFrom the repository root, run each setup command and checkpoint it before moving to the next one:\n\n```bash\n{}\n```\n\n{}\n\nWhen the full workspace is finished, it should contain these files:\n\n```text\nworkspace/\n  pubspec.yaml\n  lib/\n    contracts/\n      task_api.dart\n      task_list_response.dart\n    code/\n      task_list_controller.dart\n    adapter/\n      http_task_api.dart\n      todo_list_page.dart\n  test/\n    code/\n      task_list_controller_test.dart\n    adapter/\n      http_task_api_test.dart\n      todo_list_page_test.dart\n  integration_test/\n    app_test.dart\n  lib/main.dart\n```\n\nBefore you try any run command, make sure Flutter can see a supported target:\n\n```bash\njust devices\n```\n\nFor web, use the default web command:\n\n```bash\njust run\n```\n\nor, explicitly:\n\n```bash\njust run-web\n```\n\nOn macOS for iOS, install CocoaPods first if you have not already:\n\n```bash\nsudo gem install cocoapods\n```\n\nThen open the simulator, list devices, and run the iOS app with an actual simulator id or name:\n\n```bash\nopen -a Simulator\njust devices\njust run-ios device=\"<ios-device-id-or-name>\"\n```\n\nFlutter does not accept bare `ios` as a generic simulator target, so if `just devices` does not show your simulator yet, wait a moment and run it again.\n\nFor Android, list available emulators, launch one, list devices again, and then run the Android app:\n\n```bash\njust emulators\nflutter emulators --launch <emulator-id>\njust devices\njust --set api_base_url http://10.0.2.2:{FOR_ALL_API_PORT} run-android device=\"<android-device-id-or-name>\"\n```\n\nFor macOS desktop, use:\n\n```bash\njust run-macos\n```\n{}{newline}For Windows or Linux, run the matching command on that host platform:\n\n```bash\njust run-windows\njust run-linux\n```\n\nAfter your first successful iOS run, if CocoaPods added shared iOS project files like these:\n\n- `workspace/ios/Runner.xcodeproj/project.pbxproj`\n- `workspace/ios/Runner.xcworkspace/contents.xcworkspacedata`\n- `workspace/ios/Podfile.lock`\n\nthen run:\n\n```bash\ngit add --all\ngit commit --message \"Add iOS CocoaPods workspace files\"\n```\n\nAfter your first successful macOS run, if CocoaPods added shared macOS project files like these:\n\n- `workspace/macos/Runner.xcodeproj/project.pbxproj`\n- `workspace/macos/Runner.xcworkspace/contents.xcworkspacedata`\n- `workspace/macos/Podfile.lock`\n\nthen run:\n\n```bash\ngit add --all\ngit commit --message \"Add macOS CocoaPods workspace files\"\n```\n\nDo not commit local machine output like these:\n\n- `workspace/ios/Pods/`\n- `workspace/macos/Pods/`\n- `workspace/build/`\n- `workspace/.dart_tool/`\n\nFor Android, a normal first run usually should not add shared tracked files. If it does change shared files under `workspace/android/`, review them carefully and commit only the project-level changes. Do not commit machine-specific files like:\n\n- `workspace/android/local.properties`\n- `workspace/.gradle/`\n- `workspace/build/`",
+                "Keep the repository root for shared files like `README.md`, `LICENSE`, `.gitignore`, `.github/`, `justfile`, and `tutorial/`.\n\nPut all Flutter code inside a single `workspace/` folder.\n\nFrom the repository root, run each setup command and checkpoint it before moving to the next one:\n\n```bash\n{}\n```\n\n{}\n\nWhen the full workspace is finished, it should contain these files:\n\n```text\nworkspace/\n  pubspec.yaml\n  lib/\n    contracts/\n      task.dart\n      task_api.dart\n      task_list_response.dart\n    code/\n      task_list_controller.dart\n    adapter/\n      http_task_api.dart\n      todo_list_page.dart\n  test/\n    code/\n      task_list_controller_test.dart\n    adapter/\n      http_task_api_test.dart\n      todo_list_page_test.dart\n  integration_test/\n    app_test.dart\n  lib/main.dart\n```\n\nBefore you try any run command, make sure Flutter can see a supported target:\n\n```bash\njust devices\n```\n\nFor web, use the default web command:\n\n```bash\njust run\n```\n\nor, explicitly:\n\n```bash\njust run-web\n```\n\nOn macOS for iOS, install CocoaPods first if you have not already:\n\n```bash\nsudo gem install cocoapods\n```\n\nThen open the simulator, list devices, and run the iOS app with an actual simulator id or name:\n\n```bash\nopen -a Simulator\njust devices\njust run-ios device=\"<ios-device-id-or-name>\"\n```\n\nFlutter does not accept bare `ios` as a generic simulator target, so if `just devices` does not show your simulator yet, wait a moment and run it again.\n\nFor Android, list available emulators, launch one, list devices again, and then run the Android app:\n\n```bash\njust emulators\nflutter emulators --launch <emulator-id>\njust devices\njust --set api_base_url http://10.0.2.2:{FOR_ALL_API_PORT} run-android device=\"<android-device-id-or-name>\"\n```\n\nFor macOS desktop, use:\n\n```bash\njust run-macos\n```\n{}{newline}For Windows or Linux, run the matching command on that host platform:\n\n```bash\njust run-windows\njust run-linux\n```\n\nAfter your first successful iOS run, if CocoaPods added shared iOS project files like these:\n\n- `workspace/ios/Runner.xcodeproj/project.pbxproj`\n- `workspace/ios/Runner.xcworkspace/contents.xcworkspacedata`\n- `workspace/ios/Podfile.lock`\n\nthen run:\n\n```bash\ngit add --all\ngit commit --message \"Add iOS CocoaPods workspace files\"\n```\n\nAfter your first successful macOS run, if CocoaPods added shared macOS project files like these:\n\n- `workspace/macos/Runner.xcodeproj/project.pbxproj`\n- `workspace/macos/Runner.xcworkspace/contents.xcworkspacedata`\n- `workspace/macos/Podfile.lock`\n\nthen run:\n\n```bash\ngit add --all\ngit commit --message \"Add macOS CocoaPods workspace files\"\n```\n\nDo not commit local machine output like these:\n\n- `workspace/ios/Pods/`\n- `workspace/macos/Pods/`\n- `workspace/build/`\n- `workspace/.dart_tool/`\n\nFor Android, a normal first run usually should not add shared tracked files. If it does change shared files under `workspace/android/`, review them carefully and commit only the project-level changes. Do not commit machine-specific files like:\n\n- `workspace/android/local.properties`\n- `workspace/.gradle/`\n- `workspace/build/`",
                 render_setup_commands_with_commits(&setup_commands, 2),
                 macos_entitlements_note,
                 macos_http_note,
@@ -2579,7 +2575,7 @@ fn render_output_repo_finish_content(spec: &OutputRepoSpec) -> String {
         );
     }
 
-    if is_flutter_todo_list_http_output_repo(spec) {
+    if is_flutter_todo_list_output_repo(spec) {
         return tutorial_file_markdown(
             "Finish",
             &format!(
@@ -7070,30 +7066,51 @@ git commit --message "7. Green: Wire The Server Entry Point"
     )
 }
 
-fn render_flutter_todo_list_http_contracts_content(_spec: &OutputRepoSpec) -> String {
+fn render_flutter_todo_list_rest_json_contracts_content(_spec: &OutputRepoSpec) -> String {
     tutorial_file_markdown(
         "Contracts",
         &rewrite_stage_commit_checkpoints(&rewrite_touch_creation_stage_only(&format!(
             r#"Create the shared contract files:
 
 ```bash
+touch workspace/lib/contracts/task.dart
 touch workspace/lib/contracts/task_list_response.dart
 touch workspace/lib/contracts/task_api.dart
+```
+
+Put this exact content in `workspace/lib/contracts/task.dart`:
+
+```dart
+class Task {{
+  final int id;
+  final String text;
+
+  const Task({{required this.id, required this.text}});
+
+  factory Task.fromJson(Map<String, dynamic> json) {{
+    return Task(
+      id: json['id'] as int,
+      text: json['text'] as String,
+    );
+  }}
+}}
 ```
 
 Put this exact content in `workspace/lib/contracts/task_list_response.dart`:
 
 ```dart
-class TaskListResponse {{
-  final List<String> tasks;
-  final List<String> lines;
+import 'task.dart';
 
-  const TaskListResponse({{required this.tasks, required this.lines}});
+class TaskListResponse {{
+  final List<Task> tasks;
+
+  const TaskListResponse({{required this.tasks}});
 
   factory TaskListResponse.fromJson(Map<String, dynamic> json) {{
     return TaskListResponse(
-      tasks: List<String>.from(json['tasks'] as List<dynamic>),
-      lines: List<String>.from(json['lines'] as List<dynamic>),
+      tasks: (json['tasks'] as List<dynamic>)
+          .map((taskJson) => Task.fromJson(taskJson as Map<String, dynamic>))
+          .toList(),
     );
   }}
 }}
@@ -7102,12 +7119,13 @@ class TaskListResponse {{
 Put this exact content in `workspace/lib/contracts/task_api.dart`:
 
 ```dart
+import 'task.dart';
 import 'task_list_response.dart';
 
 abstract class TaskApi {{
   Future<TaskListResponse> getTasks();
-  Future<TaskListResponse> addTask(String task);
-  Future<TaskListResponse> removeTask(String task);
+  Future<Task> createTask(String text);
+  Future<void> deleteTask(int taskId);
 }}
 ```
 
@@ -7124,7 +7142,7 @@ git commit --message "Define todo-list Flutter contracts"
     )
 }
 
-fn render_flutter_todo_list_http_code_content(spec: &OutputRepoSpec) -> String {
+fn render_flutter_todo_list_rest_json_code_content(spec: &OutputRepoSpec) -> String {
     let package_name = flutter_package_name(&spec.project_slug);
     let body = format!(
         r#"### 1. Red: Load The Current Task List
@@ -7140,6 +7158,7 @@ Put this exact content in `workspace/test/code/task_list_controller_test.dart`:
 ```dart
 import 'package:mocktail/mocktail.dart';
 import 'package:{package_name}/code/task_list_controller.dart';
+import 'package:{package_name}/contracts/task.dart';
 import 'package:{package_name}/contracts/task_api.dart';
 import 'package:{package_name}/contracts/task_list_response.dart';
 import 'package:test/test.dart';
@@ -7151,15 +7170,19 @@ void main() {{
     final api = MockTaskApi();
     when(() => api.getTasks()).thenAnswer(
       (_) async => const TaskListResponse(
-        tasks: ['Learn how to invert binary trees', 'Buy milk'],
-        lines: ['Learn how to invert binary trees', 'Buy milk'],
+        tasks: [
+          Task(id: 1, text: 'Learn how to invert binary trees'),
+          Task(id: 2, text: 'Buy milk'),
+        ],
       ),
     );
 
     final result = await loadTasks(api);
 
-    expect(result.tasks, ['Learn how to invert binary trees', 'Buy milk']);
-    expect(result.lines, ['Learn how to invert binary trees', 'Buy milk']);
+    expect(
+      result.tasks.map((task) => task.text).toList(),
+      ['Learn how to invert binary trees', 'Buy milk'],
+    );
     expect(result.errorMessage, isNull);
   }});
 }}
@@ -7184,24 +7207,22 @@ touch workspace/lib/code/task_list_controller.dart
 Put this exact content in `workspace/lib/code/task_list_controller.dart`:
 
 ```dart
+import '../contracts/task.dart';
 import '../contracts/task_api.dart';
 import '../contracts/task_list_response.dart';
 
 class TaskListViewModel {{
-  final List<String> tasks;
-  final List<String> lines;
+  final List<Task> tasks;
   final String? errorMessage;
 
   const TaskListViewModel({{
     required this.tasks,
-    required this.lines,
     this.errorMessage,
   }});
 
   factory TaskListViewModel.fromResponse(TaskListResponse response) {{
     return TaskListViewModel(
       tasks: response.tasks,
-      lines: response.lines,
     );
   }}
 }}
@@ -7227,6 +7248,7 @@ Replace `workspace/test/code/task_list_controller_test.dart` with:
 ```dart
 import 'package:mocktail/mocktail.dart';
 import 'package:{package_name}/code/task_list_controller.dart';
+import 'package:{package_name}/contracts/task.dart';
 import 'package:{package_name}/contracts/task_api.dart';
 import 'package:{package_name}/contracts/task_list_response.dart';
 import 'package:test/test.dart';
@@ -7238,31 +7260,43 @@ void main() {{
     final api = MockTaskApi();
     when(() => api.getTasks()).thenAnswer(
       (_) async => const TaskListResponse(
-        tasks: ['Learn how to invert binary trees', 'Buy milk'],
-        lines: ['Learn how to invert binary trees', 'Buy milk'],
+        tasks: [
+          Task(id: 1, text: 'Learn how to invert binary trees'),
+          Task(id: 2, text: 'Buy milk'),
+        ],
       ),
     );
 
     final result = await loadTasks(api);
 
-    expect(result.tasks, ['Learn how to invert binary trees', 'Buy milk']);
-    expect(result.lines, ['Learn how to invert binary trees', 'Buy milk']);
+    expect(
+      result.tasks.map((task) => task.text).toList(),
+      ['Learn how to invert binary trees', 'Buy milk'],
+    );
     expect(result.errorMessage, isNull);
   }});
 
-  test('trims submitted tasks before calling the API', () async {{
+  test('trims submitted tasks before calling the REST API', () async {{
     final api = MockTaskApi();
-    when(() => api.addTask('Buy milk')).thenAnswer(
+    when(() => api.createTask('Buy milk')).thenAnswer(
+      (_) async => const Task(id: 2, text: 'Buy milk'),
+    );
+    when(() => api.getTasks()).thenAnswer(
       (_) async => const TaskListResponse(
-        tasks: ['Learn how to invert binary trees', 'Buy milk'],
-        lines: ['Learn how to invert binary trees', 'Buy milk'],
+        tasks: [
+          Task(id: 1, text: 'Learn how to invert binary trees'),
+          Task(id: 2, text: 'Buy milk'),
+        ],
       ),
     );
 
     final result = await addTask('  Buy milk  ', api);
 
-    expect(result.tasks, ['Learn how to invert binary trees', 'Buy milk']);
-    verify(() => api.addTask('Buy milk')).called(1);
+    expect(
+      result.tasks.map((task) => task.text).toList(),
+      ['Learn how to invert binary trees', 'Buy milk'],
+    );
+    verify(() => api.createTask('Buy milk')).called(1);
   }});
 }}
 ```
@@ -7280,24 +7314,22 @@ git commit --message "3. Red: Trim Submitted Tasks Before Calling The API"
 Replace `workspace/lib/code/task_list_controller.dart` with:
 
 ```dart
+import '../contracts/task.dart';
 import '../contracts/task_api.dart';
 import '../contracts/task_list_response.dart';
 
 class TaskListViewModel {{
-  final List<String> tasks;
-  final List<String> lines;
+  final List<Task> tasks;
   final String? errorMessage;
 
   const TaskListViewModel({{
     required this.tasks,
-    required this.lines,
     this.errorMessage,
   }});
 
   factory TaskListViewModel.fromResponse(TaskListResponse response) {{
     return TaskListViewModel(
       tasks: response.tasks,
-      lines: response.lines,
     );
   }}
 }}
@@ -7308,7 +7340,8 @@ Future<TaskListViewModel> loadTasks(TaskApi api) async {{
 }}
 
 Future<TaskListViewModel> addTask(String task, TaskApi api) async {{
-  final response = await api.addTask(task.trim());
+  await api.createTask(task.trim());
+  final response = await api.getTasks();
   return TaskListViewModel.fromResponse(response);
 }}
 ```
@@ -7328,6 +7361,7 @@ Replace `workspace/test/code/task_list_controller_test.dart` with:
 ```dart
 import 'package:mocktail/mocktail.dart';
 import 'package:{package_name}/code/task_list_controller.dart';
+import 'package:{package_name}/contracts/task.dart';
 import 'package:{package_name}/contracts/task_api.dart';
 import 'package:{package_name}/contracts/task_list_response.dart';
 import 'package:test/test.dart';
@@ -7339,31 +7373,43 @@ void main() {{
     final api = MockTaskApi();
     when(() => api.getTasks()).thenAnswer(
       (_) async => const TaskListResponse(
-        tasks: ['Learn how to invert binary trees', 'Buy milk'],
-        lines: ['Learn how to invert binary trees', 'Buy milk'],
+        tasks: [
+          Task(id: 1, text: 'Learn how to invert binary trees'),
+          Task(id: 2, text: 'Buy milk'),
+        ],
       ),
     );
 
     final result = await loadTasks(api);
 
-    expect(result.tasks, ['Learn how to invert binary trees', 'Buy milk']);
-    expect(result.lines, ['Learn how to invert binary trees', 'Buy milk']);
+    expect(
+      result.tasks.map((task) => task.text).toList(),
+      ['Learn how to invert binary trees', 'Buy milk'],
+    );
     expect(result.errorMessage, isNull);
   }});
 
-  test('trims submitted tasks before calling the API', () async {{
+  test('trims submitted tasks before calling the REST API', () async {{
     final api = MockTaskApi();
-    when(() => api.addTask('Buy milk')).thenAnswer(
+    when(() => api.createTask('Buy milk')).thenAnswer(
+      (_) async => const Task(id: 2, text: 'Buy milk'),
+    );
+    when(() => api.getTasks()).thenAnswer(
       (_) async => const TaskListResponse(
-        tasks: ['Learn how to invert binary trees', 'Buy milk'],
-        lines: ['Learn how to invert binary trees', 'Buy milk'],
+        tasks: [
+          Task(id: 1, text: 'Learn how to invert binary trees'),
+          Task(id: 2, text: 'Buy milk'),
+        ],
       ),
     );
 
     final result = await addTask('  Buy milk  ', api);
 
-    expect(result.tasks, ['Learn how to invert binary trees', 'Buy milk']);
-    verify(() => api.addTask('Buy milk')).called(1);
+    expect(
+      result.tasks.map((task) => task.text).toList(),
+      ['Learn how to invert binary trees', 'Buy milk'],
+    );
+    verify(() => api.createTask('Buy milk')).called(1);
   }});
 
   test('rejects blank submitted tasks without calling the API', () async {{
@@ -7372,7 +7418,7 @@ void main() {{
     final result = await addTask('   ', api);
 
     expect(result.errorMessage, 'Task must not be blank.');
-    verifyNever(() => api.addTask(any()));
+    verifyNever(() => api.createTask(any()));
   }});
 
   test('returns a friendly message when the task API is unavailable', () async {{
@@ -7384,19 +7430,24 @@ void main() {{
     expect(result.errorMessage, 'Sorry, the task API is unavailable right now.');
   }});
 
-  test('removes the chosen task through the API', () async {{
+  test('removes the chosen task through the REST API', () async {{
     final api = MockTaskApi();
-    when(() => api.removeTask('Buy milk')).thenAnswer(
+    when(() => api.deleteTask(2)).thenAnswer((_) async {{}});
+    when(() => api.getTasks()).thenAnswer(
       (_) async => const TaskListResponse(
-        tasks: ['Learn how to invert binary trees'],
-        lines: ['Learn how to invert binary trees'],
+        tasks: [
+          Task(id: 1, text: 'Learn how to invert binary trees'),
+        ],
       ),
     );
 
-    final result = await removeTask('Buy milk', api);
+    final result = await removeTask(2, api);
 
-    expect(result.tasks, ['Learn how to invert binary trees']);
-    verify(() => api.removeTask('Buy milk')).called(1);
+    expect(
+      result.tasks.map((task) => task.text).toList(),
+      ['Learn how to invert binary trees'],
+    );
+    verify(() => api.deleteTask(2)).called(1);
   }});
 }}
 ```
@@ -7414,24 +7465,22 @@ git commit --message "5. Red: Reject Blank Tasks And Handle API Errors"
 Replace `workspace/lib/code/task_list_controller.dart` with:
 
 ```dart
+import '../contracts/task.dart';
 import '../contracts/task_api.dart';
 import '../contracts/task_list_response.dart';
 
 class TaskListViewModel {{
-  final List<String> tasks;
-  final List<String> lines;
+  final List<Task> tasks;
   final String? errorMessage;
 
   const TaskListViewModel({{
     required this.tasks,
-    required this.lines,
     this.errorMessage,
   }});
 
   factory TaskListViewModel.fromResponse(TaskListResponse response) {{
     return TaskListViewModel(
       tasks: response.tasks,
-      lines: response.lines,
     );
   }}
 }}
@@ -7443,7 +7492,6 @@ Future<TaskListViewModel> loadTasks(TaskApi api) async {{
   }} catch (_) {{
     return const TaskListViewModel(
       tasks: [],
-      lines: [],
       errorMessage: 'Sorry, the task API is unavailable right now.',
     );
   }}
@@ -7454,31 +7502,30 @@ Future<TaskListViewModel> addTask(String task, TaskApi api) async {{
   if (trimmed.isEmpty) {{
     return const TaskListViewModel(
       tasks: [],
-      lines: [],
       errorMessage: 'Task must not be blank.',
     );
   }}
 
   try {{
-    final response = await api.addTask(trimmed);
+    await api.createTask(trimmed);
+    final response = await api.getTasks();
     return TaskListViewModel.fromResponse(response);
   }} catch (_) {{
     return const TaskListViewModel(
       tasks: [],
-      lines: [],
       errorMessage: 'Sorry, the task API is unavailable right now.',
     );
   }}
 }}
 
-Future<TaskListViewModel> removeTask(String task, TaskApi api) async {{
+Future<TaskListViewModel> removeTask(int taskId, TaskApi api) async {{
   try {{
-    final response = await api.removeTask(task);
+    await api.deleteTask(taskId);
+    final response = await api.getTasks();
     return TaskListViewModel.fromResponse(response);
   }} catch (_) {{
     return const TaskListViewModel(
       tasks: [],
-      lines: [],
       errorMessage: 'Sorry, the task API is unavailable right now.',
     );
   }}
@@ -7500,7 +7547,7 @@ git commit --message "6. Green: Reject Blank Tasks And Handle API Errors"
     )
 }
 
-fn render_flutter_todo_list_http_adapter_content(spec: &OutputRepoSpec) -> String {
+fn render_flutter_todo_list_rest_json_adapter_content(spec: &OutputRepoSpec) -> String {
     let package_name = flutter_package_name(&spec.project_slug);
     let body = format!(
         r#"### 1. Red: Add The HTTP Task API Test
@@ -7517,6 +7564,8 @@ Put this exact content in `workspace/test/adapter/http_task_api_test.dart`:
 import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
 import 'package:{package_name}/adapter/http_task_api.dart';
+import 'package:{package_name}/contracts/task.dart';
+import 'package:{package_name}/contracts/task_list_response.dart';
 import 'package:test/test.dart';
 
 void main() {{
@@ -7525,7 +7574,7 @@ void main() {{
     final client = MockClient((request) async {{
       requestedUri = request.url;
       return http.Response(
-        '{{"tasks":["Learn how to invert binary trees","Buy milk"],"lines":["Learn how to invert binary trees","Buy milk"]}}',
+        '{{"tasks":[{{"id":1,"text":"Learn how to invert binary trees"}},{{"id":2,"text":"Buy milk"}}]}}',
         200,
         headers: {{'content-type': 'application/json'}},
       );
@@ -7538,16 +7587,19 @@ void main() {{
     final result = await api.getTasks();
 
     expect(requestedUri.toString(), 'http://localhost:{FOR_ALL_API_PORT}/api/tasks');
-    expect(result.tasks, ['Learn how to invert binary trees', 'Buy milk']);
+    expect(
+      result.tasks.map((task) => task.text).toList(),
+      ['Learn how to invert binary trees', 'Buy milk'],
+    );
   }});
 
-  test('posts a new task to the canonical endpoint', () async {{
+  test('posts a new task resource to the canonical endpoint', () async {{
     late String requestBody;
     final client = MockClient((request) async {{
       requestBody = request.body;
       return http.Response(
-        '{{"tasks":["Learn how to invert binary trees","Buy milk"],"lines":["Learn how to invert binary trees","Buy milk"]}}',
-        200,
+        '{{"id":2,"text":"Buy milk"}}',
+        201,
         headers: {{'content-type': 'application/json'}},
       );
     }});
@@ -7556,30 +7608,28 @@ void main() {{
       baseUrl: 'http://localhost:{FOR_ALL_API_PORT}',
       client: client,
     );
-    await api.addTask('Buy milk');
+    final createdTask = await api.createTask('Buy milk');
 
-    expect(requestBody, '{{"task":"Buy milk"}}');
+    expect(requestBody, '{{"text":"Buy milk"}}');
+    expect(createdTask, isA<Task>());
+    expect(createdTask.id, 2);
+    expect(createdTask.text, 'Buy milk');
   }});
 
   test('deletes a task through the canonical endpoint', () async {{
     late Uri requestedUri;
     final client = MockClient((request) async {{
       requestedUri = request.url;
-      return http.Response(
-        '{{"tasks":["Learn how to invert binary trees"],"lines":["Learn how to invert binary trees"]}}',
-        200,
-        headers: {{'content-type': 'application/json'}},
-      );
+      return http.Response('', 204);
     }});
 
     final api = HttpTaskApi(
       baseUrl: 'http://localhost:{FOR_ALL_API_PORT}',
       client: client,
     );
-    await api.removeTask('Buy milk');
+    await api.deleteTask(7);
 
-    expect(requestedUri.path, '/api/tasks');
-    expect(requestedUri.queryParameters, {{'task': 'Buy milk'}});
+    expect(requestedUri.toString(), 'http://localhost:{FOR_ALL_API_PORT}/api/tasks/7');
   }});
 }}
 ```
@@ -7608,6 +7658,7 @@ import 'dart:convert';
 import 'package:http/http.dart' as http;
 
 import '../contracts/task_api.dart';
+import '../contracts/task.dart';
 import '../contracts/task_list_response.dart';
 
 class HttpTaskApi implements TaskApi {{
@@ -7620,28 +7671,31 @@ class HttpTaskApi implements TaskApi {{
   @override
   Future<TaskListResponse> getTasks() async {{
     final response = await client.get(Uri.parse('$baseUrl/api/tasks'));
+    if (response.statusCode != 200) {{
+      throw Exception('failed to load tasks');
+    }}
     return TaskListResponse.fromJson(jsonDecode(response.body) as Map<String, dynamic>);
   }}
 
   @override
-  Future<TaskListResponse> addTask(String task) async {{
+  Future<Task> createTask(String text) async {{
     final response = await client.post(
       Uri.parse('$baseUrl/api/tasks'),
       headers: {{'Content-Type': 'application/json'}},
-      body: jsonEncode({{'task': task}}),
+      body: jsonEncode({{'text': text}}),
     );
-    return TaskListResponse.fromJson(jsonDecode(response.body) as Map<String, dynamic>);
+    if (response.statusCode != 201) {{
+      throw Exception('failed to create task');
+    }}
+    return Task.fromJson(jsonDecode(response.body) as Map<String, dynamic>);
   }}
 
   @override
-  Future<TaskListResponse> removeTask(String task) async {{
-    final uri = Uri.parse('$baseUrl/api/tasks').replace(
-      queryParameters: {{'task': task}},
-    );
-    final response = await client.delete(
-      uri,
-    );
-    return TaskListResponse.fromJson(jsonDecode(response.body) as Map<String, dynamic>);
+  Future<void> deleteTask(int taskId) async {{
+    final response = await client.delete(Uri.parse('$baseUrl/api/tasks/$taskId'));
+    if (response.statusCode != 204) {{
+      throw Exception('failed to delete task');
+    }}
   }}
 }}
 ```
@@ -7669,6 +7723,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:{package_name}/adapter/todo_list_page.dart';
+import 'package:{package_name}/contracts/task.dart';
 import 'package:{package_name}/contracts/task_api.dart';
 import 'package:{package_name}/contracts/task_list_response.dart';
 
@@ -7677,24 +7732,31 @@ class MockTaskApi extends Mock implements TaskApi {{}}
 void main() {{
   testWidgets('loads, adds, and removes tasks', (tester) async {{
     final api = MockTaskApi();
-    when(() => api.getTasks()).thenAnswer(
-      (_) async => const TaskListResponse(
-        tasks: ['Learn how to invert binary trees'],
-        lines: ['Learn how to invert binary trees'],
-      ),
+    var loadCount = 0;
+    when(() => api.getTasks()).thenAnswer((_) async {{
+      loadCount += 1;
+      switch (loadCount) {{
+        case 1:
+          return const TaskListResponse(
+            tasks: [Task(id: 1, text: 'Learn how to invert binary trees')],
+          );
+        case 2:
+          return const TaskListResponse(
+            tasks: [
+              Task(id: 1, text: 'Learn how to invert binary trees'),
+              Task(id: 2, text: 'Buy milk'),
+            ],
+          );
+        default:
+          return const TaskListResponse(
+            tasks: [Task(id: 1, text: 'Learn how to invert binary trees')],
+          );
+      }}
+    }});
+    when(() => api.createTask('Buy milk')).thenAnswer(
+      (_) async => const Task(id: 2, text: 'Buy milk'),
     );
-    when(() => api.addTask('Buy milk')).thenAnswer(
-      (_) async => const TaskListResponse(
-        tasks: ['Learn how to invert binary trees', 'Buy milk'],
-        lines: ['Learn how to invert binary trees', 'Buy milk'],
-      ),
-    );
-    when(() => api.removeTask('Buy milk')).thenAnswer(
-      (_) async => const TaskListResponse(
-        tasks: ['Learn how to invert binary trees'],
-        lines: ['Learn how to invert binary trees'],
-      ),
-    );
+    when(() => api.deleteTask(2)).thenAnswer((_) async {{}});
 
     await tester.pumpWidget(
       MaterialApp(
@@ -7711,7 +7773,7 @@ void main() {{
 
     expect(find.text('Buy milk'), findsOneWidget);
 
-    await tester.tap(find.byKey(const Key('remove-Buy milk')));
+    await tester.tap(find.byKey(const Key('remove-2')));
     await tester.pumpAndSettle();
 
     expect(find.text('Buy milk'), findsNothing);
@@ -7741,6 +7803,7 @@ Put this exact content in `workspace/lib/adapter/todo_list_page.dart`:
 import 'package:flutter/material.dart';
 
 import '../code/task_list_controller.dart';
+import '../contracts/task.dart';
 import '../contracts/task_api.dart';
 
 class TodoListPage extends StatefulWidget {{
@@ -7754,7 +7817,7 @@ class TodoListPage extends StatefulWidget {{
 
 class _TodoListPageState extends State<TodoListPage> {{
   final TextEditingController _taskController = TextEditingController();
-  TaskListViewModel _viewModel = const TaskListViewModel(tasks: [], lines: []);
+  TaskListViewModel _viewModel = const TaskListViewModel(tasks: []);
 
   @override
   void initState() {{
@@ -7783,8 +7846,8 @@ class _TodoListPageState extends State<TodoListPage> {{
     }});
   }}
 
-  Future<void> _removeTask(String task) async {{
-    final nextViewModel = await removeTask(task, widget.api);
+  Future<void> _removeTask(Task task) async {{
+    final nextViewModel = await removeTask(task.id, widget.api);
     if (!mounted) {{
       return;
     }}
@@ -7821,9 +7884,9 @@ class _TodoListPageState extends State<TodoListPage> {{
                 children: _viewModel.tasks
                     .map(
                       (task) => ListTile(
-                        title: Text(task),
+                        title: Text(task.text),
                         trailing: IconButton(
-                          key: Key('remove-$task'),
+                          key: Key('remove-${{task.id}}'),
                           onPressed: () => _removeTask(task),
                           icon: const Icon(Icons.delete_outline),
                         ),
@@ -9732,7 +9795,7 @@ mod tests {
         OutputRepoSpec {
             repo_name: "fa_tut_todo-list".to_string(),
             repo_description:
-                "Tutorial workspace for the Todo List project with Dart / Dart / test / mocktail / no-storage / client / all / Flutter / http-json choices."
+                "Tutorial workspace for the Todo List project with Dart / Dart / test / mocktail / no-storage / client / all / Flutter / rest-json choices."
                     .to_string(),
             project_slug: "todo-list".to_string(),
             selections: OutputRepoSelections {
@@ -9744,7 +9807,7 @@ mod tests {
                 surface: "client".to_string(),
                 target: "all".to_string(),
                 framework: "flutter".to_string(),
-                protocol: Some("http-json".to_string()),
+                protocol: Some("rest-json".to_string()),
             },
         }
     }
@@ -9926,7 +9989,7 @@ mod tests {
     }
 
     #[test]
-    fn output_repo_selection_overrides_allow_switching_todo_list_to_flutter_http_json() {
+    fn output_repo_selection_overrides_allow_switching_todo_list_to_flutter_rest_json() {
         let overrides = BootstrapSelectionOverrides {
             ecosystem: Some("dart".to_string()),
             ..BootstrapSelectionOverrides::default()
@@ -9943,7 +10006,7 @@ mod tests {
         assert_eq!(selections.surface, "client");
         assert_eq!(selections.target, "all");
         assert_eq!(selections.framework, "flutter");
-        assert_eq!(selections.protocol, Some("http-json".to_string()));
+        assert_eq!(selections.protocol, Some("rest-json".to_string()));
     }
 
     #[test]
@@ -10454,7 +10517,7 @@ mod tests {
     }
 
     #[test]
-    fn todo_list_flutter_output_repo_tutorial_readme_lists_client_http_json_choices() {
+    fn todo_list_flutter_output_repo_tutorial_readme_lists_client_rest_json_choices() {
         let spec = sample_todo_list_flutter_output_repo_spec();
 
         let readme = render_output_repo_tutorial_readme_content(&spec);
@@ -10469,7 +10532,7 @@ mod tests {
         assert!(readme.contains("- Surface: `client`"));
         assert!(readme.contains("- Target: `all`"));
         assert!(readme.contains("- Framework: `Flutter`"));
-        assert!(readme.contains("- Protocol: `http-json`"));
+        assert!(readme.contains("- Protocol: `rest-json`"));
         assert!(readme.contains("- API Port: `25664`"));
         assert!(readme.contains("- App Port: `25616`"));
     }
@@ -10729,14 +10792,16 @@ mod tests {
     fn todo_list_flutter_contracts_code_adapter_and_finish_are_concrete() {
         let spec = sample_todo_list_flutter_output_repo_spec();
 
-        let contracts = render_flutter_todo_list_http_contracts_content(&spec);
-        let code = render_flutter_todo_list_http_code_content(&spec);
-        let adapter = render_flutter_todo_list_http_adapter_content(&spec);
+        let contracts = render_flutter_todo_list_rest_json_contracts_content(&spec);
+        let code = render_flutter_todo_list_rest_json_code_content(&spec);
+        let adapter = render_flutter_todo_list_rest_json_adapter_content(&spec);
         let finish = render_output_repo_finish_content(&spec);
 
+        assert!(contracts.contains("class Task {"));
         assert!(contracts.contains("abstract class TaskApi"));
         assert!(contracts.contains("class TaskListResponse"));
-        assert!(contracts.contains("mkdir -p workspace/lib/contracts\ntouch workspace/lib/contracts/task_list_response.dart"));
+        assert!(contracts.contains("mkdir -p workspace/lib/contracts\ntouch workspace/lib/contracts/task.dart"));
+        assert!(contracts.contains("touch workspace/lib/contracts/task_list_response.dart"));
         assert!(contracts.contains("touch workspace/lib/contracts/task_api.dart"));
         assert!(code.contains("mkdir -p workspace/test/code\ntouch workspace/test/code/task_list_controller_test.dart"));
         assert!(code.contains("touch workspace/test/code/task_list_controller_test.dart"));
@@ -10744,17 +10809,19 @@ mod tests {
         assert!(code.contains("touch workspace/lib/code/task_list_controller.dart"));
         assert!(code.contains("Task must not be blank."));
         assert!(code.contains("Sorry, the task API is unavailable right now."));
+        assert!(code.contains("api.createTask('Buy milk')"));
+        assert!(code.contains("api.deleteTask(2)"));
         assert!(adapter.contains("mkdir -p workspace/test/adapter\ntouch workspace/test/adapter/http_task_api_test.dart"));
         assert!(adapter.contains("touch workspace/test/adapter/http_task_api_test.dart"));
         assert!(adapter.contains("touch workspace/test/adapter/todo_list_page_test.dart"));
         assert!(adapter.contains("mkdir -p workspace/lib/adapter\ntouch workspace/lib/adapter/http_task_api.dart"));
         assert!(adapter.contains("touch workspace/lib/adapter/http_task_api.dart"));
         assert!(adapter.contains("touch workspace/lib/adapter/todo_list_page.dart"));
-        assert!(adapter.contains("expect(requestedUri.path, '/api/tasks');"));
-        assert!(adapter.contains("expect(requestedUri.queryParameters, {'task': 'Buy milk'});"));
-        assert!(adapter.contains("Uri.parse('$baseUrl/api/tasks').replace("));
-        assert!(adapter.contains("queryParameters: {'task': task},"));
-        assert!(!adapter.contains("Buy%20milk"));
+        assert!(adapter.contains("expect(requestedUri.toString(), 'http://localhost:25664/api/tasks/7');"));
+        assert!(adapter.contains("body: jsonEncode({'text': text})"));
+        assert!(adapter.contains("Uri.parse('$baseUrl/api/tasks/$taskId')"));
+        assert!(adapter.contains("Future<void> deleteTask(int taskId) async"));
+        assert!(adapter.contains("Key('remove-${task.id}')"));
         assert!(adapter.contains("HttpTaskApi(baseUrl: apiBaseUrl)"));
         assert!(adapter.contains("TodoListPage(api: api)"));
         assert!(finish.contains("matching Todo List API is running"));

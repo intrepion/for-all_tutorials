@@ -242,7 +242,7 @@ bs-typescript-astro-web owner="intrepion" project="saying-hello":
       --set bootstrap_protocol http-json \
       _bs "{{owner}}" "{{project}}"
 
-bs-dart-flutter-rest-json-all owner="intrepion" project="saying-hello":
+bs-dart-flutter-rest-json-all owner="intrepion" project="todo-list":
     just --set bootstrap_ecosystem dart \
       --set bootstrap_language dart \
       --set bootstrap_testing test \
@@ -251,7 +251,7 @@ bs-dart-flutter-rest-json-all owner="intrepion" project="saying-hello":
       --set bootstrap_surface client \
       --set bootstrap_target all \
       --set bootstrap_framework flutter \
-      --set bootstrap_protocol http-json \
+      --set bootstrap_protocol rest-json \
       _bs "{{owner}}" "{{project}}"
 
 bs-dart-flutter-grpc-native owner="intrepion" project="saying-hello":
