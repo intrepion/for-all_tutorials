@@ -199,7 +199,6 @@ bs-echo owner="intrepion" project="saying-hello":
       --set bootstrap_language go \
       --set bootstrap_testing testify \
       --set bootstrap_mocking testify-mock \
-      --set bootstrap_storage no-storage \
       --set bootstrap_surface web \
       --set bootstrap_target api \
       --set bootstrap_framework echo \

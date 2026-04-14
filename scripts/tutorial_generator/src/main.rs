@@ -415,6 +415,23 @@ fn is_go_saying_hello_output_repo(spec: &OutputRepoSpec) -> bool {
     spec.project_slug == "saying-hello" && spec.selections.ecosystem == "go"
 }
 
+fn is_go_todo_list_output_repo(spec: &OutputRepoSpec) -> bool {
+    spec.project_slug == "todo-list"
+        && spec.selections.ecosystem == "go"
+        && spec.selections.language == "go"
+        && spec.selections.testing == "testify"
+        && spec.selections.mocking == "testify-mock"
+        && spec.selections.storage == "local-files-json"
+        && spec.selections.surface == "web"
+        && spec.selections.target == "api"
+        && spec.selections.framework == "echo"
+        && spec.selections.protocol.as_deref() == Some("http-json")
+}
+
+fn is_go_output_repo(spec: &OutputRepoSpec) -> bool {
+    is_go_saying_hello_output_repo(spec) || is_go_todo_list_output_repo(spec)
+}
+
 fn is_astro_saying_hello_output_repo(spec: &OutputRepoSpec) -> bool {
     spec.project_slug == "saying-hello"
         && spec.selections.ecosystem == "javascript"
@@ -577,6 +594,17 @@ fn supported_output_repo_selections(
             framework: "echo".to_string(),
             protocol: Some("http-json".to_string()),
         }),
+        ("todo-list", "go") => Some(OutputRepoSelections {
+            ecosystem: "go".to_string(),
+            language: "go".to_string(),
+            testing: "testify".to_string(),
+            mocking: "testify-mock".to_string(),
+            storage: "local-files-json".to_string(),
+            surface: "web".to_string(),
+            target: "api".to_string(),
+            framework: "echo".to_string(),
+            protocol: Some("http-json".to_string()),
+        }),
         ("saying-hello", "javascript") => Some(OutputRepoSelections {
             ecosystem: "javascript".to_string(),
             language: "typescript".to_string(),
@@ -624,6 +652,18 @@ fn validate_output_repo_selections(
         testing: "testify".to_string(),
         mocking: "testify-mock".to_string(),
         storage: "no-storage".to_string(),
+        surface: "web".to_string(),
+        target: "api".to_string(),
+        framework: "echo".to_string(),
+        protocol: Some("http-json".to_string()),
+    };
+
+    let supported_go_todo_list = OutputRepoSelections {
+        ecosystem: "go".to_string(),
+        language: "go".to_string(),
+        testing: "testify".to_string(),
+        mocking: "testify-mock".to_string(),
+        storage: "local-files-json".to_string(),
         surface: "web".to_string(),
         target: "api".to_string(),
         framework: "echo".to_string(),
@@ -683,6 +723,10 @@ fn validate_output_repo_selections(
     }
 
     if project_slug == "saying-hello" && selections == &supported_go {
+        return Ok(());
+    }
+
+    if project_slug == "todo-list" && selections == &supported_go_todo_list {
         return Ok(());
     }
 
@@ -1023,7 +1067,7 @@ fn build_managed_repo_files(
     ];
 
     if spec.selections.ecosystem == "dotnet"
-        || is_go_saying_hello_output_repo(spec)
+        || is_go_output_repo(spec)
         || is_flutter_saying_hello_output_repo(spec)
         || is_astro_saying_hello_output_repo(spec)
     {
@@ -1095,8 +1139,10 @@ fn render_output_repo_readme_content(owner: &str, spec: &OutputRepoSpec) -> Stri
 }
 
 fn render_output_repo_root_justfile_content(spec: &OutputRepoSpec) -> String {
-    if is_go_saying_hello_output_repo(spec) {
+    if is_go_output_repo(spec) {
         return "set shell := [\"bash\", \"-eu\", \"-c\"]\n\n\
+default:\n\
+\t@just --list\n\n\
 workspace := \"workspace\"\n\n\
 restore:\n\
 \t(cd {{workspace}} && go mod download)\n\n\
@@ -1138,6 +1184,8 @@ check-all:\n\
 
         return format!(
             "set shell := [\"bash\", \"-eu\", \"-c\"]\n\n\
+default:\n\
+\t@just --list\n\n\
 workspace := \"workspace\"\n\n\
 {extra_variable}\
 restore:\n\
@@ -1195,6 +1243,8 @@ check-all:\n\
 
     if is_astro_saying_hello_output_repo(spec) {
         return "set shell := [\"bash\", \"-eu\", \"-c\"]\n\n\
+default:\n\
+\t@just --list\n\n\
 workspace := \"workspace\"\n\n\
 restore:\n\
 \tnpm --prefix {{workspace}} ci\n\n\
@@ -1216,6 +1266,8 @@ check-all:\n\
     let adapter_project_name = adapter_project_name(&spec.project_slug);
     format!(
         "set shell := [\"bash\", \"-eu\", \"-c\"]\n\n\
+         default:\n\
+         \t@just --list\n\n\
          workspace := \"workspace\"\n\
          solution := \"{solution_name}.sln\"\n\
          adapter_project := \"workspace/src/{adapter_project_name}\"\n\n\
@@ -1236,7 +1288,7 @@ check-all:\n\
 }
 
 fn render_output_repo_ci_workflow_content(spec: &OutputRepoSpec) -> String {
-    if is_go_saying_hello_output_repo(spec) {
+    if is_go_output_repo(spec) {
         return r#"name: CI
 
 on:
@@ -1407,6 +1459,10 @@ fn build_output_repo_tutorial_files(app_root: &Path, spec: &OutputRepoSpec) -> V
         return build_go_saying_hello_output_repo_tutorial_files(app_root, spec);
     }
 
+    if is_go_todo_list_output_repo(spec) {
+        return build_go_todo_list_output_repo_tutorial_files(app_root, spec);
+    }
+
     if is_flutter_saying_hello_output_repo(spec) {
         return build_flutter_saying_hello_output_repo_tutorial_files(app_root, spec);
     }
@@ -1533,6 +1589,50 @@ fn build_go_saying_hello_output_repo_tutorial_files(
         ManagedRepoFile {
             relative_path: "tutorial/adapter.md".to_string(),
             contents: render_go_saying_hello_adapter_content(spec).into_bytes(),
+        },
+        ManagedRepoFile {
+            relative_path: "tutorial/finish.md".to_string(),
+            contents: render_output_repo_finish_content(spec).into_bytes(),
+        },
+    ]
+}
+
+fn build_go_todo_list_output_repo_tutorial_files(
+    app_root: &Path,
+    spec: &OutputRepoSpec,
+) -> Vec<ManagedRepoFile> {
+    let project_root = app_root.join("partials/projects").join(&spec.project_slug);
+    let spec_partial =
+        Partial::load(&project_root.join("spec/README.md")).expect("spec partial should exist");
+
+    vec![
+        ManagedRepoFile {
+            relative_path: "tutorial/README.md".to_string(),
+            contents: render_output_repo_tutorial_readme_content(spec).into_bytes(),
+        },
+        ManagedRepoFile {
+            relative_path: "tutorial/setup.md".to_string(),
+            contents: render_output_repo_setup_content(spec).into_bytes(),
+        },
+        ManagedRepoFile {
+            relative_path: "tutorial/spec.md".to_string(),
+            contents: tutorial_file_markdown(
+                "Spec",
+                &rewrite_for_single_repo_tutorial(&spec_partial.body),
+            )
+            .into_bytes(),
+        },
+        ManagedRepoFile {
+            relative_path: "tutorial/contracts.md".to_string(),
+            contents: render_go_todo_list_contracts_content(spec).into_bytes(),
+        },
+        ManagedRepoFile {
+            relative_path: "tutorial/code.md".to_string(),
+            contents: render_go_todo_list_code_content(spec).into_bytes(),
+        },
+        ManagedRepoFile {
+            relative_path: "tutorial/adapter.md".to_string(),
+            contents: render_go_todo_list_adapter_content(spec).into_bytes(),
         },
         ManagedRepoFile {
             relative_path: "tutorial/finish.md".to_string(),
@@ -1713,7 +1813,7 @@ fn render_output_repo_tutorial_readme_content(spec: &OutputRepoSpec) -> String {
         choices.push(format!("- Protocol: `{}`", repo_choice_display(protocol)));
     }
 
-    if is_go_saying_hello_output_repo(spec) {
+    if is_go_output_repo(spec) {
         choices.push(format!("- API Port: `{FOR_ALL_API_PORT}`"));
         choices.push(format!("- App Port: `{FOR_ALL_FRONTEND_PORT}`"));
     }
@@ -1751,6 +1851,34 @@ fn render_output_repo_setup_content(spec: &OutputRepoSpec) -> String {
             "Setup",
             &format!(
                 "Keep the repository root for shared files like `README.md`, `LICENSE`, `.gitignore`, `.github/`, `justfile`, and `tutorial/`.\n\nPut all Go code inside a single `workspace/` folder.\n\nFrom the repository root, run each setup command and checkpoint it before moving to the next one:\n\n```bash\n{}\n```\n\nThis gives you:\n\n- a root-level `.gitignore` for operating-system noise and editor leftovers\n- a `workspace/.gitignore` for standard Go build output and local tooling files\n\nWhen the full workspace is finished, it should contain these files:\n\n```text\nworkspace/\n  .gitignore\n  go.mod\n  go.sum\n  cmd/\n    server/\n      main.go\n  internal/\n    contracts/\n      greeting.go\n    code/\n      greeting_service.go\n      greeting_service_test.go\n    adapter/\n      http/\n        greeting_handler.go\n        greeting_handler_test.go\n```",
+                render_setup_commands_with_commits(&setup_commands, 1)
+            ),
+        );
+    }
+
+    if is_go_todo_list_output_repo(spec) {
+        let module_path = format!(
+            "github.com/{}/{}/workspace",
+            GITHUB_OWNER, spec.repo_name
+        );
+        let setup_commands = vec![
+            "mkdir -p workspace".to_string(),
+            "curl -L -s https://raw.githubusercontent.com/github/gitignore/refs/heads/main/Go.gitignore > workspace/.gitignore".to_string(),
+            format!("(cd workspace && go mod init {module_path})"),
+            "(cd workspace && go get github.com/labstack/echo/v4)".to_string(),
+            "(cd workspace && go get github.com/labstack/echo/v4/middleware)".to_string(),
+            "(cd workspace && go get github.com/stretchr/testify/assert github.com/stretchr/testify/mock)".to_string(),
+            "mkdir -p workspace/cmd/server".to_string(),
+            "mkdir -p workspace/data".to_string(),
+            "mkdir -p workspace/internal/contracts".to_string(),
+            "mkdir -p workspace/internal/code".to_string(),
+            "mkdir -p workspace/internal/adapter/http".to_string(),
+            "mkdir -p workspace/internal/adapter/storage".to_string(),
+        ];
+        return tutorial_file_markdown(
+            "Setup",
+            &format!(
+                "Keep the repository root for shared files like `README.md`, `LICENSE`, `.gitignore`, `.github/`, `justfile`, and `tutorial/`.\n\nPut all Go code inside a single `workspace/` folder.\n\nFrom the repository root, run each setup command and checkpoint it before moving to the next one:\n\n```bash\n{}\n```\n\nThis gives you:\n\n- a root-level `.gitignore` for operating-system noise and editor leftovers\n- a `workspace/.gitignore` for standard Go build output and local tooling files\n- a `workspace/data/tasks.json` file path for the durable local JSON task store used by the API adapter\n\nWhen the full workspace is finished, it should contain these files:\n\n```text\nworkspace/\n  .gitignore\n  go.mod\n  go.sum\n  cmd/\n    server/\n      main.go\n  data/\n    tasks.json\n  internal/\n    contracts/\n      task_list_service.go\n    code/\n      task_list_service.go\n      task_list_service_test.go\n    adapter/\n      http/\n        task_handler.go\n        task_handler_test.go\n      storage/\n        json_task_store.go\n        json_task_store_test.go\n```",
                 render_setup_commands_with_commits(&setup_commands, 1)
             ),
         );
@@ -2135,6 +2263,15 @@ fn render_output_repo_finish_content(spec: &OutputRepoSpec) -> String {
             "Finish",
             &format!(
                 "Start the API server from the repository root:\n\n```bash\njust run\n```\n\nThis API is configured to accept browser requests from `http://localhost:{FOR_ALL_FRONTEND_PORT}`.\n\nIn another terminal, try these requests:\n\n```bash\ncurl \"http://localhost:{FOR_ALL_API_PORT}/api/greeting\"\ncurl \"http://localhost:{FOR_ALL_API_PORT}/api/greeting?name=Ada\"\n```\n\nYou should get:\n\n```json\n{{\"message\":\"Hello!\"}}\n```\n\nand:\n\n```json\n{{\"message\":\"Hello, Ada!\"}}\n```"
+            ),
+        );
+    }
+
+    if is_go_todo_list_output_repo(spec) {
+        return tutorial_file_markdown(
+            "Finish",
+            &format!(
+                "Start the API server from the repository root:\n\n```bash\njust run\n```\n\nThis API is configured to accept browser requests from `http://localhost:{FOR_ALL_FRONTEND_PORT}` and to persist tasks in `workspace/data/tasks.json`.\n\nIn another terminal, try these requests:\n\n```bash\ncurl \"http://localhost:{FOR_ALL_API_PORT}/api/tasks\"\ncurl -X POST \"http://localhost:{FOR_ALL_API_PORT}/api/tasks\" \\\n  -H \"Content-Type: application/json\" \\\n  -d '{{\"task\":\"Buy milk\"}}'\ncurl -X DELETE \"http://localhost:{FOR_ALL_API_PORT}/api/tasks?task=Buy%20milk\"\n```\n\nThe initial `GET` should return an empty task list:\n\n```json\n{{\"tasks\":[],\"lines\":[]}}\n```\n\nAfter the `POST`, you should get:\n\n```json\n{{\"tasks\":[\"Buy milk\"],\"lines\":[\"Buy milk\"]}}\n```\n\nAfter the `DELETE`, the task list should be empty again.\n\nIf you later build a browser client at `http://localhost:{FOR_ALL_FRONTEND_PORT}`, it can call this API without additional CORS setup."
             ),
         );
     }
@@ -4451,6 +4588,1087 @@ git commit --message "4. Green: Wire The Server Entry Point"
     )
 }
 
+fn render_go_todo_list_contracts_content(_spec: &OutputRepoSpec) -> String {
+    let contracts_file = "workspace/internal/contracts/task_list_service.go";
+    tutorial_file_markdown(
+        "Contracts",
+        &rewrite_stage_commit_checkpoints(&rewrite_touch_creation_stage_only(&format!(
+            "Create the shared contract file:\n\n```bash\ntouch {contracts_file}\n```\n\nPut this exact content in `{contracts_file}`:\n\n```go\npackage contracts\n\ntype TaskStore interface {{\n\tLoadTaskStorage() (string, error)\n\tSaveTaskStorage(storageText string) error\n}}\n\ntype TaskListService interface {{\n\tListTasks() (TaskListResult, error)\n\tAddTask(taskText string) (TaskListResult, error)\n\tRemoveTask(completedTaskText string) (TaskListResult, error)\n}}\n\ntype TaskListResult struct {{\n\tTasks []string `json:\"tasks\"`\n\tLines []string `json:\"lines\"`\n}}\n\ntype AddTaskRequest struct {{\n\tTask string `json:\"task\"`\n}}\n\ntype ErrorResponse struct {{\n\tMessage string `json:\"message\"`\n}}\n```\n\nDo not add tests here. Keep this layer limited to interfaces and small shared types.\n\nThen run:\n\n```bash\ngit add --all\ngit commit --message \"Define task-list contracts\"\n```"
+        ))),
+    )
+}
+
+fn render_go_todo_list_code_content(_spec: &OutputRepoSpec) -> String {
+    let body = r#"### 1. Red: Parse The Canonical Stored Task Data
+
+Create the first code test file:
+
+```bash
+touch workspace/internal/code/task_list_service_test.go
+```
+
+Put this exact content in `workspace/internal/code/task_list_service_test.go`:
+
+```go
+package code
+
+import (
+	"testing"
+
+	"github.com/stretchr/testify/assert"
+)
+
+func TestParseTaskStoragePreservesTheCanonicalTasksInOrder(t *testing.T) {
+	storageText := "[\n  \"Learn how to invert binary trees\",\n  \"Buy milk\",\n  \"Clean kitchen\"\n]"
+
+	result := parseTaskStorage(storageText)
+
+	assert.Equal(t, []string{
+		"Learn how to invert binary trees",
+		"Buy milk",
+		"Clean kitchen",
+	}, result)
+}
+```
+
+Run:
+
+```bash
+just check-tests
+git add --all
+git commit --message "1. Red: Parse The Canonical Stored Task Data"
+```
+
+### 2. Green: Parse The Canonical Stored Task Data
+
+Create the first production file:
+
+```bash
+touch workspace/internal/code/task_list_service.go
+```
+
+Put this exact content in `workspace/internal/code/task_list_service.go`:
+
+```go
+package code
+
+import "encoding/json"
+
+func parseTaskStorage(storageText string) []string {
+	var tasks []string
+	_ = json.Unmarshal([]byte(storageText), &tasks)
+	return tasks
+}
+```
+
+Run:
+
+```bash
+just check-tests
+git add --all
+git commit --message "2. Green: Parse The Canonical Stored Task Data"
+```
+
+### 3. Red: Append And Remove Tasks
+
+Replace `workspace/internal/code/task_list_service_test.go` with:
+
+```go
+package code
+
+import (
+	"testing"
+
+	"github.com/stretchr/testify/assert"
+)
+
+func TestParseTaskStoragePreservesTheCanonicalTasksInOrder(t *testing.T) {
+	storageText := "[\n  \"Learn how to invert binary trees\",\n  \"Buy milk\",\n  \"Clean kitchen\"\n]"
+
+	result := parseTaskStorage(storageText)
+
+	assert.Equal(t, []string{
+		"Learn how to invert binary trees",
+		"Buy milk",
+		"Clean kitchen",
+	}, result)
+}
+
+func TestAppendTaskAppendsTheTaskToTheEndOfANewList(t *testing.T) {
+	result := appendTask([]string{
+		"Learn how to invert binary trees",
+		"Buy milk",
+	}, "Clean kitchen")
+
+	assert.Equal(t, []string{
+		"Learn how to invert binary trees",
+		"Buy milk",
+		"Clean kitchen",
+	}, result)
+}
+
+func TestRemoveTaskByExactTextRemovesTheFirstExactMatch(t *testing.T) {
+	result := removeTaskByExactText([]string{
+		"Learn how to invert binary trees",
+		"Buy milk",
+		"Clean kitchen",
+	}, "Buy milk")
+
+	assert.Equal(t, []string{
+		"Learn how to invert binary trees",
+		"Clean kitchen",
+	}, result)
+}
+```
+
+Run:
+
+```bash
+just check-tests
+git add --all
+git commit --message "3. Red: Append And Remove Tasks"
+```
+
+### 4. Green: Append And Remove Tasks
+
+Replace `workspace/internal/code/task_list_service.go` with:
+
+```go
+package code
+
+import "encoding/json"
+
+func parseTaskStorage(storageText string) []string {
+	var tasks []string
+	_ = json.Unmarshal([]byte(storageText), &tasks)
+	return tasks
+}
+
+func appendTask(taskList []string, taskText string) []string {
+	next := append([]string{}, taskList...)
+	return append(next, taskText)
+}
+
+func removeTaskByExactText(taskList []string, completedTaskText string) []string {
+	next := append([]string{}, taskList...)
+	for index, task := range next {
+		if task == completedTaskText {
+			return append(next[:index], next[index+1:]...)
+		}
+	}
+	return next
+}
+```
+
+Run:
+
+```bash
+just check-tests
+git add --all
+git commit --message "4. Green: Append And Remove Tasks"
+```
+
+### 5. Red: Format And Serialize The Task List
+
+Replace `workspace/internal/code/task_list_service_test.go` with:
+
+```go
+package code
+
+import (
+	"testing"
+
+	"github.com/stretchr/testify/assert"
+)
+
+func TestParseTaskStoragePreservesTheCanonicalTasksInOrder(t *testing.T) {
+	storageText := "[\n  \"Learn how to invert binary trees\",\n  \"Buy milk\",\n  \"Clean kitchen\"\n]"
+
+	result := parseTaskStorage(storageText)
+
+	assert.Equal(t, []string{
+		"Learn how to invert binary trees",
+		"Buy milk",
+		"Clean kitchen",
+	}, result)
+}
+
+func TestAppendTaskAppendsTheTaskToTheEndOfANewList(t *testing.T) {
+	result := appendTask([]string{
+		"Learn how to invert binary trees",
+		"Buy milk",
+	}, "Clean kitchen")
+
+	assert.Equal(t, []string{
+		"Learn how to invert binary trees",
+		"Buy milk",
+		"Clean kitchen",
+	}, result)
+}
+
+func TestRemoveTaskByExactTextRemovesTheFirstExactMatch(t *testing.T) {
+	result := removeTaskByExactText([]string{
+		"Learn how to invert binary trees",
+		"Buy milk",
+		"Clean kitchen",
+	}, "Buy milk")
+
+	assert.Equal(t, []string{
+		"Learn how to invert binary trees",
+		"Clean kitchen",
+	}, result)
+}
+
+func TestFormatTaskListReturnsOneLinePerTaskInOrder(t *testing.T) {
+	result := formatTaskList([]string{
+		"Learn how to invert binary trees",
+		"Buy milk",
+	})
+
+	assert.Equal(t, []string{
+		"Learn how to invert binary trees",
+		"Buy milk",
+	}, result)
+}
+
+func TestSerializeTaskStorageReturnsAJsonArrayInOrder(t *testing.T) {
+	result := serializeTaskStorage([]string{
+		"Learn how to invert binary trees",
+		"Buy milk",
+	})
+
+	assert.JSONEq(t, "[\"Learn how to invert binary trees\",\"Buy milk\"]", result)
+}
+```
+
+Run:
+
+```bash
+just check-tests
+git add --all
+git commit --message "5. Red: Format And Serialize The Task List"
+```
+
+### 6. Green: Format And Serialize The Task List
+
+Replace `workspace/internal/code/task_list_service.go` with:
+
+```go
+package code
+
+import "encoding/json"
+
+func parseTaskStorage(storageText string) []string {
+	var tasks []string
+	_ = json.Unmarshal([]byte(storageText), &tasks)
+	return tasks
+}
+
+func appendTask(taskList []string, taskText string) []string {
+	next := append([]string{}, taskList...)
+	return append(next, taskText)
+}
+
+func removeTaskByExactText(taskList []string, completedTaskText string) []string {
+	next := append([]string{}, taskList...)
+	for index, task := range next {
+		if task == completedTaskText {
+			return append(next[:index], next[index+1:]...)
+		}
+	}
+	return next
+}
+
+func formatTaskList(taskList []string) []string {
+	return append([]string{}, taskList...)
+}
+
+func serializeTaskStorage(taskList []string) string {
+	storageBytes, _ := json.Marshal(taskList)
+	return string(storageBytes)
+}
+```
+
+Run:
+
+```bash
+just check-tests
+git add --all
+git commit --message "6. Green: Format And Serialize The Task List"
+```
+
+### 7. Red: Add The Task Service Tests
+
+Replace `workspace/internal/code/task_list_service_test.go` with:
+
+```go
+package code
+
+import (
+	"testing"
+
+	"__MODULE_PATH__/internal/contracts"
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/mock"
+)
+
+type MockTaskStore struct {
+	mock.Mock
+}
+
+func (m *MockTaskStore) LoadTaskStorage() (string, error) {
+	args := m.Called()
+	return args.String(0), args.Error(1)
+}
+
+func (m *MockTaskStore) SaveTaskStorage(storageText string) error {
+	args := m.Called(storageText)
+	return args.Error(0)
+}
+
+func TestParseTaskStoragePreservesTheCanonicalTasksInOrder(t *testing.T) {
+	storageText := "[\n  \"Learn how to invert binary trees\",\n  \"Buy milk\",\n  \"Clean kitchen\"\n]"
+
+	result := parseTaskStorage(storageText)
+
+	assert.Equal(t, []string{
+		"Learn how to invert binary trees",
+		"Buy milk",
+		"Clean kitchen",
+	}, result)
+}
+
+func TestAppendTaskAppendsTheTaskToTheEndOfANewList(t *testing.T) {
+	result := appendTask([]string{
+		"Learn how to invert binary trees",
+		"Buy milk",
+	}, "Clean kitchen")
+
+	assert.Equal(t, []string{
+		"Learn how to invert binary trees",
+		"Buy milk",
+		"Clean kitchen",
+	}, result)
+}
+
+func TestRemoveTaskByExactTextRemovesTheFirstExactMatch(t *testing.T) {
+	result := removeTaskByExactText([]string{
+		"Learn how to invert binary trees",
+		"Buy milk",
+		"Clean kitchen",
+	}, "Buy milk")
+
+	assert.Equal(t, []string{
+		"Learn how to invert binary trees",
+		"Clean kitchen",
+	}, result)
+}
+
+func TestFormatTaskListReturnsOneLinePerTaskInOrder(t *testing.T) {
+	result := formatTaskList([]string{
+		"Learn how to invert binary trees",
+		"Buy milk",
+	})
+
+	assert.Equal(t, []string{
+		"Learn how to invert binary trees",
+		"Buy milk",
+	}, result)
+}
+
+func TestSerializeTaskStorageReturnsAJsonArrayInOrder(t *testing.T) {
+	result := serializeTaskStorage([]string{
+		"Learn how to invert binary trees",
+		"Buy milk",
+	})
+
+	assert.JSONEq(t, "[\"Learn how to invert binary trees\",\"Buy milk\"]", result)
+}
+
+func TestTaskListServiceListTasksLoadsAndFormatsTasks(t *testing.T) {
+	store := new(MockTaskStore)
+	store.On("LoadTaskStorage").Return("[\"Learn how to invert binary trees\",\"Buy milk\"]", nil)
+
+	service := NewTaskListService(store)
+	result, err := service.ListTasks()
+
+	assert.NoError(t, err)
+	assert.Equal(t, contracts.TaskListResult{
+		Tasks: []string{"Learn how to invert binary trees", "Buy milk"},
+		Lines: []string{"Learn how to invert binary trees", "Buy milk"},
+	}, result)
+	store.AssertExpectations(t)
+}
+
+func TestTaskListServiceAddTaskPersistsUpdatedTasks(t *testing.T) {
+	store := new(MockTaskStore)
+	store.On("LoadTaskStorage").Return("[\"Learn how to invert binary trees\"]", nil)
+	store.On("SaveTaskStorage", "[\"Learn how to invert binary trees\",\"Buy milk\"]").Return(nil)
+
+	service := NewTaskListService(store)
+	result, err := service.AddTask("Buy milk")
+
+	assert.NoError(t, err)
+	assert.Equal(t, contracts.TaskListResult{
+		Tasks: []string{"Learn how to invert binary trees", "Buy milk"},
+		Lines: []string{"Learn how to invert binary trees", "Buy milk"},
+	}, result)
+	store.AssertExpectations(t)
+}
+
+func TestTaskListServiceRemoveTaskPersistsUpdatedTasks(t *testing.T) {
+	store := new(MockTaskStore)
+	store.On("LoadTaskStorage").Return("[\"Learn how to invert binary trees\",\"Buy milk\"]", nil)
+	store.On("SaveTaskStorage", "[\"Learn how to invert binary trees\"]").Return(nil)
+
+	service := NewTaskListService(store)
+	result, err := service.RemoveTask("Buy milk")
+
+	assert.NoError(t, err)
+	assert.Equal(t, contracts.TaskListResult{
+		Tasks: []string{"Learn how to invert binary trees"},
+		Lines: []string{"Learn how to invert binary trees"},
+	}, result)
+	store.AssertExpectations(t)
+}
+```
+
+Run:
+
+```bash
+just check-tests
+git add --all
+git commit --message "7. Red: Add The Task Service Tests"
+```
+
+### 8. Green: Add The Task Service
+
+Replace `workspace/internal/code/task_list_service.go` with:
+
+```go
+package code
+
+import (
+	"encoding/json"
+
+	"__MODULE_PATH__/internal/contracts"
+)
+
+type DefaultTaskListService struct {
+	store contracts.TaskStore
+}
+
+func NewTaskListService(store contracts.TaskStore) contracts.TaskListService {
+	return DefaultTaskListService{store: store}
+}
+
+func parseTaskStorage(storageText string) []string {
+	var tasks []string
+	_ = json.Unmarshal([]byte(storageText), &tasks)
+	return tasks
+}
+
+func appendTask(taskList []string, taskText string) []string {
+	next := append([]string{}, taskList...)
+	return append(next, taskText)
+}
+
+func removeTaskByExactText(taskList []string, completedTaskText string) []string {
+	next := append([]string{}, taskList...)
+	for index, task := range next {
+		if task == completedTaskText {
+			return append(next[:index], next[index+1:]...)
+		}
+	}
+	return next
+}
+
+func formatTaskList(taskList []string) []string {
+	return append([]string{}, taskList...)
+}
+
+func serializeTaskStorage(taskList []string) string {
+	storageBytes, _ := json.Marshal(taskList)
+	return string(storageBytes)
+}
+
+func (s DefaultTaskListService) ListTasks() (contracts.TaskListResult, error) {
+	storageText, err := s.store.LoadTaskStorage()
+	if err != nil {
+		return contracts.TaskListResult{}, err
+	}
+
+	tasks := parseTaskStorage(storageText)
+	return buildTaskListResult(tasks), nil
+}
+
+func (s DefaultTaskListService) AddTask(taskText string) (contracts.TaskListResult, error) {
+	storageText, err := s.store.LoadTaskStorage()
+	if err != nil {
+		return contracts.TaskListResult{}, err
+	}
+
+	nextTasks := appendTask(parseTaskStorage(storageText), taskText)
+	if err := s.store.SaveTaskStorage(serializeTaskStorage(nextTasks)); err != nil {
+		return contracts.TaskListResult{}, err
+	}
+
+	return buildTaskListResult(nextTasks), nil
+}
+
+func (s DefaultTaskListService) RemoveTask(completedTaskText string) (contracts.TaskListResult, error) {
+	storageText, err := s.store.LoadTaskStorage()
+	if err != nil {
+		return contracts.TaskListResult{}, err
+	}
+
+	nextTasks := removeTaskByExactText(parseTaskStorage(storageText), completedTaskText)
+	if err := s.store.SaveTaskStorage(serializeTaskStorage(nextTasks)); err != nil {
+		return contracts.TaskListResult{}, err
+	}
+
+	return buildTaskListResult(nextTasks), nil
+}
+
+func buildTaskListResult(taskList []string) contracts.TaskListResult {
+	return contracts.TaskListResult{
+		Tasks: append([]string{}, taskList...),
+		Lines: formatTaskList(taskList),
+	}
+}
+```
+
+Run:
+
+```bash
+just check-tests
+git add --all
+git commit --message "8. Green: Add The Task Service"
+```"#
+        .replace("__MODULE_PATH__", &go_module_path(_spec));
+
+    tutorial_file_markdown(
+        "Code",
+        &rewrite_touch_creation_stage_only(&body),
+    )
+}
+
+fn render_go_todo_list_adapter_content(spec: &OutputRepoSpec) -> String {
+    let module_path = go_module_path(spec);
+    let body = r#"### 1. Red: Add The List-Tasks Handler Test
+
+Create the first adapter test file:
+
+```bash
+touch workspace/internal/adapter/http/task_handler_test.go
+```
+
+Put this exact content in `workspace/internal/adapter/http/task_handler_test.go`:
+
+```go
+package httpadapter
+
+import (
+	"encoding/json"
+	"net/http"
+	"net/http/httptest"
+	"testing"
+
+	"__MODULE_PATH__/internal/contracts"
+	"github.com/labstack/echo/v4"
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/mock"
+)
+
+type MockTaskListService struct {
+	mock.Mock
+}
+
+func (m *MockTaskListService) ListTasks() (contracts.TaskListResult, error) {
+	args := m.Called()
+	return args.Get(0).(contracts.TaskListResult), args.Error(1)
+}
+
+func (m *MockTaskListService) AddTask(taskText string) (contracts.TaskListResult, error) {
+	args := m.Called(taskText)
+	return args.Get(0).(contracts.TaskListResult), args.Error(1)
+}
+
+func (m *MockTaskListService) RemoveTask(completedTaskText string) (contracts.TaskListResult, error) {
+	args := m.Called(completedTaskText)
+	return args.Get(0).(contracts.TaskListResult), args.Error(1)
+}
+
+func TestTaskHandlerGetTasksReturnsTheCurrentTaskList(t *testing.T) {
+	e := echo.New()
+	req := httptest.NewRequest(http.MethodGet, "/api/tasks", nil)
+	rec := httptest.NewRecorder()
+	ctx := e.NewContext(req, rec)
+
+	service := new(MockTaskListService)
+	service.On("ListTasks").Return(contracts.TaskListResult{
+		Tasks: []string{"Learn how to invert binary trees", "Buy milk"},
+		Lines: []string{"Learn how to invert binary trees", "Buy milk"},
+	}, nil)
+
+	handler := NewTaskHandler(service)
+	err := handler.GetTasks(ctx)
+
+	assert.NoError(t, err)
+	assert.Equal(t, http.StatusOK, rec.Code)
+
+	var body contracts.TaskListResult
+	err = json.Unmarshal(rec.Body.Bytes(), &body)
+
+	assert.NoError(t, err)
+	assert.Equal(t, []string{"Learn how to invert binary trees", "Buy milk"}, body.Tasks)
+	assert.Equal(t, []string{"Learn how to invert binary trees", "Buy milk"}, body.Lines)
+	service.AssertExpectations(t)
+}
+```
+
+Run:
+
+```bash
+just check-tests
+git add --all
+git commit --message "1. Red: Add The List-Tasks Handler Test"
+```
+
+### 2. Green: Return The Current Task List As JSON
+
+Create the first adapter production file:
+
+```bash
+touch workspace/internal/adapter/http/task_handler.go
+```
+
+Put this exact content in `workspace/internal/adapter/http/task_handler.go`:
+
+```go
+package httpadapter
+
+import (
+	"net/http"
+
+	"__MODULE_PATH__/internal/contracts"
+	"github.com/labstack/echo/v4"
+)
+
+type TaskHandler struct {
+	service contracts.TaskListService
+}
+
+func NewTaskHandler(service contracts.TaskListService) *TaskHandler {
+	return &TaskHandler{service: service}
+}
+
+func (h *TaskHandler) GetTasks(c echo.Context) error {
+	result, err := h.service.ListTasks()
+	if err != nil {
+		return c.JSON(http.StatusInternalServerError, contracts.ErrorResponse{
+			Message: "internal server error",
+		})
+	}
+
+	return c.JSON(http.StatusOK, result)
+}
+```
+
+Run:
+
+```bash
+just check-tests
+git add --all
+git commit --message "2. Green: Return The Current Task List As JSON"
+```
+
+### 3. Red: Add The Task-Mutation Handler Tests
+
+Replace `workspace/internal/adapter/http/task_handler_test.go` with:
+
+```go
+package httpadapter
+
+import (
+	"bytes"
+	"encoding/json"
+	"net/http"
+	"net/http/httptest"
+	"testing"
+
+	"__MODULE_PATH__/internal/contracts"
+	"github.com/labstack/echo/v4"
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/mock"
+)
+
+type MockTaskListService struct {
+	mock.Mock
+}
+
+func (m *MockTaskListService) ListTasks() (contracts.TaskListResult, error) {
+	args := m.Called()
+	return args.Get(0).(contracts.TaskListResult), args.Error(1)
+}
+
+func (m *MockTaskListService) AddTask(taskText string) (contracts.TaskListResult, error) {
+	args := m.Called(taskText)
+	return args.Get(0).(contracts.TaskListResult), args.Error(1)
+}
+
+func (m *MockTaskListService) RemoveTask(completedTaskText string) (contracts.TaskListResult, error) {
+	args := m.Called(completedTaskText)
+	return args.Get(0).(contracts.TaskListResult), args.Error(1)
+}
+
+func TestTaskHandlerGetTasksReturnsTheCurrentTaskList(t *testing.T) {
+	e := echo.New()
+	req := httptest.NewRequest(http.MethodGet, "/api/tasks", nil)
+	rec := httptest.NewRecorder()
+	ctx := e.NewContext(req, rec)
+
+	service := new(MockTaskListService)
+	service.On("ListTasks").Return(contracts.TaskListResult{
+		Tasks: []string{"Learn how to invert binary trees", "Buy milk"},
+		Lines: []string{"Learn how to invert binary trees", "Buy milk"},
+	}, nil)
+
+	handler := NewTaskHandler(service)
+	err := handler.GetTasks(ctx)
+
+	assert.NoError(t, err)
+	assert.Equal(t, http.StatusOK, rec.Code)
+
+	var body contracts.TaskListResult
+	err = json.Unmarshal(rec.Body.Bytes(), &body)
+
+	assert.NoError(t, err)
+	assert.Equal(t, []string{"Learn how to invert binary trees", "Buy milk"}, body.Tasks)
+	assert.Equal(t, []string{"Learn how to invert binary trees", "Buy milk"}, body.Lines)
+	service.AssertExpectations(t)
+}
+
+func TestTaskHandlerAddTaskAppendsTheSubmittedTask(t *testing.T) {
+	e := echo.New()
+	req := httptest.NewRequest(
+		http.MethodPost,
+		"/api/tasks",
+		bytes.NewBufferString("{\"task\":\"Buy milk\"}"),
+	)
+	req.Header.Set(echo.HeaderContentType, echo.MIMEApplicationJSON)
+	rec := httptest.NewRecorder()
+	ctx := e.NewContext(req, rec)
+
+	service := new(MockTaskListService)
+	service.On("AddTask", "Buy milk").Return(contracts.TaskListResult{
+		Tasks: []string{"Learn how to invert binary trees", "Buy milk"},
+		Lines: []string{"Learn how to invert binary trees", "Buy milk"},
+	}, nil)
+
+	handler := NewTaskHandler(service)
+	err := handler.AddTask(ctx)
+
+	assert.NoError(t, err)
+	assert.Equal(t, http.StatusOK, rec.Code)
+	service.AssertExpectations(t)
+}
+
+func TestTaskHandlerAddTaskRejectsBlankInput(t *testing.T) {
+	e := echo.New()
+	req := httptest.NewRequest(
+		http.MethodPost,
+		"/api/tasks",
+		bytes.NewBufferString("{\"task\":\"   \"}"),
+	)
+	req.Header.Set(echo.HeaderContentType, echo.MIMEApplicationJSON)
+	rec := httptest.NewRecorder()
+	ctx := e.NewContext(req, rec)
+
+	service := new(MockTaskListService)
+	handler := NewTaskHandler(service)
+	err := handler.AddTask(ctx)
+
+	assert.NoError(t, err)
+	assert.Equal(t, http.StatusBadRequest, rec.Code)
+	service.AssertExpectations(t)
+}
+
+func TestTaskHandlerRemoveTaskRemovesTheChosenTask(t *testing.T) {
+	e := echo.New()
+	req := httptest.NewRequest(http.MethodDelete, "/api/tasks?task=Buy%20milk", nil)
+	rec := httptest.NewRecorder()
+	ctx := e.NewContext(req, rec)
+
+	service := new(MockTaskListService)
+	service.On("RemoveTask", "Buy milk").Return(contracts.TaskListResult{
+		Tasks: []string{"Learn how to invert binary trees"},
+		Lines: []string{"Learn how to invert binary trees"},
+	}, nil)
+
+	handler := NewTaskHandler(service)
+	err := handler.RemoveTask(ctx)
+
+	assert.NoError(t, err)
+	assert.Equal(t, http.StatusOK, rec.Code)
+	service.AssertExpectations(t)
+}
+```
+
+Run:
+
+```bash
+just check-tests
+git add --all
+git commit --message "3. Red: Add The Task-Mutation Handler Tests"
+```
+
+### 4. Green: Handle Add And Remove Task Requests
+
+Replace `workspace/internal/adapter/http/task_handler.go` with:
+
+```go
+package httpadapter
+
+import (
+	"net/http"
+	"strings"
+
+	"__MODULE_PATH__/internal/contracts"
+	"github.com/labstack/echo/v4"
+)
+
+type TaskHandler struct {
+	service contracts.TaskListService
+}
+
+func NewTaskHandler(service contracts.TaskListService) *TaskHandler {
+	return &TaskHandler{service: service}
+}
+
+func (h *TaskHandler) GetTasks(c echo.Context) error {
+	result, err := h.service.ListTasks()
+	if err != nil {
+		return c.JSON(http.StatusInternalServerError, contracts.ErrorResponse{
+			Message: "internal server error",
+		})
+	}
+
+	return c.JSON(http.StatusOK, result)
+}
+
+func (h *TaskHandler) AddTask(c echo.Context) error {
+	var request contracts.AddTaskRequest
+	if err := c.Bind(&request); err != nil {
+		return c.JSON(http.StatusBadRequest, contracts.ErrorResponse{
+			Message: "invalid request body",
+		})
+	}
+
+	if strings.TrimSpace(request.Task) == "" {
+		return c.JSON(http.StatusBadRequest, contracts.ErrorResponse{
+			Message: "task must not be blank",
+		})
+	}
+
+	result, err := h.service.AddTask(request.Task)
+	if err != nil {
+		return c.JSON(http.StatusInternalServerError, contracts.ErrorResponse{
+			Message: "internal server error",
+		})
+	}
+
+	return c.JSON(http.StatusOK, result)
+}
+
+func (h *TaskHandler) RemoveTask(c echo.Context) error {
+	taskText := c.QueryParam("task")
+	if strings.TrimSpace(taskText) == "" {
+		return c.JSON(http.StatusBadRequest, contracts.ErrorResponse{
+			Message: "task query parameter must not be blank",
+		})
+	}
+
+	result, err := h.service.RemoveTask(taskText)
+	if err != nil {
+		return c.JSON(http.StatusInternalServerError, contracts.ErrorResponse{
+			Message: "internal server error",
+		})
+	}
+
+	return c.JSON(http.StatusOK, result)
+}
+```
+
+Run:
+
+```bash
+just check-tests
+git add --all
+git commit --message "4. Green: Handle Add And Remove Task Requests"
+```
+
+### 5. Red: Add The JSON Task Store Test
+
+Create the storage test file:
+
+```bash
+touch workspace/internal/adapter/storage/json_task_store_test.go
+```
+
+Put this exact content in `workspace/internal/adapter/storage/json_task_store_test.go`:
+
+```go
+package storageadapter
+
+import (
+	"path/filepath"
+	"testing"
+
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
+)
+
+func TestJSONTaskStoreLoadsEmptyJsonArrayWhenTheFileDoesNotExist(t *testing.T) {
+	store := NewJSONTaskStore(filepath.Join(t.TempDir(), "tasks.json"))
+
+	result, err := store.LoadTaskStorage()
+
+	require.NoError(t, err)
+	assert.JSONEq(t, "[]", result)
+}
+
+func TestJSONTaskStoreWritesAndReadsTaskStorage(t *testing.T) {
+	store := NewJSONTaskStore(filepath.Join(t.TempDir(), "tasks.json"))
+
+	require.NoError(t, store.SaveTaskStorage("[\"Buy milk\"]"))
+
+	result, err := store.LoadTaskStorage()
+
+	require.NoError(t, err)
+	assert.JSONEq(t, "[\"Buy milk\"]", result)
+}
+```
+
+Run:
+
+```bash
+just check-tests
+git add --all
+git commit --message "5. Red: Add The JSON Task Store Test"
+```
+
+### 6. Green: Read And Write The Local JSON Task Store
+
+Create the storage production file:
+
+```bash
+touch workspace/internal/adapter/storage/json_task_store.go
+```
+
+Put this exact content in `workspace/internal/adapter/storage/json_task_store.go`:
+
+```go
+package storageadapter
+
+import (
+	"errors"
+	"os"
+	"path/filepath"
+)
+
+type JSONTaskStore struct {
+	path string
+}
+
+func NewJSONTaskStore(path string) *JSONTaskStore {
+	return &JSONTaskStore{path: path}
+}
+
+func (s *JSONTaskStore) LoadTaskStorage() (string, error) {
+	storageBytes, err := os.ReadFile(s.path)
+	if errors.Is(err, os.ErrNotExist) {
+		return "[]", nil
+	}
+	if err != nil {
+		return "", err
+	}
+
+	return string(storageBytes), nil
+}
+
+func (s *JSONTaskStore) SaveTaskStorage(storageText string) error {
+	if err := os.MkdirAll(filepath.Dir(s.path), 0o755); err != nil {
+		return err
+	}
+
+	return os.WriteFile(s.path, []byte(storageText), 0o644)
+}
+```
+
+Run:
+
+```bash
+just check-tests
+git add --all
+git commit --message "6. Green: Read And Write The Local JSON Task Store"
+```
+
+### 7. Green: Wire The Server Entry Point
+
+Create the server entry point:
+
+```bash
+touch workspace/cmd/server/main.go
+```
+
+Put this exact content in `workspace/cmd/server/main.go`:
+
+```go
+package main
+
+import (
+	"log"
+
+	httpadapter "__MODULE_PATH__/internal/adapter/http"
+	storageadapter "__MODULE_PATH__/internal/adapter/storage"
+	"__MODULE_PATH__/internal/code"
+	"github.com/labstack/echo/v4"
+	"github.com/labstack/echo/v4/middleware"
+)
+
+func main() {
+	e := echo.New()
+	e.Use(middleware.CORSWithConfig(middleware.CORSConfig{
+		AllowOrigins: []string{"http://localhost:25616"},
+	}))
+
+	store := storageadapter.NewJSONTaskStore("data/tasks.json")
+	service := code.NewTaskListService(store)
+	handler := httpadapter.NewTaskHandler(service)
+
+	e.GET("/api/tasks", handler.GetTasks)
+	e.POST("/api/tasks", handler.AddTask)
+	e.DELETE("/api/tasks", handler.RemoveTask)
+
+	log.Fatal(e.Start(":25664"))
+}
+```
+
+Run:
+
+```bash
+just check-tests
+git add --all
+git commit --message "7. Green: Wire The Server Entry Point"
+```"#;
+
+    tutorial_file_markdown(
+        "Adapter",
+        &rewrite_touch_creation_stage_only(&body.replace("__MODULE_PATH__", &module_path)),
+    )
+}
+
 fn render_flutter_saying_hello_contracts_content(_spec: &OutputRepoSpec) -> String {
     if is_flutter_local_saying_hello_output_repo(_spec) {
         return tutorial_file_markdown(
@@ -6198,6 +7416,27 @@ mod tests {
         }
     }
 
+    fn sample_todo_list_go_output_repo_spec() -> OutputRepoSpec {
+        OutputRepoSpec {
+            repo_name: "fa_tut_todo-list".to_string(),
+            repo_description:
+                "Tutorial workspace for the Todo List project with go / go / testify / testify-mock / local-files-json / web / API / echo / http-json choices."
+                    .to_string(),
+            project_slug: "todo-list".to_string(),
+            selections: OutputRepoSelections {
+                ecosystem: "go".to_string(),
+                language: "go".to_string(),
+                testing: "testify".to_string(),
+                mocking: "testify-mock".to_string(),
+                storage: "local-files-json".to_string(),
+                surface: "web".to_string(),
+                target: "api".to_string(),
+                framework: "echo".to_string(),
+                protocol: Some("http-json".to_string()),
+            },
+        }
+    }
+
     fn sample_astro_output_repo_spec() -> OutputRepoSpec {
         OutputRepoSpec {
             repo_name: "fa_tut_saying-hello".to_string(),
@@ -6339,6 +7578,27 @@ mod tests {
     }
 
     #[test]
+    fn output_repo_selection_overrides_allow_switching_todo_list_to_go() {
+        let overrides = BootstrapSelectionOverrides {
+            ecosystem: Some("go".to_string()),
+            ..BootstrapSelectionOverrides::default()
+        };
+
+        let selections = output_repo_selections_for_project("todo-list", &overrides)
+            .expect("go todo-list should be supported");
+
+        assert_eq!(selections.ecosystem, "go");
+        assert_eq!(selections.language, "go");
+        assert_eq!(selections.testing, "testify");
+        assert_eq!(selections.mocking, "testify-mock");
+        assert_eq!(selections.storage, "local-files-json");
+        assert_eq!(selections.surface, "web");
+        assert_eq!(selections.target, "api");
+        assert_eq!(selections.framework, "echo");
+        assert_eq!(selections.protocol, Some("http-json".to_string()));
+    }
+
+    #[test]
     fn output_repo_selection_overrides_allow_switching_saying_hello_to_astro() {
         let overrides = BootstrapSelectionOverrides {
             ecosystem: Some("javascript".to_string()),
@@ -6423,6 +7683,7 @@ mod tests {
 
         let justfile = render_output_repo_root_justfile_content(&spec);
 
+        assert!(justfile.contains("default:\n\t@just --list"));
         assert!(justfile.contains("\nrestore:\n"));
         assert!(justfile.contains("go mod download"));
         assert!(justfile.contains("gofmt -w"));
@@ -6526,12 +7787,76 @@ mod tests {
     }
 
     #[test]
+    fn todo_list_go_output_repo_tutorial_readme_lists_local_files_json_api_choices() {
+        let spec = sample_todo_list_go_output_repo_spec();
+
+        let readme = render_output_repo_tutorial_readme_content(&spec);
+
+        assert!(readme.contains("- Project: `todo-list`"));
+        assert!(readme.contains("- Testing: `testify`"));
+        assert!(readme.contains("- Mocking: `testify-mock`"));
+        assert!(readme.contains("- Storage: `local-files-json`"));
+        assert!(readme.contains("- Surface: `web`"));
+        assert!(readme.contains("- Target: `API`"));
+        assert!(readme.contains("- Framework: `echo`"));
+        assert!(readme.contains("- Protocol: `http-json`"));
+        assert!(readme.contains("- API Port: `25664`"));
+        assert!(readme.contains("- App Port: `25616`"));
+    }
+
+    #[test]
+    fn todo_list_go_output_repo_setup_and_finish_content_use_local_json_api_examples() {
+        let spec = sample_todo_list_go_output_repo_spec();
+
+        let setup = render_output_repo_setup_content(&spec);
+        let finish = render_output_repo_finish_content(&spec);
+
+        assert!(setup.contains("go mod init github.com/intrepion/fa_tut_todo-list/workspace"));
+        assert!(setup.contains("Go.gitignore > workspace/.gitignore"));
+        assert!(setup.contains("mkdir -p workspace/data"));
+        assert!(setup.contains("mkdir -p workspace/internal/adapter/storage"));
+        assert!(setup.contains("workspace/data/tasks.json"));
+        assert!(finish.contains("http://localhost:25664/api/tasks"));
+        assert!(finish.contains("workspace/data/tasks.json"));
+        assert!(finish.contains("{\"tasks\":[],\"lines\":[]}"));
+        assert!(finish.contains("{\"tasks\":[\"Buy milk\"],\"lines\":[\"Buy milk\"]}"));
+    }
+
+    #[test]
+    fn todo_list_go_contracts_code_and_adapter_tutorials_are_concrete() {
+        let spec = sample_todo_list_go_output_repo_spec();
+
+        let contracts = render_go_todo_list_contracts_content(&spec);
+        let code = render_go_todo_list_code_content(&spec);
+        let adapter = render_go_todo_list_adapter_content(&spec);
+
+        assert!(contracts.contains("type TaskStore interface"));
+        assert!(contracts.contains("type TaskListService interface"));
+        assert!(contracts.contains("type AddTaskRequest struct"));
+        assert!(contracts.contains("git commit --message 'touch workspace/internal/contracts/task_list_service.go'"));
+        assert!(code.contains("touch workspace/internal/code/task_list_service_test.go"));
+        assert!(code.contains("touch workspace/internal/code/task_list_service.go"));
+        assert!(code.contains("TestTaskListServiceAddTaskPersistsUpdatedTasks"));
+        assert!(code.contains("NewTaskListService(store)"));
+        assert!(adapter.contains("touch workspace/internal/adapter/http/task_handler_test.go"));
+        assert!(adapter.contains("touch workspace/internal/adapter/storage/json_task_store_test.go"));
+        assert!(adapter.contains("touch workspace/internal/adapter/storage/json_task_store.go"));
+        assert!(adapter.contains("touch workspace/cmd/server/main.go"));
+        assert!(adapter.contains("AllowOrigins: []string{\"http://localhost:25616\"}"));
+        assert!(adapter.contains("e.GET(\"/api/tasks\", handler.GetTasks)"));
+        assert!(adapter.contains("e.POST(\"/api/tasks\", handler.AddTask)"));
+        assert!(adapter.contains("e.DELETE(\"/api/tasks\", handler.RemoveTask)"));
+        assert!(adapter.contains("storageadapter.NewJSONTaskStore(\"data/tasks.json\")"));
+    }
+
+    #[test]
     fn dotnet_output_repo_tutorials_include_checkpoint_commands() {
         let app_root = app_root_for_tests();
         let spec = sample_dotnet_output_repo_spec();
         let files = build_output_repo_tutorial_files(&app_root, &spec);
         let justfile = render_output_repo_root_justfile_content(&spec);
 
+        assert!(justfile.contains("default:\n\t@just --list"));
         let setup = String::from_utf8(
             files
                 .iter()
@@ -6593,6 +7918,7 @@ mod tests {
 
         let justfile = render_output_repo_root_justfile_content(&spec);
 
+        assert!(justfile.contains("default:\n\t@just --list"));
         assert!(justfile.contains("\nrestore:\n"));
         assert!(justfile.contains("npm --prefix {{workspace}} ci"));
         assert!(justfile.contains("npm --prefix {{workspace}} run format"));
@@ -6607,6 +7933,7 @@ mod tests {
 
         let justfile = render_output_repo_root_justfile_content(&spec);
 
+        assert!(justfile.contains("default:\n\t@just --list"));
         assert!(justfile.contains("\nrestore:\n"));
         assert!(justfile.contains("(cd {{workspace}} && flutter pub get)"));
         assert!(justfile.contains("(cd {{workspace}} && dart format lib test integration_test)"));
@@ -6628,6 +7955,7 @@ mod tests {
 
         let justfile = render_output_repo_root_justfile_content(&spec);
 
+        assert!(justfile.contains("default:\n\t@just --list"));
         assert!(justfile.contains("(cd {{workspace}} && flutter pub get)"));
         assert!(justfile.contains("(cd {{workspace}} && flutter test)"));
         assert!(justfile.contains("\ndevices:\n"));
