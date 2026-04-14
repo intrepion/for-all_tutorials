@@ -7,14 +7,15 @@ source_scope: project-partials
 
 Project-source slices for future compiled tutorials.
 
-Every project manifest in this folder now declares at least one active compiled tutorial output.
+Some project manifests in this folder already declare active compiled tutorial outputs.
 
-Every project manifest in this folder now also declares at least one active adapter output on a currently supported `.NET/C#` path.
+Other project manifests are intentionally spec-first and keep `compiled_outputs: []` until their first tutorial path is ready.
 
 ## Contents
 
 - [Adding Numbers](adding-numbers/README.md)
 - [Anagram Checker](anagram-checker/README.md)
+- [AR Preview](ar-preview/README.md)
 - [Area of a Rectangular Room](area-of-a-rectangular-room/README.md)
 - [Blood Alcohol Calculator](blood-alcohol-calculator/README.md)
 - [BMI Calculator](bmi-calculator/README.md)
@@ -34,9 +35,11 @@ Every project manifest in this folder now also declares at least one active adap
 - [Handling Bad Input](handling-bad-input/README.md)
 - [Karvonen Heart Rate](karvonen-heart-rate/README.md)
 - [Legal Driving Age](legal-driving-age/README.md)
+- [Lighting Studio](lighting-studio/README.md)
 - [Mad Lib](mad-lib/README.md)
 - [Magic 8 Ball](magic-8-ball/README.md)
 - [Months to Pay Off a Credit Card](months-to-pay-off-a-credit-card/README.md)
+- [Model Showroom](model-showroom/README.md)
 - [Movie Recommendations](movie-recommendations/README.md)
 - [Multiplication Table](multiplication-table/README.md)
 - [Multistate Sales Tax Calculator](multistate-sales-tax-calculator/README.md)
@@ -50,8 +53,10 @@ Every project manifest in this folder now also declares at least one active adap
 - [Picking a Winner](picking-a-winner/README.md)
 - [Pizza Party](pizza-party/README.md)
 - [Printing Quotes](printing-quotes/README.md)
+- [Product Configurator](product-configurator/README.md)
 - [Product Search](product-search/README.md)
 - [Pushing Notes to Firebase](pushing-notes-to-firebase/README.md)
+- [Remote Model Loader](remote-model-loader/README.md)
 - [Retirement Calculator](retirement-calculator/README.md)
 - [Saying Hello](saying-hello/README.md)
 - [Self-Checkout](self-checkout/README.md)

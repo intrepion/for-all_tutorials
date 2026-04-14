@@ -870,3 +870,53 @@ Project slugs stay stable even if their place in this map changes.
 - `Unlocks`: none
 - `Recommended Instructions`: [partials/projects/trivia-app/instructions/README.md](../partials/projects/trivia-app/instructions/README.md)
 - `Notes`: start with small parsing, choice-pool, answer-checking, and score-formatting contracts such as `parse_trivia_question_bank(json_text)`, `build_trivia_choice_pool(trivia_question)`, `is_correct_trivia_answer(trivia_question, selected_answer)`, and `format_trivia_final_score(correct_answer_count)`, build the core repo first, then add an adapter repo that consumes that core; this project builds on the earlier file-parsing and random-choice exercises by moving from one random winner or one hidden answer to a file-driven trivia game that randomizes both question order and displayed answer order
+
+## Stage 58
+
+### model-showroom
+
+- `Project`: `model-showroom`
+- `Prerequisites`: [`saying-hello`](#saying-hello)
+- `Unlocks`: [`lighting-studio`](#lighting-studio)
+- `Recommended Instructions`: [partials/projects/model-showroom/instructions/README.md](../partials/projects/model-showroom/instructions/README.md)
+- `Notes`: start with a tiny viewer-scene contract such as `build_showroom_scene() -> viewer_scene_config`, build the core repo first, then add an adapter repo that consumes that core; this project starts the 3D-viewer track by focusing on one local model, one deterministic camera orbit, and a clean separation between core-owned scene defaults and adapter-managed rendering
+
+## Stage 59
+
+### lighting-studio
+
+- `Project`: `lighting-studio`
+- `Prerequisites`: [`model-showroom`](#model-showroom)
+- `Unlocks`: [`remote-model-loader`](#remote-model-loader)
+- `Recommended Instructions`: [partials/projects/lighting-studio/instructions/README.md](../partials/projects/lighting-studio/instructions/README.md)
+- `Notes`: start with small lighting and scene-building contracts such as `clamp_lighting_controls(exposure, shadow_intensity, environment_id)` and `build_lighting_scene(lighting_controls)`, build the core repo first, then add an adapter repo that consumes that core; this project builds on the earlier static 3D scene by introducing lighting ranges, environment mapping, and visual tuning without changing the model geometry
+
+## Stage 60
+
+### remote-model-loader
+
+- `Project`: `remote-model-loader`
+- `Prerequisites`: [`lighting-studio`](#lighting-studio)
+- `Unlocks`: [`product-configurator`](#product-configurator)
+- `Recommended Instructions`: [partials/projects/remote-model-loader/instructions/README.md](../partials/projects/remote-model-loader/instructions/README.md)
+- `Notes`: start with small progress, message, and interaction-gating contracts such as `calculate_load_percentage(loaded_bytes, total_bytes)`, `format_loading_message(load_percentage)`, `format_model_load_error(model_label)`, and `can_interact_with_model(has_loaded, has_error)`, build the core repo first, then add an adapter repo that consumes that core; this project builds on the earlier static and lighting-driven 3D scenes by introducing remote asset loading, asynchronous state, and graceful error handling
+
+## Stage 61
+
+### product-configurator
+
+- `Project`: `product-configurator`
+- `Prerequisites`: [`remote-model-loader`](#remote-model-loader)
+- `Unlocks`: [`ar-preview`](#ar-preview)
+- `Recommended Instructions`: [partials/projects/product-configurator/instructions/README.md](../partials/projects/product-configurator/instructions/README.md)
+- `Notes`: start with small catalog, selection, and scene contracts such as `build_variant_catalog()`, `find_variant_by_exact_id(variant_catalog, variant_id)`, and `build_variant_scene(variant)`, build the core repo first, then add an adapter repo that consumes that core; this project builds on the earlier 3D loading work by introducing multiple model variants and per-variant camera and lighting defaults
+
+## Stage 62
+
+### ar-preview
+
+- `Project`: `ar-preview`
+- `Prerequisites`: [`product-configurator`](#product-configurator)
+- `Unlocks`: none
+- `Recommended Instructions`: [partials/projects/ar-preview/instructions/README.md](../partials/projects/ar-preview/instructions/README.md)
+- `Notes`: start with small AR scale, launch-eligibility, and fallback-message contracts such as `select_ar_scale_mode(mode_name)`, `can_launch_ar(device_supports_ar, has_camera_permission)`, and `format_ar_unavailable_message()`, build the core repo first, then add an adapter repo that consumes that core; this project builds on the earlier configurable 3D scenes by introducing platform-specific AR capabilities and graceful unsupported-device fallbacks
