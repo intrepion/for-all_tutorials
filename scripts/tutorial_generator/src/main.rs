@@ -1939,10 +1939,6 @@ fn render_output_repo_setup_content(spec: &OutputRepoSpec) -> String {
             "(cd workspace && go get github.com/labstack/echo/v4)".to_string(),
             "(cd workspace && go get github.com/labstack/echo/v4/middleware)".to_string(),
             "(cd workspace && go get github.com/stretchr/testify/assert github.com/stretchr/testify/mock)".to_string(),
-            "mkdir -p workspace/cmd/server".to_string(),
-            "mkdir -p workspace/internal/contracts".to_string(),
-            "mkdir -p workspace/internal/code".to_string(),
-            "mkdir -p workspace/internal/adapter/http".to_string(),
         ];
         return tutorial_file_markdown(
             "Setup",
@@ -1965,12 +1961,7 @@ fn render_output_repo_setup_content(spec: &OutputRepoSpec) -> String {
             "(cd workspace && go get github.com/labstack/echo/v4)".to_string(),
             "(cd workspace && go get github.com/labstack/echo/v4/middleware)".to_string(),
             "(cd workspace && go get github.com/stretchr/testify/assert github.com/stretchr/testify/mock)".to_string(),
-            "mkdir -p workspace/cmd/server".to_string(),
             "mkdir -p workspace/data".to_string(),
-            "mkdir -p workspace/internal/contracts".to_string(),
-            "mkdir -p workspace/internal/code".to_string(),
-            "mkdir -p workspace/internal/adapter/http".to_string(),
-            "mkdir -p workspace/internal/adapter/storage".to_string(),
         ];
         return tutorial_file_markdown(
             "Setup",
@@ -1986,12 +1977,6 @@ fn render_output_repo_setup_content(spec: &OutputRepoSpec) -> String {
         let setup_commands = vec![
             format!("flutter create --platforms=web,android,ios,macos,windows,linux --org com.intrepion --project-name {package_name} workspace"),
             "rm workspace/test/widget_test.dart".to_string(),
-            "mkdir -p workspace/integration_test".to_string(),
-            "mkdir -p workspace/lib/contracts".to_string(),
-            "mkdir -p workspace/lib/code".to_string(),
-            "mkdir -p workspace/lib/adapter".to_string(),
-            "mkdir -p workspace/test/code".to_string(),
-            "mkdir -p workspace/test/adapter".to_string(),
             "(cd workspace && flutter pub add http)".to_string(),
             "(cd workspace && flutter pub add --dev test)".to_string(),
             "(cd workspace && flutter pub add --dev mocktail)".to_string(),
@@ -2002,7 +1987,7 @@ fn render_output_repo_setup_content(spec: &OutputRepoSpec) -> String {
             "Setup",
             &format!(
                 "Keep the repository root for shared files like `README.md`, `LICENSE`, `.gitignore`, `.github/`, `justfile`, and `tutorial/`.\n\nPut all Flutter code inside a single `workspace/` folder.\n\nFrom the repository root, run each setup command and checkpoint it before moving to the next one:\n\n```bash\n{}\n```\n\nWhen the full workspace is finished, it should contain these files:\n\n```text\nworkspace/\n  pubspec.yaml\n  lib/\n    contracts/\n      task_api.dart\n      task_list_response.dart\n    code/\n      task_list_controller.dart\n    adapter/\n      http_task_api.dart\n      todo_list_page.dart\n  test/\n    code/\n      task_list_controller_test.dart\n    adapter/\n      http_task_api_test.dart\n      todo_list_page_test.dart\n  integration_test/\n    app_test.dart\n  lib/main.dart\n```\n\nBefore you try any run command, make sure Flutter can see a supported target:\n\n```bash\njust devices\n```\n\nFor web, use the default web command:\n\n```bash\njust run\n```\n\nor, explicitly:\n\n```bash\njust run-web\n```\n\nOn macOS for iOS, install CocoaPods first if you have not already:\n\n```bash\nsudo gem install cocoapods\n```\n\nThen open the simulator, list devices, and run the iOS app with an actual simulator id or name:\n\n```bash\nopen -a Simulator\njust devices\njust run-ios device=\"<ios-device-id-or-name>\"\n```\n\nFlutter does not accept bare `ios` as a generic simulator target, so if `just devices` does not show your simulator yet, wait a moment and run it again.\n\nFor Android, list available emulators, launch one, list devices again, and then run the Android app:\n\n```bash\njust emulators\nflutter emulators --launch <emulator-id>\njust devices\njust --set api_base_url http://10.0.2.2:{FOR_ALL_API_PORT} run-android device=\"<android-device-id-or-name>\"\n```\n\nFor macOS desktop, use:\n\n```bash\njust run-macos\n```\n\nFor Windows or Linux, run the matching command on that host platform:\n\n```bash\njust run-windows\njust run-linux\n```\n\nAfter your first successful iOS run, if CocoaPods added shared iOS project files like these:\n\n- `workspace/ios/Runner.xcodeproj/project.pbxproj`\n- `workspace/ios/Runner.xcworkspace/contents.xcworkspacedata`\n- `workspace/ios/Podfile.lock`\n\nthen run:\n\n```bash\ngit add --all\ngit commit --message \"Add iOS CocoaPods workspace files\"\n```\n\nDo not commit local machine output like these:\n\n- `workspace/ios/Pods/`\n- `workspace/build/`\n- `workspace/.dart_tool/`\n\nFor Android, a normal first run usually should not add shared tracked files. If it does change shared files under `workspace/android/`, review them carefully and commit only the project-level changes. Do not commit machine-specific files like:\n\n- `workspace/android/local.properties`\n- `workspace/.gradle/`\n- `workspace/build/`",
-                render_setup_commands_with_commits(&setup_commands, 8),
+                render_setup_commands_with_commits(&setup_commands, 2),
             ),
         );
     }
@@ -2011,19 +1996,13 @@ fn render_output_repo_setup_content(spec: &OutputRepoSpec) -> String {
         let mut setup_commands = vec![
             "flutter create --platforms=web,android,ios,macos,windows,linux --org com.intrepion --project-name saying_hello workspace".to_string(),
             "rm workspace/test/widget_test.dart".to_string(),
-            "mkdir -p workspace/integration_test".to_string(),
-            "mkdir -p workspace/lib/contracts".to_string(),
-            "mkdir -p workspace/lib/code".to_string(),
-            "mkdir -p workspace/lib/adapter".to_string(),
-            "mkdir -p workspace/test/code".to_string(),
-            "mkdir -p workspace/test/adapter".to_string(),
             "(cd workspace && flutter pub add --dev test)".to_string(),
             "(cd workspace && flutter pub add --dev mocktail)".to_string(),
             "(cd workspace && flutter pub add --dev integration_test --sdk flutter)".to_string(),
         ];
 
         if is_flutter_http_saying_hello_output_repo(spec) {
-            setup_commands.insert(8, "(cd workspace && flutter pub add http)".to_string());
+            setup_commands.insert(2, "(cd workspace && flutter pub add http)".to_string());
         }
 
         let workspace_tree = if is_flutter_local_saying_hello_output_repo(spec) {
@@ -2110,10 +2089,6 @@ fn render_output_repo_setup_content(spec: &OutputRepoSpec) -> String {
             "(cd workspace && npm pkg set scripts.format=\"prettier --write .\")".to_string(),
             "(cd workspace && npm pkg set scripts.check-formatting=\"prettier --check .\")".to_string(),
             "(cd workspace && npm pkg set scripts.test=\"vitest run\")".to_string(),
-            "mkdir -p workspace/src/contracts".to_string(),
-            "mkdir -p workspace/src/code".to_string(),
-            "mkdir -p workspace/src/adapter".to_string(),
-            "mkdir -p workspace/src/pages".to_string(),
             "touch workspace/astro.config.mjs".to_string(),
             "touch workspace/tsconfig.json".to_string(),
             "touch workspace/vitest.config.ts".to_string(),
@@ -2152,22 +2127,43 @@ fn render_output_repo_setup_content(spec: &OutputRepoSpec) -> String {
 }
 
 fn render_setup_commands_with_commits(commands: &[String], format_start_index: usize) -> String {
+    let mut ensured_touch_dirs = BTreeSet::new();
+
     commands
         .iter()
         .enumerate()
         .map(|(index, command)| {
+            let mut command_lines = Vec::new();
+            if let Some(dir) = touch_parent_dir(command) {
+                if ensured_touch_dirs.insert(dir.clone()) {
+                    command_lines.push(format!("mkdir -p {dir}"));
+                }
+            }
+            command_lines.push(command.clone());
             let maybe_format = if index >= format_start_index {
                 "just format\n"
             } else {
                 ""
             };
             format!(
-                "{command}\n{maybe_format}git add --all\ngit commit --message \"{}\"",
+                "{}\n{maybe_format}git add --all\ngit commit --message \"{}\"",
+                command_lines.join("\n"),
                 escape_shell_double_quoted(command)
             )
         })
         .collect::<Vec<_>>()
         .join("\n\n")
+}
+
+fn touch_parent_dir(command: &str) -> Option<String> {
+    let path = command.strip_prefix("touch ")?;
+    let parent = Path::new(path.trim()).parent()?;
+    let parent = parent.to_string_lossy().to_string();
+    if parent.is_empty() || parent == "." {
+        None
+    } else {
+        Some(parent)
+    }
 }
 
 fn escape_shell_double_quoted(value: &str) -> String {
@@ -2193,7 +2189,7 @@ fn rewrite_tutorial_checkpoint_commands(text: &str) -> String {
 }
 
 fn rewrite_touch_creation_checkpoints(text: &str) -> String {
-    rewrite_touch_creation_checkpoints_with_check_all(text, true)
+    rewrite_touch_creation_checkpoints_with_check_all(text, false)
 }
 
 fn rewrite_touch_creation_stage_only(text: &str) -> String {
@@ -2221,19 +2217,29 @@ fn rewrite_touch_creation_checkpoints_with_check_all(
                     .to_string();
             }
 
+            let mut ensured_dirs = BTreeSet::new();
             let rewritten_body = body
                 .lines()
                 .flat_map(|line| {
+                    if let Some(dir) = line.strip_prefix("mkdir -p ") {
+                        ensured_dirs.insert(dir.trim().to_string());
+                        return vec![line.to_string()];
+                    }
+
                     if line.starts_with("touch ") {
-                        let mut lines = vec![
-                            line.to_string(),
-                            "just format".to_string(),
-                            "git add --all".to_string(),
-                            format!("git commit --message '{}'", line),
-                        ];
-                        if include_check_all {
-                            lines.insert(2, "just check-all".to_string());
+                        let mut lines = Vec::new();
+                        if let Some(dir) = touch_parent_dir(line) {
+                            if ensured_dirs.insert(dir.clone()) {
+                                lines.push(format!("mkdir -p {dir}"));
+                            }
                         }
+                        lines.push(line.to_string());
+                        lines.push("just format".to_string());
+                        if include_check_all {
+                            lines.push("just check-all".to_string());
+                        }
+                        lines.push("git add --all".to_string());
+                        lines.push(format!("git commit --message '{}'", line));
                         lines
                     } else {
                         vec![line.to_string()]
@@ -2300,7 +2306,9 @@ fn rewrite_stage_commit_checkpoints(text: &str) -> String {
                 }
             }
 
-            if !lines.iter().any(|line| line == "just check-all") {
+            let is_touch_checkpoint = lines.iter().any(|line| line.starts_with("touch "));
+
+            if !is_touch_checkpoint && !lines.iter().any(|line| line == "just check-all") {
                 if let Some(insert_index) = lines.iter().position(|line| line.starts_with("git add ")) {
                     lines.insert(insert_index, "just check-all".to_string());
                 }
@@ -8735,7 +8743,6 @@ mod tests {
         assert!(setup.contains("go get github.com/labstack/echo/v4/middleware"));
         assert!(setup.contains("go get github.com/stretchr/testify/assert github.com/stretchr/testify/mock"));
         assert!(setup.contains("Go.gitignore > workspace/.gitignore"));
-        assert!(setup.contains("workspace/internal/adapter/http"));
         assert!(setup.contains("run each setup command and checkpoint it before moving to the next one"));
         assert!(setup.contains("git commit --message \"mkdir -p workspace\""));
         assert!(setup.contains("git commit --message \"curl -L -s https://raw.githubusercontent.com/github/gitignore/refs/heads/main/Go.gitignore > workspace/.gitignore\""));
@@ -8754,21 +8761,26 @@ mod tests {
 
         assert!(contracts.contains("type GreetingService interface"));
         assert!(contracts.contains("type GreetingResponse struct"));
+        assert!(contracts.contains("mkdir -p workspace/internal/contracts\ntouch workspace/internal/contracts/greeting.go"));
         assert!(contracts.contains("git commit --message 'touch workspace/internal/contracts/greeting.go'"));
         assert!(contracts.contains("just format\njust check-all\ngit add --all\ngit commit --message \"Define greeting contracts\""));
         assert!(!code.contains("touch workspace/internal/code/greeting_service.go\ntouch workspace/internal/code/greeting_service_test.go"));
         assert!(code.contains("### 1. Red: Add The First Failing Code Test"));
+        assert!(code.contains("mkdir -p workspace/internal/code\ntouch workspace/internal/code/greeting_service_test.go"));
         assert!(code.contains("touch workspace/internal/code/greeting_service_test.go"));
         assert!(code.contains("git commit --message 'touch workspace/internal/code/greeting_service_test.go'"));
         assert!(code.contains("### 2. Green: Return The Personalized Greeting"));
+        assert!(code.contains("mkdir -p workspace/internal/code\ntouch workspace/internal/code/greeting_service.go"));
         assert!(code.contains("touch workspace/internal/code/greeting_service.go"));
         assert!(code.contains("git commit --message 'touch workspace/internal/code/greeting_service.go'"));
         assert!(adapter.contains("github.com/intrepion/fa_tut_saying-hello/workspace/internal/contracts"));
         assert!(!adapter.contains("touch workspace/internal/adapter/http/greeting_handler.go\ntouch workspace/internal/adapter/http/greeting_handler_test.go"));
         assert!(adapter.contains("Create the first adapter test file:"));
+        assert!(adapter.contains("mkdir -p workspace/internal/adapter/http\ntouch workspace/internal/adapter/http/greeting_handler_test.go"));
         assert!(adapter.contains("git commit --message 'touch workspace/internal/adapter/http/greeting_handler_test.go'"));
         assert!(!adapter.contains("touch workspace/cmd/server/main.go\n```\n\n### 1. Red"));
         assert!(adapter.contains("Create the server entry point:"));
+        assert!(adapter.contains("mkdir -p workspace/cmd/server\ntouch workspace/cmd/server/main.go"));
         assert!(adapter.contains("git commit --message 'touch workspace/cmd/server/main.go'"));
         assert!(adapter.contains("\tservice.AssertExpectations(t)"));
         assert!(adapter.contains("middleware.CORSWithConfig"));
@@ -8819,7 +8831,6 @@ mod tests {
         assert!(setup.contains("go mod init github.com/intrepion/fa_tut_todo-list/workspace"));
         assert!(setup.contains("Go.gitignore > workspace/.gitignore"));
         assert!(setup.contains("mkdir -p workspace/data"));
-        assert!(setup.contains("mkdir -p workspace/internal/adapter/storage"));
         assert!(setup.contains("workspace/data/tasks.json"));
         assert!(finish.contains("http://localhost:25664/api/tasks"));
         assert!(finish.contains("workspace/data/tasks.json"));
@@ -8838,14 +8849,21 @@ mod tests {
         assert!(contracts.contains("type TaskStore interface"));
         assert!(contracts.contains("type TaskListService interface"));
         assert!(contracts.contains("type AddTaskRequest struct"));
+        assert!(contracts.contains("mkdir -p workspace/internal/contracts\ntouch workspace/internal/contracts/task_list_service.go"));
         assert!(contracts.contains("git commit --message 'touch workspace/internal/contracts/task_list_service.go'"));
+        assert!(code.contains("mkdir -p workspace/internal/code\ntouch workspace/internal/code/task_list_service_test.go"));
         assert!(code.contains("touch workspace/internal/code/task_list_service_test.go"));
+        assert!(code.contains("mkdir -p workspace/internal/code\ntouch workspace/internal/code/task_list_service.go"));
         assert!(code.contains("touch workspace/internal/code/task_list_service.go"));
         assert!(code.contains("TestTaskListServiceAddTaskPersistsUpdatedTasks"));
         assert!(code.contains("NewTaskListService(store)"));
+        assert!(adapter.contains("mkdir -p workspace/internal/adapter/http\ntouch workspace/internal/adapter/http/task_handler_test.go"));
         assert!(adapter.contains("touch workspace/internal/adapter/http/task_handler_test.go"));
+        assert!(adapter.contains("mkdir -p workspace/internal/adapter/storage\ntouch workspace/internal/adapter/storage/json_task_store_test.go"));
         assert!(adapter.contains("touch workspace/internal/adapter/storage/json_task_store_test.go"));
+        assert!(adapter.contains("mkdir -p workspace/internal/adapter/storage\ntouch workspace/internal/adapter/storage/json_task_store.go"));
         assert!(adapter.contains("touch workspace/internal/adapter/storage/json_task_store.go"));
+        assert!(adapter.contains("mkdir -p workspace/cmd/server\ntouch workspace/cmd/server/main.go"));
         assert!(adapter.contains("touch workspace/cmd/server/main.go"));
         assert!(adapter.contains("AllowOrigins: []string{\"http://localhost:25616\"}"));
         assert!(adapter.contains("e.GET(\"/api/tasks\", handler.GetTasks)"));
@@ -8905,15 +8923,20 @@ mod tests {
         assert!(setup.contains("dotnet new sln --format sln --name SayingHello --output workspace\njust format\ngit add --all"));
         assert!(contracts.contains("dotnet new classlib --language C# --output workspace/src/SayingHello.Contracts --name SayingHello.Contracts\njust format\njust check-all\ngit add --all\ngit commit --message 'dotnet new classlib --language C# --output workspace/src/SayingHello.Contracts --name SayingHello.Contracts'"));
         assert!(contracts.contains("dotnet sln workspace/SayingHello.sln add workspace/src/SayingHello.Contracts/SayingHello.Contracts.csproj\njust format\njust check-all\ngit add --all\ngit commit --message 'dotnet sln workspace/SayingHello.sln add workspace/src/SayingHello.Contracts/SayingHello.Contracts.csproj'"));
+        assert!(contracts.contains("mkdir -p workspace/src/SayingHello.Contracts\ntouch workspace/src/SayingHello.Contracts/IGreetingService.cs"));
         assert!(contracts.contains("git commit --message 'touch workspace/src/SayingHello.Contracts/IGreetingService.cs'"));
         assert!(contracts.contains("just format\njust check-all\ngit add --all\ngit commit --message \"Define Greeting Service Contract\""));
         assert!(code.contains("dotnet new classlib --language C# --output workspace/src/SayingHello --name SayingHello\njust format\njust check-all\ngit add --all\ngit commit --message 'dotnet new classlib --language C# --output workspace/src/SayingHello --name SayingHello'"));
+        assert!(code.contains("mkdir -p workspace/src/SayingHello\ntouch workspace/src/SayingHello/GreetingService.cs"));
         assert!(code.contains("git commit --message 'touch workspace/src/SayingHello/GreetingService.cs'"));
-        assert!(code.contains("just format\njust check-all\ngit add --all\ngit commit --message 'touch workspace/src/SayingHello/GreetingService.cs'"));
+        assert!(code.contains("just format\ngit add --all\ngit commit --message 'touch workspace/src/SayingHello/GreetingService.cs'"));
+        assert!(!code.contains("just format\njust check-all\ngit add --all\ngit commit --message 'touch workspace/src/SayingHello/GreetingService.cs'"));
         assert!(code.contains("just format\njust check-all\ngit add --all\ngit commit --message \"1. Red: Add The First Failing Test\""));
         assert!(adapter.contains("dotnet new console --language C# --output workspace/src/SayingHello.CommandLine --name SayingHello.CommandLine\njust format\njust check-all\ngit add --all\ngit commit --message 'dotnet new console --language C# --output workspace/src/SayingHello.CommandLine --name SayingHello.CommandLine'"));
+        assert!(adapter.contains("mkdir -p workspace/src/SayingHello.CommandLine\ntouch workspace/src/SayingHello.CommandLine/CommandLineGreeting.cs"));
         assert!(adapter.contains("git commit --message 'touch workspace/src/SayingHello.CommandLine/CommandLineGreeting.cs'"));
-        assert!(adapter.contains("just format\njust check-all\ngit add --all\ngit commit --message 'touch workspace/src/SayingHello.CommandLine/CommandLineGreeting.cs'"));
+        assert!(adapter.contains("just format\ngit add --all\ngit commit --message 'touch workspace/src/SayingHello.CommandLine/CommandLineGreeting.cs'"));
+        assert!(!adapter.contains("just format\njust check-all\ngit add --all\ngit commit --message 'touch workspace/src/SayingHello.CommandLine/CommandLineGreeting.cs'"));
         assert!(adapter.contains("just format\njust check-all\ngit add --all\ngit commit --message \"1. Red: Add The First Failing Adapter Test\""));
     }
 
@@ -9104,14 +9127,14 @@ mod tests {
         assert!(!setup.contains("mkdir -p workspace\njust format\ngit add --all"));
         assert!(setup.contains("git commit --message \"(cd workspace && npm init --yes)\""));
         assert!(setup.contains("(cd workspace && npm pkg set scripts.format=\"prettier --write .\")\njust format\ngit add --all"));
-        assert!(format_script < setup.find("touch workspace/astro.config.mjs\njust format\ngit add --all").expect("expected formatting before touched config staging"));
+        assert!(format_script < setup.find("mkdir -p workspace\ntouch workspace/astro.config.mjs\njust format\ngit add --all").expect("expected formatting before touched config staging"));
         assert!(setup.contains("git commit --message \"touch workspace/astro.config.mjs\""));
         assert!(setup.contains("git commit --message \"Add Astro workspace configuration files\""));
         assert!(setup.contains("npm pkg set scripts.dev=\"astro dev --host 0.0.0.0 --port 25616\""));
         assert!(setup.contains("workspace/vitest.config.ts"));
         assert!(setup.contains("environment: 'node'"));
         assert!(setup.contains("opts into `jsdom` explicitly"));
-        assert!(setup.contains("workspace/src/pages"));
+        assert!(setup.contains("index-page.test.ts"));
         assert!(!setup.contains("touch workspace/.gitignore"));
         assert!(!setup.contains("Put this exact content in `workspace/.gitignore`:"));
     }
@@ -9127,8 +9150,7 @@ mod tests {
         assert!(setup.contains("flutter pub add http"));
         assert!(setup.contains("flutter pub add --dev mocktail"));
         assert!(setup.contains("flutter pub add --dev integration_test --sdk flutter"));
-        assert!(setup.contains("workspace/test/adapter"));
-        assert!(setup.contains("workspace/integration_test"));
+        assert!(setup.contains("app_test.dart"));
         assert!(setup.contains("just run-web"));
         assert!(setup.contains("just run-ios device=\"<ios-device-id-or-name>\""));
         assert!(setup.contains("just run-android device=\"<android-device-id-or-name>\""));
@@ -9156,7 +9178,6 @@ mod tests {
 
         assert!(setup.contains("flutter create --platforms=web,android,ios,macos,windows,linux --org com.intrepion --project-name todo_list workspace"));
         assert!(setup.contains("flutter pub add http"));
-        assert!(setup.contains("workspace/lib/contracts"));
         assert!(setup.contains("task_api.dart"));
         assert!(setup.contains("task_list_response.dart"));
         assert!(setup.contains("task_list_controller.dart"));
@@ -9211,17 +9232,22 @@ mod tests {
 
         assert!(contracts.contains("export interface GreetingApi"));
         assert!(contracts.contains("export interface GreetingResponse"));
+        assert!(contracts.contains("mkdir -p workspace/src/contracts\ntouch workspace/src/contracts/greeting-response.ts"));
         assert!(contracts.contains("git commit --message 'touch workspace/src/contracts/greeting-response.ts'"));
         assert!(contracts.contains("git commit --message 'touch workspace/src/contracts/greeting-api.ts'"));
         assert!(contracts.contains("just format\ngit add --all\ngit commit --message \"Define greeting contracts\""));
+        assert!(code.contains("mkdir -p workspace/src/code\ntouch workspace/src/code/load-greeting.test.ts"));
         assert!(code.contains("touch workspace/src/code/load-greeting.test.ts"));
         assert!(code.contains("git commit --message 'touch workspace/src/code/load-greeting.test.ts'"));
+        assert!(code.contains("mkdir -p workspace/src/code\ntouch workspace/src/code/load-greeting.ts"));
         assert!(code.contains("git commit --message 'touch workspace/src/code/load-greeting.ts'"));
         assert!(code.contains("### 2. Green: Return The Personalized Greeting"));
         assert!(code.contains("Sorry, the greeting API is unavailable right now."));
+        assert!(adapter.contains("mkdir -p workspace/src/adapter\ntouch workspace/src/adapter/http-greeting-api.test.ts"));
         assert!(adapter.contains("touch workspace/src/adapter/http-greeting-api.test.ts"));
         assert!(adapter.contains("git commit --message 'touch workspace/src/adapter/http-greeting-api.test.ts'"));
         assert!(adapter.contains("git commit --message 'touch workspace/src/adapter/bind-greeting-form.test.ts'"));
+        assert!(adapter.contains("mkdir -p workspace/src/pages\ntouch workspace/src/pages/index.astro"));
         assert!(adapter.contains("git commit --message 'touch workspace/src/pages/index.astro'"));
         assert!(adapter.contains("Create the browser binding test file:"));
         assert!(adapter.contains("// @vitest-environment jsdom"));
@@ -9245,8 +9271,11 @@ mod tests {
         let finish = render_output_repo_finish_content(&spec);
 
         assert!(contracts.contains("abstract class GreetingService"));
+        assert!(contracts.contains("mkdir -p workspace/lib/contracts\ntouch workspace/lib/contracts/greeting_service.dart"));
         assert!(contracts.contains("touch workspace/lib/contracts/greeting_service.dart"));
+        assert!(code.contains("mkdir -p workspace/test/code\ntouch workspace/test/code/default_greeting_service_test.dart"));
         assert!(code.contains("touch workspace/test/code/default_greeting_service_test.dart"));
+        assert!(code.contains("mkdir -p workspace/lib/code\ntouch workspace/lib/code/default_greeting_service.dart"));
         assert!(code.contains("touch workspace/lib/code/default_greeting_service.dart"));
         assert!(code.contains("returns the generic greeting for empty input"));
         assert!(adapter.contains("MockGreetingService"));
@@ -9273,6 +9302,8 @@ mod tests {
 
         assert!(adapter.contains("HttpGreetingApi(baseUrl: apiBaseUrl)"));
         assert!(adapter.contains("const apiBaseUrl = String.fromEnvironment("));
+        assert!(adapter.contains("mkdir -p workspace/test/adapter\ntouch workspace/test/adapter/http_greeting_api_test.dart"));
+        assert!(adapter.contains("mkdir -p workspace/lib/adapter\ntouch workspace/lib/adapter/http_greeting_api.dart"));
         assert!(finish.contains("just run-web"));
         assert!(finish.contains("just run-ios device=\"<ios-device-id-or-name>\""));
         assert!(finish.contains("just --set api_base_url http://10.0.2.2:25664 run-android device=\"<android-device-id-or-name>\""));
@@ -9295,13 +9326,18 @@ mod tests {
 
         assert!(contracts.contains("abstract class TaskApi"));
         assert!(contracts.contains("class TaskListResponse"));
+        assert!(contracts.contains("mkdir -p workspace/lib/contracts\ntouch workspace/lib/contracts/task_list_response.dart"));
         assert!(contracts.contains("touch workspace/lib/contracts/task_api.dart"));
+        assert!(code.contains("mkdir -p workspace/test/code\ntouch workspace/test/code/task_list_controller_test.dart"));
         assert!(code.contains("touch workspace/test/code/task_list_controller_test.dart"));
+        assert!(code.contains("mkdir -p workspace/lib/code\ntouch workspace/lib/code/task_list_controller.dart"));
         assert!(code.contains("touch workspace/lib/code/task_list_controller.dart"));
         assert!(code.contains("Task must not be blank."));
         assert!(code.contains("Sorry, the task API is unavailable right now."));
+        assert!(adapter.contains("mkdir -p workspace/test/adapter\ntouch workspace/test/adapter/http_task_api_test.dart"));
         assert!(adapter.contains("touch workspace/test/adapter/http_task_api_test.dart"));
         assert!(adapter.contains("touch workspace/test/adapter/todo_list_page_test.dart"));
+        assert!(adapter.contains("mkdir -p workspace/lib/adapter\ntouch workspace/lib/adapter/http_task_api.dart"));
         assert!(adapter.contains("touch workspace/lib/adapter/http_task_api.dart"));
         assert!(adapter.contains("touch workspace/lib/adapter/todo_list_page.dart"));
         assert!(adapter.contains("expect(requestedUri.path, '/api/tasks');"));
