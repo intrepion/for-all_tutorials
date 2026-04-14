@@ -827,11 +827,21 @@ Project slugs stay stable even if their place in this map changes.
 
 - `Project`: `todo-list`
 - `Prerequisites`: [`employee-list-removal`](#employee-list-removal), [`website-generator`](#website-generator)
-- `Unlocks`: none
+- `Unlocks`: [`team-task-board`](#team-task-board)
 - `Recommended Instructions`: [partials/projects/todo-list/instructions/README.md](../partials/projects/todo-list/instructions/README.md)
 - `Notes`: start with small parsing, append, removal, formatting, and serialization contracts such as `parse_task_storage(storage_text)`, `append_task(task_list, task_text)`, `remove_task_by_exact_text(task_list, completed_task_text)`, `format_task_list(task_list)`, and `serialize_task_storage(task_list)`, build the core repo first, then add adapter repos that consume that core; this project builds on the earlier list-removal and file-generation exercises by moving from fixed in-memory lists to a user-managed task list that persists in permanent local storage across runs
 
 ## Stage 54
+
+### team-task-board
+
+- `Project`: `team-task-board`
+- `Prerequisites`: [`todo-list`](#todo-list)
+- `Unlocks`: none
+- `Recommended Instructions`: [partials/projects/team-task-board/instructions/README.md](../partials/projects/team-task-board/instructions/README.md)
+- `Notes`: start with small parsing, visibility, authorization, and serialization contracts such as `parse_team_task_storage(storage_text)`, `filter_visible_tasks(task_list, principal)`, `can_delete_task(task, principal)`, `remove_task_by_id(task_list, task_id, principal)`, and `serialize_team_task_storage(task_list)`, build the core repo first, then add an adapter repo that consumes that core; this project builds on `todo-list` by moving from one user's private task list to a shared board with public vs private visibility, logged-in user ownership, and admin-wide deletion rights
+
+## Stage 55
 
 ### url-shortener
 
@@ -841,7 +851,7 @@ Project slugs stay stable even if their place in this map changes.
 - `Recommended Instructions`: [partials/projects/url-shortener/instructions/README.md](../partials/projects/url-shortener/instructions/README.md)
 - `Notes`: start with small short-link, path, counting, and formatting contracts such as `build_short_link_record(short_code, long_url)`, `format_short_link_path(short_code)`, `increment_short_link_visit_count(short_link_record)`, and `format_short_link_stats(short_link_record)`, build the core repo first, then add an adapter repo that consumes that core; this project builds on the earlier file-generation and service exercises by moving from static page creation and small service responses to a persisted full-stack web app with redirects, visit tracking, and a stats page
 
-## Stage 55
+## Stage 56
 
 ### text-sharing
 
@@ -851,7 +861,7 @@ Project slugs stay stable even if their place in this map changes.
 - `Recommended Instructions`: [partials/projects/text-sharing/instructions/README.md](../partials/projects/text-sharing/instructions/README.md)
 - `Notes`: start with small snippet, path, view, and edit-seed contracts such as `build_text_snippet_record(snippet_id, snippet_text)`, `format_text_snippet_path(snippet_id)`, `format_text_snippet_edit_path(snippet_id)`, `format_text_snippet_view(text_snippet_record)`, and `build_text_snippet_edit_seed(text_snippet_record)`, build the core repo first, then add an adapter repo that consumes that core; this project builds on the earlier full-stack routing and persistence exercises by moving from redirectable short links to persisted text snippets that can be viewed and forked back into the create form for editing
 
-## Stage 56
+## Stage 57
 
 ### tracking-inventory
 
@@ -861,7 +871,7 @@ Project slugs stay stable even if their place in this map changes.
 - `Recommended Instructions`: [partials/projects/tracking-inventory/instructions/README.md](../partials/projects/tracking-inventory/instructions/README.md)
 - `Notes`: start with small validation, record-building, parsing, and export contracts such as `validate_inventory_value(value_text)`, `build_inventory_record(name, serial_number, value_text)`, `parse_inventory_storage(storage_text)`, `format_inventory_html_report(inventory_records)`, and `format_inventory_csv_report(inventory_records)`, build the core repo first, then add an adapter repo that consumes that core; this project builds on the earlier parsing, validation, and file-generation exercises by moving from simple tabular output to a persisted inventory that can be exported in both HTML and CSV formats
 
-## Stage 57
+## Stage 58
 
 ### trivia-app
 
@@ -871,7 +881,7 @@ Project slugs stay stable even if their place in this map changes.
 - `Recommended Instructions`: [partials/projects/trivia-app/instructions/README.md](../partials/projects/trivia-app/instructions/README.md)
 - `Notes`: start with small parsing, choice-pool, answer-checking, and score-formatting contracts such as `parse_trivia_question_bank(json_text)`, `build_trivia_choice_pool(trivia_question)`, `is_correct_trivia_answer(trivia_question, selected_answer)`, and `format_trivia_final_score(correct_answer_count)`, build the core repo first, then add an adapter repo that consumes that core; this project builds on the earlier file-parsing and random-choice exercises by moving from one random winner or one hidden answer to a file-driven trivia game that randomizes both question order and displayed answer order
 
-## Stage 58
+## Stage 59
 
 ### model-showroom
 
@@ -881,7 +891,7 @@ Project slugs stay stable even if their place in this map changes.
 - `Recommended Instructions`: [partials/projects/model-showroom/instructions/README.md](../partials/projects/model-showroom/instructions/README.md)
 - `Notes`: start with a tiny viewer-scene contract such as `build_showroom_scene() -> viewer_scene_config`, build the core repo first, then add an adapter repo that consumes that core; this project starts the 3D-viewer track by focusing on one local model, one deterministic camera orbit, and a clean separation between core-owned scene defaults and adapter-managed rendering
 
-## Stage 59
+## Stage 60
 
 ### lighting-studio
 
@@ -891,7 +901,7 @@ Project slugs stay stable even if their place in this map changes.
 - `Recommended Instructions`: [partials/projects/lighting-studio/instructions/README.md](../partials/projects/lighting-studio/instructions/README.md)
 - `Notes`: start with small lighting and scene-building contracts such as `clamp_lighting_controls(exposure, shadow_intensity, environment_id)` and `build_lighting_scene(lighting_controls)`, build the core repo first, then add an adapter repo that consumes that core; this project builds on the earlier static 3D scene by introducing lighting ranges, environment mapping, and visual tuning without changing the model geometry
 
-## Stage 60
+## Stage 61
 
 ### remote-model-loader
 
@@ -901,7 +911,7 @@ Project slugs stay stable even if their place in this map changes.
 - `Recommended Instructions`: [partials/projects/remote-model-loader/instructions/README.md](../partials/projects/remote-model-loader/instructions/README.md)
 - `Notes`: start with small progress, message, and interaction-gating contracts such as `calculate_load_percentage(loaded_bytes, total_bytes)`, `format_loading_message(load_percentage)`, `format_model_load_error(model_label)`, and `can_interact_with_model(has_loaded, has_error)`, build the core repo first, then add an adapter repo that consumes that core; this project builds on the earlier static and lighting-driven 3D scenes by introducing remote asset loading, asynchronous state, and graceful error handling
 
-## Stage 61
+## Stage 62
 
 ### product-configurator
 
@@ -911,7 +921,7 @@ Project slugs stay stable even if their place in this map changes.
 - `Recommended Instructions`: [partials/projects/product-configurator/instructions/README.md](../partials/projects/product-configurator/instructions/README.md)
 - `Notes`: start with small catalog, selection, and scene contracts such as `build_variant_catalog()`, `find_variant_by_exact_id(variant_catalog, variant_id)`, and `build_variant_scene(variant)`, build the core repo first, then add an adapter repo that consumes that core; this project builds on the earlier 3D loading work by introducing multiple model variants and per-variant camera and lighting defaults
 
-## Stage 62
+## Stage 63
 
 ### ar-preview
 

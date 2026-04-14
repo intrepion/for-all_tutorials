@@ -63,6 +63,7 @@ Other project manifests are intentionally spec-first and keep `compiled_outputs:
 - [Simple Math](simple-math/README.md)
 - [Sorting Records](sorting-records/README.md)
 - [Tax Calculator](tax-calculator/README.md)
+- [Team Task Board](team-task-board/README.md)
 - [Temperature Converter](temperature-converter/README.md)
 - [Text Sharing](text-sharing/README.md)
 - [Todo List](todo-list/README.md)
