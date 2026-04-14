@@ -183,7 +183,7 @@ _bs owner="intrepion" project="saying-hello":
 
     "${args[@]}"
 
-bs-dotnet owner="intrepion" project="saying-hello":
+bs-dotnet-csharp-cli owner="intrepion" project="saying-hello":
     just --set bootstrap_ecosystem dotnet \
       --set bootstrap_language csharp \
       --set bootstrap_testing xunit \
@@ -194,18 +194,43 @@ bs-dotnet owner="intrepion" project="saying-hello":
       --set bootstrap_framework no-framework \
       _bs "{{owner}}" "{{project}}"
 
-bs-echo owner="intrepion" project="saying-hello":
+bs-go-echo-rest-json-sqlite-api owner="intrepion" project="todo-list":
     just --set bootstrap_ecosystem go \
       --set bootstrap_language go \
       --set bootstrap_testing testify \
       --set bootstrap_mocking testify-mock \
+      --set bootstrap_storage database-sqlite \
       --set bootstrap_surface web \
       --set bootstrap_target api \
       --set bootstrap_framework echo \
-      --set bootstrap_protocol http-json \
+      --set bootstrap_protocol rest-json \
       _bs "{{owner}}" "{{project}}"
 
-bs-astro owner="intrepion" project="saying-hello":
+bs-go-echo-rest-json-postgres-api owner="intrepion" project="todo-list":
+    just --set bootstrap_ecosystem go \
+      --set bootstrap_language go \
+      --set bootstrap_testing testify \
+      --set bootstrap_mocking testify-mock \
+      --set bootstrap_storage database-postgres \
+      --set bootstrap_surface web \
+      --set bootstrap_target api \
+      --set bootstrap_framework echo \
+      --set bootstrap_protocol rest-json \
+      _bs "{{owner}}" "{{project}}"
+
+bs-go-grpc-postgres-api owner="intrepion" project="todo-list":
+    just --set bootstrap_ecosystem go \
+      --set bootstrap_language go \
+      --set bootstrap_testing testify \
+      --set bootstrap_mocking testify-mock \
+      --set bootstrap_storage database-postgres \
+      --set bootstrap_surface web \
+      --set bootstrap_target api \
+      --set bootstrap_framework grpc \
+      --set bootstrap_protocol grpc \
+      _bs "{{owner}}" "{{project}}"
+
+bs-typescript-astro-web owner="intrepion" project="saying-hello":
     just --set bootstrap_ecosystem javascript \
       --set bootstrap_language typescript \
       --set bootstrap_testing vitest \
@@ -217,19 +242,7 @@ bs-astro owner="intrepion" project="saying-hello":
       --set bootstrap_protocol http-json \
       _bs "{{owner}}" "{{project}}"
 
-bs-flutter-local owner="intrepion" project="saying-hello":
-    just --set bootstrap_ecosystem dart \
-      --set bootstrap_language dart \
-      --set bootstrap_testing test \
-      --set bootstrap_mocking mocktail \
-      --set bootstrap_storage no-storage \
-      --set bootstrap_surface client \
-      --set bootstrap_target all \
-      --set bootstrap_framework flutter \
-      --set bootstrap_protocol none \
-      _bs "{{owner}}" "{{project}}"
-
-bs-flutter-http-json owner="intrepion" project="saying-hello":
+bs-dart-flutter-rest-json-all owner="intrepion" project="saying-hello":
     just --set bootstrap_ecosystem dart \
       --set bootstrap_language dart \
       --set bootstrap_testing test \
@@ -239,6 +252,30 @@ bs-flutter-http-json owner="intrepion" project="saying-hello":
       --set bootstrap_target all \
       --set bootstrap_framework flutter \
       --set bootstrap_protocol http-json \
+      _bs "{{owner}}" "{{project}}"
+
+bs-dart-flutter-grpc-native owner="intrepion" project="saying-hello":
+    just --set bootstrap_ecosystem dart \
+      --set bootstrap_language dart \
+      --set bootstrap_testing test \
+      --set bootstrap_mocking mocktail \
+      --set bootstrap_storage no-storage \
+      --set bootstrap_surface client \
+      --set bootstrap_target native \
+      --set bootstrap_framework flutter \
+      --set bootstrap_protocol grpc \
+      _bs "{{owner}}" "{{project}}"
+
+bs-dart-flutter-grpc-web owner="intrepion" project="saying-hello":
+    just --set bootstrap_ecosystem dart \
+      --set bootstrap_language dart \
+      --set bootstrap_testing test \
+      --set bootstrap_mocking mocktail \
+      --set bootstrap_storage no-storage \
+      --set bootstrap_surface client \
+      --set bootstrap_target web \
+      --set bootstrap_framework flutter \
+      --set bootstrap_protocol grpc \
       _bs "{{owner}}" "{{project}}"
 
 cleanup-output-repos apply="false" repos_root="../output-repos" owner="intrepion":
