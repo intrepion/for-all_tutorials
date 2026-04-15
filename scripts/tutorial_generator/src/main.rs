@@ -1269,7 +1269,7 @@ database_url := \"postgres://postgres@localhost:5432/todo_list?sslmode=disable\"
 restore:\n\
 \t(cd {{{{workspace}}}} && go mod download)\n\n\
 generate:\n\
-\t(cd {{{{workspace}}}} && sqlc generate)\n\n\
+\t(cd {{{{workspace}}}} && ./bin/sqlc generate)\n\n\
 format:\n\
 \tfind {{{{workspace}}}} -name '*.go' -exec gofmt -w {{}} +\n\n\
 check-formatting:\n\
@@ -2031,6 +2031,7 @@ fn render_output_repo_setup_content(spec: &OutputRepoSpec) -> String {
         );
         let setup_commands = vec![
             "curl -L -s https://raw.githubusercontent.com/github/gitignore/refs/heads/main/Go.gitignore > workspace/.gitignore".to_string(),
+            "printf '\\n# Repo-local tools\\nbin/\\n\\n# Local runtime data\\ndata/\\n' >> workspace/.gitignore".to_string(),
             format!("(cd workspace && go mod init {module_path})"),
             "(cd workspace && go get github.com/labstack/echo/v4)".to_string(),
             "(cd workspace && go get github.com/labstack/echo/v4/middleware)".to_string(),
@@ -2039,7 +2040,7 @@ fn render_output_repo_setup_content(spec: &OutputRepoSpec) -> String {
         return tutorial_file_markdown(
             "Setup",
             &format!(
-                "Keep the repository root for shared files like `README.md`, `LICENSE`, `.gitignore`, `.github/`, `justfile`, and `tutorial/`.\n\nPut all Go code inside a single `workspace/` folder.\n\nFrom the repository root, run each setup command and checkpoint it before moving to the next one:\n\n```bash\n{}\n```\n\nThis gives you:\n\n- a root-level `.gitignore` for operating-system noise and editor leftovers\n- a `workspace/.gitignore` for standard Go build output and local tooling files\n\nWhen the full workspace is finished, it should contain these files:\n\n```text\nworkspace/\n  .gitignore\n  go.mod\n  go.sum\n  cmd/\n    server/\n      main.go\n  internal/\n    contracts/\n      greeting.go\n    code/\n      greeting_service.go\n      greeting_service_test.go\n    adapter/\n      http/\n        greeting_handler.go\n        greeting_handler_test.go\n```",
+                "Keep the repository root for shared files like `README.md`, `LICENSE`, `.gitignore`, `.github/`, `justfile`, and `tutorial/`.\n\nPut all Go code inside a single `workspace/` folder.\n\nFrom the repository root, run each setup command and checkpoint it before moving to the next one:\n\n```bash\n{}\n```\n\nThis gives you:\n\n- a root-level `.gitignore` for operating-system noise and editor leftovers\n- a `workspace/.gitignore` for standard Go build output, local tooling files, and local runtime data\n\nWhen the full workspace is finished, it should contain these files:\n\n```text\nworkspace/\n  .gitignore\n  go.mod\n  go.sum\n  cmd/\n    server/\n      main.go\n  internal/\n    contracts/\n      greeting.go\n    code/\n      greeting_service.go\n      greeting_service_test.go\n    adapter/\n      http/\n        greeting_handler.go\n        greeting_handler_test.go\n```",
                 render_setup_commands_with_commits(&setup_commands, 0)
             ),
         );
@@ -2052,6 +2053,7 @@ fn render_output_repo_setup_content(spec: &OutputRepoSpec) -> String {
         );
         let setup_commands = vec![
             "curl -L -s https://raw.githubusercontent.com/github/gitignore/refs/heads/main/Go.gitignore > workspace/.gitignore".to_string(),
+            "printf '\\n# Repo-local tools\\nbin/\\n\\n# Local runtime data\\ndata/\\n' >> workspace/.gitignore".to_string(),
             format!("(cd workspace && go mod init {module_path})"),
             "(cd workspace && go get github.com/labstack/echo/v4)".to_string(),
             "(cd workspace && go get github.com/labstack/echo/v4/middleware)".to_string(),
@@ -2062,7 +2064,7 @@ fn render_output_repo_setup_content(spec: &OutputRepoSpec) -> String {
         return tutorial_file_markdown(
             "Setup",
             &format!(
-                "Keep the repository root for shared files like `README.md`, `LICENSE`, `.gitignore`, `.github/`, `justfile`, and `tutorial/`.\n\nPut all Go code inside a single `workspace/` folder.\n\nFrom the repository root, run each setup command and checkpoint it before moving to the next one:\n\n```bash\n{}\n```\n\nThis gives you:\n\n- a root-level `.gitignore` for operating-system noise and editor leftovers\n- a `workspace/.gitignore` for standard Go build output and local tooling files\n- a `workspace/data/tasks.db` file path for the durable SQLite task store used by the REST API adapter\n\nWhen the full workspace is finished, it should contain these files:\n\n```text\nworkspace/\n  .gitignore\n  go.mod\n  go.sum\n  cmd/\n    server/\n      main.go\n  data/\n    tasks.db\n  internal/\n    contracts/\n      task_api.go\n    code/\n      task_service.go\n      task_service_test.go\n    adapter/\n      http/\n        task_handler.go\n        task_handler_test.go\n      storage/\n        sqlite_task_store.go\n        sqlite_task_store_test.go\n```",
+                "Keep the repository root for shared files like `README.md`, `LICENSE`, `.gitignore`, `.github/`, `justfile`, and `tutorial/`.\n\nPut all Go code inside a single `workspace/` folder.\n\nFrom the repository root, run each setup command and checkpoint it before moving to the next one:\n\n```bash\n{}\n```\n\nThis gives you:\n\n- a root-level `.gitignore` for operating-system noise and editor leftovers\n- a `workspace/.gitignore` for standard Go build output, local tooling files, and local runtime data\n- a `workspace/data/tasks.db` file path for the durable SQLite task store used by the REST API adapter\n\nWhen the full workspace is finished, it should contain these files:\n\n```text\nworkspace/\n  .gitignore\n  go.mod\n  go.sum\n  cmd/\n    server/\n      main.go\n  data/\n    tasks.db\n  internal/\n    contracts/\n      task_api.go\n    code/\n      task_service.go\n      task_service_test.go\n    adapter/\n      http/\n        task_handler.go\n        task_handler_test.go\n      storage/\n        sqlite_task_store.go\n        sqlite_task_store_test.go\n```",
                 render_setup_commands_with_commits(&setup_commands, 0)
             ),
         );
@@ -2075,8 +2077,9 @@ fn render_output_repo_setup_content(spec: &OutputRepoSpec) -> String {
         );
         let setup_commands = vec![
             "curl -L -s https://raw.githubusercontent.com/github/gitignore/refs/heads/main/Go.gitignore > workspace/.gitignore".to_string(),
+            "printf '\\n# Repo-local tools\\nbin/\\n\\n# Local runtime data\\ndata/\\n' >> workspace/.gitignore".to_string(),
             format!("(cd workspace && go mod init {module_path})"),
-            "go install github.com/sqlc-dev/sqlc/cmd/sqlc@v1.30.0".to_string(),
+            "(cd workspace && GOBIN=$(pwd)/bin go install github.com/sqlc-dev/sqlc/cmd/sqlc@v1.30.0)".to_string(),
             "(cd workspace && go get github.com/labstack/echo/v4)".to_string(),
             "(cd workspace && go get github.com/labstack/echo/v4/middleware)".to_string(),
             "(cd workspace && go get github.com/jackc/pgx/v5/stdlib)".to_string(),
@@ -2086,7 +2089,7 @@ fn render_output_repo_setup_content(spec: &OutputRepoSpec) -> String {
         return tutorial_file_markdown(
             "Setup",
             &format!(
-                "Keep the repository root for shared files like `README.md`, `LICENSE`, `.gitignore`, `.github/`, `justfile`, and `tutorial/`.\n\nPut all Go code inside a single `workspace/` folder.\n\nFrom the repository root, run each setup command and checkpoint it before moving to the next one:\n\n```bash\n{}\n```\n\nThis gives you:\n\n- a root-level `.gitignore` for operating-system noise and editor leftovers\n- a `workspace/.gitignore` for standard Go build output and local tooling files\n- a Postgres-backed REST adapter that reads its connection string from `TODO_LIST_DATABASE_URL`\n- a generated root `justfile` that defaults `database_url` to `postgres://postgres@localhost:5432/todo_list?sslmode=disable`\n- a local `sqlc` installation for generating Go query code from `workspace/sqlc.yaml`, `workspace/db/schema.sql`, and `workspace/db/query/tasks.sql`\n\nBefore you run the server, create the default tutorial database with:\n\n```bash\ncreatedb --host localhost --username postgres todo_list\n```\n\nIf that does not match your local Postgres setup, create an equivalent database your user can access and override the generated `database_url` value in the root `justfile`.\n\nWhen the full workspace is finished, it should contain these files:\n\n```text\nworkspace/\n  .gitignore\n  go.mod\n  go.sum\n  sqlc.yaml\n  db/\n    schema.sql\n    query/\n      tasks.sql\n  cmd/\n    server/\n      main.go\n  internal/\n    contracts/\n      task_api.go\n    code/\n      task_service.go\n      task_service_test.go\n    adapter/\n      http/\n        task_handler.go\n        task_handler_test.go\n      storage/\n        postgres_task_store.go\n        postgres_task_store_test.go\n        db/\n          ...generated Go files from sqlc...\n```",
+                "Keep the repository root for shared files like `README.md`, `LICENSE`, `.gitignore`, `.github/`, `justfile`, and `tutorial/`.\n\nPut all Go code inside a single `workspace/` folder.\n\nFrom the repository root, run each setup command and checkpoint it before moving to the next one:\n\n```bash\n{}\n```\n\nThis gives you:\n\n- a root-level `.gitignore` for operating-system noise and editor leftovers\n- a `workspace/.gitignore` for standard Go build output, local tooling files, and local runtime data\n- a Postgres-backed REST adapter that reads its connection string from `TODO_LIST_DATABASE_URL`\n- a generated root `justfile` that defaults `database_url` to `postgres://postgres@localhost:5432/todo_list?sslmode=disable`\n- a repo-local `workspace/bin/sqlc` installation for generating Go query code from `workspace/sqlc.yaml`, `workspace/db/schema.sql`, and `workspace/db/query/tasks.sql`\n\nBefore you run the server, create the default tutorial database with:\n\n```bash\ncreatedb --host localhost --username postgres todo_list\n```\n\nIf that does not match your local Postgres setup, create an equivalent database your user can access and override the generated `database_url` value in the root `justfile`.\n\nWhen the full workspace is finished, it should contain these files:\n\n```text\nworkspace/\n  .gitignore\n  bin/\n    sqlc\n  go.mod\n  go.sum\n  sqlc.yaml\n  db/\n    schema.sql\n    query/\n      tasks.sql\n  cmd/\n    server/\n      main.go\n  internal/\n    contracts/\n      task_api.go\n    code/\n      task_service.go\n      task_service_test.go\n    adapter/\n      http/\n        task_handler.go\n        task_handler_test.go\n      storage/\n        postgres_task_store.go\n        postgres_task_store_test.go\n        db/\n          ...generated Go files from sqlc...\n```",
                 render_setup_commands_with_commits(&setup_commands, 0)
             ),
         );
@@ -2099,6 +2102,7 @@ fn render_output_repo_setup_content(spec: &OutputRepoSpec) -> String {
         );
         let setup_commands = vec![
             "curl -L -s https://raw.githubusercontent.com/github/gitignore/refs/heads/main/Go.gitignore > workspace/.gitignore".to_string(),
+            "printf '\\n# Repo-local tools\\nbin/\\n\\n# Local runtime data\\ndata/\\n' >> workspace/.gitignore".to_string(),
             format!("(cd workspace && go mod init {module_path})"),
             "(cd workspace && go get github.com/labstack/echo/v4)".to_string(),
             "(cd workspace && go get github.com/labstack/echo/v4/middleware)".to_string(),
@@ -2108,7 +2112,7 @@ fn render_output_repo_setup_content(spec: &OutputRepoSpec) -> String {
         return tutorial_file_markdown(
             "Setup",
             &format!(
-                "Keep the repository root for shared files like `README.md`, `LICENSE`, `.gitignore`, `.github/`, `justfile`, and `tutorial/`.\n\nPut all Go code inside a single `workspace/` folder.\n\nFrom the repository root, run each setup command and checkpoint it before moving to the next one:\n\n```bash\n{}\n```\n\nThis gives you:\n\n- a root-level `.gitignore` for operating-system noise and editor leftovers\n- a `workspace/.gitignore` for standard Go build output and local tooling files\n- a `workspace/data/tasks.json` file path for the durable local JSON task store used by the API adapter\n\nWhen the full workspace is finished, it should contain these files:\n\n```text\nworkspace/\n  .gitignore\n  go.mod\n  go.sum\n  cmd/\n    server/\n      main.go\n  data/\n    tasks.json\n  internal/\n    contracts/\n      task_list_service.go\n    code/\n      task_list_service.go\n      task_list_service_test.go\n    adapter/\n      http/\n        task_handler.go\n        task_handler_test.go\n      storage/\n        json_task_store.go\n        json_task_store_test.go\n```",
+                "Keep the repository root for shared files like `README.md`, `LICENSE`, `.gitignore`, `.github/`, `justfile`, and `tutorial/`.\n\nPut all Go code inside a single `workspace/` folder.\n\nFrom the repository root, run each setup command and checkpoint it before moving to the next one:\n\n```bash\n{}\n```\n\nThis gives you:\n\n- a root-level `.gitignore` for operating-system noise and editor leftovers\n- a `workspace/.gitignore` for standard Go build output, local tooling files, and local runtime data\n- a `workspace/data/tasks.json` file path for the durable local JSON task store used by the API adapter\n\nWhen the full workspace is finished, it should contain these files:\n\n```text\nworkspace/\n  .gitignore\n  go.mod\n  go.sum\n  cmd/\n    server/\n      main.go\n  data/\n    tasks.json\n  internal/\n    contracts/\n      task_list_service.go\n    code/\n      task_list_service.go\n      task_list_service_test.go\n    adapter/\n      http/\n        task_handler.go\n        task_handler_test.go\n      storage/\n        json_task_store.go\n        json_task_store_test.go\n```",
                 render_setup_commands_with_commits(&setup_commands, 0)
             ),
         );
@@ -11020,13 +11024,16 @@ mod tests {
         assert!(setup.contains("go get github.com/labstack/echo/v4/middleware"));
         assert!(setup.contains("go get github.com/stretchr/testify/assert github.com/stretchr/testify/mock"));
         assert!(setup.contains("Go.gitignore > workspace/.gitignore"));
+        assert!(setup.contains("printf '\\n# Repo-local tools\\nbin/\\n\\n# Local runtime data\\ndata/\\n' >> workspace/.gitignore"));
         assert!(setup.contains("run each setup command and checkpoint it before moving to the next one"));
         assert!(!setup.contains("git commit --message \"mkdir -p workspace\""));
         assert!(!setup.contains("mkdir -p workspace\n\njust format"));
         assert!(setup.contains("git commit --message \"curl -L -s https://raw.githubusercontent.com/github/gitignore/refs/heads/main/Go.gitignore > workspace/.gitignore\""));
+        assert!(setup.contains("git commit --message \"printf '"));
         assert!(setup.contains("git commit --message \"(cd workspace && go mod init github.com/intrepion/fa_tut_saying-hello/workspace)\""));
         assert!(setup.contains("just format\ngit add --all\ngit commit --message \"(cd workspace && go get github.com/labstack/echo/v4)\""));
         assert!(setup.contains("just format\ngit add --all\ngit commit --message \"(cd workspace && go get github.com/labstack/echo/v4/middleware)\""));
+        assert!(setup.contains("a `workspace/.gitignore` for standard Go build output, local tooling files, and local runtime data"));
     }
 
     #[test]
@@ -11109,6 +11116,7 @@ mod tests {
         assert!(setup.contains("rm -rf workspace"));
         assert!(setup.contains("go mod init github.com/intrepion/fa_tut_todo-list/workspace"));
         assert!(setup.contains("Go.gitignore > workspace/.gitignore"));
+        assert!(setup.contains("printf '\\n# Repo-local tools\\nbin/\\n\\n# Local runtime data\\ndata/\\n' >> workspace/.gitignore"));
         assert!(setup.contains("mkdir -p workspace/data"));
         assert!(!setup.contains("mkdir -p workspace/data\njust format"));
         assert!(setup.contains("workspace/data/tasks.json"));
@@ -11190,6 +11198,7 @@ mod tests {
         assert!(setup.contains("rm -rf workspace"));
         assert!(setup.contains("go mod init github.com/intrepion/fa_tut_todo-list/workspace"));
         assert!(setup.contains("go get modernc.org/sqlite"));
+        assert!(setup.contains("printf '\\n# Repo-local tools\\nbin/\\n\\n# Local runtime data\\ndata/\\n' >> workspace/.gitignore"));
         assert!(setup.contains("workspace/data/tasks.db"));
         assert!(!setup.contains("mkdir -p workspace/data\njust format"));
         assert!(finish.contains("http://localhost:25664/api/tasks"));
@@ -11207,15 +11216,17 @@ mod tests {
         let finish = render_output_repo_finish_content(&spec);
 
         assert!(justfile.contains("database_url := \"postgres://postgres@localhost:5432/todo_list?sslmode=disable\""));
-        assert!(justfile.contains("generate:\n\t(cd {{workspace}} && sqlc generate)"));
+        assert!(justfile.contains("generate:\n\t(cd {{workspace}} && ./bin/sqlc generate)"));
         assert!(justfile.contains("just generate\n\t(cd {{workspace}} && go test ./...)"));
         assert!(justfile.contains("TODO_LIST_DATABASE_URL={{database_url}} go run ./cmd/server"));
         assert!(justfile.contains("just generate\n\t(cd {{workspace}} && TODO_LIST_DATABASE_URL={{database_url}} go run ./cmd/server)"));
-        assert!(setup.contains("go install github.com/sqlc-dev/sqlc/cmd/sqlc@v1.30.0"));
+        assert!(setup.contains("(cd workspace && GOBIN=$(pwd)/bin go install github.com/sqlc-dev/sqlc/cmd/sqlc@v1.30.0)"));
         assert!(setup.contains("go get github.com/jackc/pgx/v5/stdlib"));
         assert!(setup.contains("go get github.com/DATA-DOG/go-sqlmock"));
+        assert!(setup.contains("printf '\\n# Repo-local tools\\nbin/\\n\\n# Local runtime data\\ndata/\\n' >> workspace/.gitignore"));
         assert!(setup.contains("sqlc.yaml"));
         assert!(setup.contains("db/query/tasks.sql"));
+        assert!(setup.contains("workspace/bin/sqlc"));
         assert!(setup.contains("createdb --host localhost --username postgres todo_list"));
         assert!(setup.contains("TODO_LIST_DATABASE_URL"));
         assert!(setup.contains("postgres://postgres@localhost:5432/todo_list?sslmode=disable"));
