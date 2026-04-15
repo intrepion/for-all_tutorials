@@ -428,7 +428,7 @@ fn is_go_todo_list_http_json_output_repo(spec: &OutputRepoSpec) -> bool {
         && spec.selections.protocol.as_deref() == Some("http-json")
 }
 
-fn is_go_todo_list_rest_json_sqlite_output_repo(spec: &OutputRepoSpec) -> bool {
+fn is_go_todo_list_http_json_sqlite_output_repo(spec: &OutputRepoSpec) -> bool {
     spec.project_slug == "todo-list"
         && spec.selections.ecosystem == "go"
         && spec.selections.language == "go"
@@ -438,7 +438,7 @@ fn is_go_todo_list_rest_json_sqlite_output_repo(spec: &OutputRepoSpec) -> bool {
         && spec.selections.surface == "web"
         && spec.selections.target == "api"
         && spec.selections.framework == "echo"
-        && spec.selections.protocol.as_deref() == Some("rest-json")
+        && spec.selections.protocol.as_deref() == Some("http-json")
 }
 
 fn is_go_todo_list_rest_json_postgres_output_repo(spec: &OutputRepoSpec) -> bool {
@@ -455,12 +455,12 @@ fn is_go_todo_list_rest_json_postgres_output_repo(spec: &OutputRepoSpec) -> bool
 }
 
 fn is_go_todo_list_rest_json_output_repo(spec: &OutputRepoSpec) -> bool {
-    is_go_todo_list_rest_json_sqlite_output_repo(spec)
-        || is_go_todo_list_rest_json_postgres_output_repo(spec)
+    is_go_todo_list_rest_json_postgres_output_repo(spec)
 }
 
 fn is_go_todo_list_output_repo(spec: &OutputRepoSpec) -> bool {
     is_go_todo_list_http_json_output_repo(spec)
+        || is_go_todo_list_http_json_sqlite_output_repo(spec)
         || is_go_todo_list_rest_json_output_repo(spec)
 }
 
@@ -742,7 +742,7 @@ fn validate_output_repo_selections(
         protocol: Some("http-json".to_string()),
     };
 
-    let supported_go_todo_list_rest_json_sqlite = OutputRepoSelections {
+    let supported_go_todo_list_http_json_sqlite = OutputRepoSelections {
         ecosystem: "go".to_string(),
         language: "go".to_string(),
         testing: "testify".to_string(),
@@ -751,7 +751,7 @@ fn validate_output_repo_selections(
         surface: "web".to_string(),
         target: "api".to_string(),
         framework: "echo".to_string(),
-        protocol: Some("rest-json".to_string()),
+        protocol: Some("http-json".to_string()),
     };
 
     let supported_go_todo_list_rest_json_postgres = OutputRepoSelections {
@@ -838,7 +838,7 @@ fn validate_output_repo_selections(
         return Ok(());
     }
 
-    if project_slug == "todo-list" && selections == &supported_go_todo_list_rest_json_sqlite {
+    if project_slug == "todo-list" && selections == &supported_go_todo_list_http_json_sqlite {
         return Ok(());
     }
 
@@ -1268,13 +1268,17 @@ workspace := \"workspace\"\n\
 database_url := \"postgres://postgres@localhost:5432/todo_list?sslmode=disable\"\n\n\
 restore:\n\
 \t(cd {{{{workspace}}}} && go mod download)\n\n\
+generate:\n\
+\t(cd {{{{workspace}}}} && sqlc generate)\n\n\
 format:\n\
 \tfind {{{{workspace}}}} -name '*.go' -exec gofmt -w {{}} +\n\n\
 check-formatting:\n\
 \ttest -z \"$(find {{{{workspace}}}} -name '*.go' -exec gofmt -l {{}} +)\"\n\n\
 check-tests:\n\
+\tjust generate\n\
 \t(cd {{{{workspace}}}} && go test ./...)\n\n\
 run:\n\
+\tjust generate\n\
 \t(cd {{{{workspace}}}} && TODO_LIST_DATABASE_URL={{{{database_url}}}} go run ./cmd/server)\n\n\
 check-all:\n\
 \tjust check-formatting\n\
@@ -1752,7 +1756,7 @@ fn build_go_todo_list_output_repo_tutorial_files(
     let project_root = app_root.join("partials/projects").join(&spec.project_slug);
     let spec_partial =
         Partial::load(&project_root.join("spec/README.md")).expect("spec partial should exist");
-    let spec_contents = if is_go_todo_list_rest_json_sqlite_output_repo(spec) {
+    let spec_contents = if is_go_todo_list_http_json_sqlite_output_repo(spec) {
         render_go_todo_list_rest_json_sqlite_spec_content()
     } else if is_go_todo_list_rest_json_postgres_output_repo(spec) {
         render_go_todo_list_rest_json_postgres_spec_content()
@@ -2041,7 +2045,7 @@ fn render_output_repo_setup_content(spec: &OutputRepoSpec) -> String {
         );
     }
 
-    if is_go_todo_list_rest_json_sqlite_output_repo(spec) {
+    if is_go_todo_list_http_json_sqlite_output_repo(spec) {
         let module_path = format!(
             "github.com/{}/{}/workspace",
             GITHUB_OWNER, spec.repo_name
@@ -2072,6 +2076,7 @@ fn render_output_repo_setup_content(spec: &OutputRepoSpec) -> String {
         let setup_commands = vec![
             "curl -L -s https://raw.githubusercontent.com/github/gitignore/refs/heads/main/Go.gitignore > workspace/.gitignore".to_string(),
             format!("(cd workspace && go mod init {module_path})"),
+            "go install github.com/sqlc-dev/sqlc/cmd/sqlc@v1.30.0".to_string(),
             "(cd workspace && go get github.com/labstack/echo/v4)".to_string(),
             "(cd workspace && go get github.com/labstack/echo/v4/middleware)".to_string(),
             "(cd workspace && go get github.com/jackc/pgx/v5/stdlib)".to_string(),
@@ -2081,7 +2086,7 @@ fn render_output_repo_setup_content(spec: &OutputRepoSpec) -> String {
         return tutorial_file_markdown(
             "Setup",
             &format!(
-                "Keep the repository root for shared files like `README.md`, `LICENSE`, `.gitignore`, `.github/`, `justfile`, and `tutorial/`.\n\nPut all Go code inside a single `workspace/` folder.\n\nFrom the repository root, run each setup command and checkpoint it before moving to the next one:\n\n```bash\n{}\n```\n\nThis gives you:\n\n- a root-level `.gitignore` for operating-system noise and editor leftovers\n- a `workspace/.gitignore` for standard Go build output and local tooling files\n- a Postgres-backed REST adapter that reads its connection string from `TODO_LIST_DATABASE_URL`\n- a generated root `justfile` that defaults `database_url` to `postgres://postgres@localhost:5432/todo_list?sslmode=disable`\n\nBefore you run the server, create the default tutorial database with:\n\n```bash\ncreatedb --host localhost --username postgres todo_list\n```\n\nIf that does not match your local Postgres setup, create an equivalent database your user can access and override the generated `database_url` value in the root `justfile`.\n\nWhen the full workspace is finished, it should contain these files:\n\n```text\nworkspace/\n  .gitignore\n  go.mod\n  go.sum\n  cmd/\n    server/\n      main.go\n  internal/\n    contracts/\n      task_api.go\n    code/\n      task_service.go\n      task_service_test.go\n    adapter/\n      http/\n        task_handler.go\n        task_handler_test.go\n      storage/\n        postgres_task_store.go\n        postgres_task_store_test.go\n```",
+                "Keep the repository root for shared files like `README.md`, `LICENSE`, `.gitignore`, `.github/`, `justfile`, and `tutorial/`.\n\nPut all Go code inside a single `workspace/` folder.\n\nFrom the repository root, run each setup command and checkpoint it before moving to the next one:\n\n```bash\n{}\n```\n\nThis gives you:\n\n- a root-level `.gitignore` for operating-system noise and editor leftovers\n- a `workspace/.gitignore` for standard Go build output and local tooling files\n- a Postgres-backed REST adapter that reads its connection string from `TODO_LIST_DATABASE_URL`\n- a generated root `justfile` that defaults `database_url` to `postgres://postgres@localhost:5432/todo_list?sslmode=disable`\n- a local `sqlc` installation for generating Go query code from `workspace/sqlc.yaml`, `workspace/db/schema.sql`, and `workspace/db/query/tasks.sql`\n\nBefore you run the server, create the default tutorial database with:\n\n```bash\ncreatedb --host localhost --username postgres todo_list\n```\n\nIf that does not match your local Postgres setup, create an equivalent database your user can access and override the generated `database_url` value in the root `justfile`.\n\nWhen the full workspace is finished, it should contain these files:\n\n```text\nworkspace/\n  .gitignore\n  go.mod\n  go.sum\n  sqlc.yaml\n  db/\n    schema.sql\n    query/\n      tasks.sql\n  cmd/\n    server/\n      main.go\n  internal/\n    contracts/\n      task_api.go\n    code/\n      task_service.go\n      task_service_test.go\n    adapter/\n      http/\n        task_handler.go\n        task_handler_test.go\n      storage/\n        postgres_task_store.go\n        postgres_task_store_test.go\n        db/\n          ...generated Go files from sqlc...\n```",
                 render_setup_commands_with_commits(&setup_commands, 0)
             ),
         );
@@ -2639,7 +2644,7 @@ fn render_output_repo_finish_content(spec: &OutputRepoSpec) -> String {
         );
     }
 
-    if is_go_todo_list_rest_json_sqlite_output_repo(spec) {
+    if is_go_todo_list_http_json_sqlite_output_repo(spec) {
         return tutorial_file_markdown(
             "Finish",
             &format!(
@@ -2652,7 +2657,7 @@ fn render_output_repo_finish_content(spec: &OutputRepoSpec) -> String {
         return tutorial_file_markdown(
             "Finish",
             &format!(
-                "Make sure you have a local Postgres database named `todo_list`. The default tutorial command for that is:\n\n```bash\ncreatedb --host localhost --username postgres todo_list\n```\n\nStart the API server from the repository root:\n\n```bash\njust run\n```\n\nIf your local Postgres uses a different connection string, run:\n\n```bash\njust --set database_url \"postgres://<user>:<password>@localhost:5432/<database>?sslmode=disable\" run\n```\n\nThis API is configured to accept browser requests from `http://localhost:{FOR_ALL_FRONTEND_PORT}`.\n\nIn another terminal, try these requests:\n\n```bash\ncurl \"http://localhost:{FOR_ALL_API_PORT}/api/tasks\"\ncurl -X POST \"http://localhost:{FOR_ALL_API_PORT}/api/tasks\" \\\n  -H \"Content-Type: application/json\" \\\n  -d '{{\"text\":\"Buy milk\"}}'\ncurl \"http://localhost:{FOR_ALL_API_PORT}/api/tasks/1\"\ncurl -i -X DELETE \"http://localhost:{FOR_ALL_API_PORT}/api/tasks/1\"\n```\n\nWith a fresh database, the first `GET` should return an empty list:\n\n```json\n{{\"tasks\":[]}}\n```\n\nThe `POST` should return the created task resource:\n\n```json\n{{\"id\":1,\"text\":\"Buy milk\"}}\n```\n\nThe next `GET /api/tasks/1` should return the same task resource. The `DELETE` should return `204 No Content`.\n\nIf you already have rows in the database, Postgres may assign a different numeric id than `1`."
+                "Make sure you have a local Postgres database named `todo_list`. The default tutorial command for that is:\n\n```bash\ncreatedb --host localhost --username postgres todo_list\n```\n\nStart the API server from the repository root:\n\n```bash\njust run\n```\n\nThe generated `just run` and `just check-tests` commands call `sqlc generate` for you before compiling the app.\n\nIf your local Postgres uses a different connection string, run:\n\n```bash\njust --set database_url \"postgres://<user>:<password>@localhost:5432/<database>?sslmode=disable\" run\n```\n\nThis API is configured to accept browser requests from `http://localhost:{FOR_ALL_FRONTEND_PORT}`.\n\nIn another terminal, try these requests:\n\n```bash\ncurl \"http://localhost:{FOR_ALL_API_PORT}/api/tasks\"\ncurl -X POST \"http://localhost:{FOR_ALL_API_PORT}/api/tasks\" \\\n  -H \"Content-Type: application/json\" \\\n  -d '{{\"text\":\"Buy milk\"}}'\ncurl \"http://localhost:{FOR_ALL_API_PORT}/api/tasks/11111111-1111-1111-1111-111111111111\"\ncurl -i -X DELETE \"http://localhost:{FOR_ALL_API_PORT}/api/tasks/11111111-1111-1111-1111-111111111111\"\n```\n\nWith a fresh database, the first `GET` should return an empty list:\n\n```json\n{{\"tasks\":[]}}\n```\n\nThe `POST` should return a created task resource with a UUID id, for example:\n\n```json\n{{\"id\":\"11111111-1111-1111-1111-111111111111\",\"text\":\"Buy milk\"}}\n```\n\nThe next `GET /api/tasks/<uuid>` should return the same task resource. The `DELETE` should return `204 No Content`.\n\nIf you already have rows in the database, Postgres will assign a different UUID than the example above."
             ),
         );
     }
@@ -4736,14 +4741,14 @@ fn go_module_path(spec: &OutputRepoSpec) -> String {
 fn render_go_todo_list_rest_json_sqlite_spec_content() -> String {
     tutorial_file_markdown(
         "Spec",
-        "Build a Todo List API that uses REST-style JSON routes and persists task resources in SQLite.\n\n## Goal\n\nBuild a small project app that introduces:\n\n- resource-oriented task routes\n- database-generated numeric task ids\n- durable SQLite persistence\n- test-first service and adapter logic\n- thin adapters\n\n## Canonical Resource Shape\n\nEvery tutorial run for this path should treat the task resource as:\n\n```text\nid: integer\ntext: string\n```\n\nA fresh SQLite database should create ids in increasing numeric order beginning with `1`.\n\n## Core Logic Contract\n\nThe shared contracts for this path are:\n\n```text\nlist_tasks() -> task[]\ncreate_task(task_text: string) -> task\nget_task(task_id: integer) -> task | not_found\ndelete_task(task_id: integer) -> deleted | not_found\n```\n\nCanonical behavior:\n\n- blank or whitespace-only task text is rejected\n- task ids are generated by SQLite when rows are inserted\n- `GET /api/tasks` returns all tasks ordered by id ascending\n- `POST /api/tasks` creates one task and returns the created task resource\n- `GET /api/tasks/:id` returns the matching task resource or `404`\n- `DELETE /api/tasks/:id` deletes the matching task resource or returns `404`\n\nExamples with a fresh database:\n\n- `POST /api/tasks` with `{\"text\":\"Buy milk\"}` returns `{\"id\":1,\"text\":\"Buy milk\"}`\n- `GET /api/tasks` returns `{\"tasks\":[{\"id\":1,\"text\":\"Buy milk\"}]}`\n- `GET /api/tasks/1` returns `{\"id\":1,\"text\":\"Buy milk\"}`\n- `DELETE /api/tasks/1` returns `204 No Content`\n\n## Non-Goals\n\nThis path does not include:\n\n- authentication or authorization\n- task editing\n- due dates\n- priorities\n- categories or tags\n- multiple lists\n- syncing tasks across machines\n\n## Surface Expectations\n\nFor this path, the API adapter should expose these canonical routes:\n\n- `GET /api/tasks`\n- `POST /api/tasks`\n- `GET /api/tasks/:id`\n- `DELETE /api/tasks/:id`\n\nThe adapter should keep request parsing, route handling, and SQLite wiring thin, and it should delegate task validation and not-found behavior to the code layer.\n\n## Testing And Coverage Contract\n\nMinimum test expectations:\n\n- a test that blank task text is rejected\n- a test that tasks are listed in id order\n- a test that the first created task in a fresh database gets id `1`\n- a test that missing ids return `404`\n- tests for every adapter built in the chosen run that prove it returns `201` for create, `200` for list and fetch, and `204` for delete",
+        "Build a Todo List API that uses HTTP JSON routes and persists task resources in SQLite.\n\n## Goal\n\nBuild a small project app that introduces:\n\n- adapter-owned JSON over HTTP routes\n- database-generated numeric task ids\n- durable SQLite persistence\n- test-first service and adapter logic\n- thin adapters\n\n## Canonical Resource Shape\n\nEvery tutorial run for this path should treat the task resource as:\n\n```text\nid: integer\ntext: string\n```\n\nA fresh SQLite database should create ids in increasing numeric order beginning with `1`.\n\n## Core Logic Contract\n\nThe shared contracts for this path are:\n\n```text\nlist_tasks() -> task[]\ncreate_task(task_text: string) -> task\nget_task(task_id: integer) -> task | not_found\ndelete_task(task_id: integer) -> deleted | not_found\n```\n\nCanonical behavior:\n\n- blank or whitespace-only task text is rejected\n- task ids are generated by SQLite when rows are inserted\n- `GET /api/tasks` returns all tasks ordered by id ascending\n- `POST /api/tasks` creates one task and returns the created task resource\n- `GET /api/tasks/:id` returns the matching task resource or `404`\n- `DELETE /api/tasks/:id` deletes the matching task resource or returns `404`\n\nExamples with a fresh database:\n\n- `POST /api/tasks` with `{\"text\":\"Buy milk\"}` returns `{\"id\":1,\"text\":\"Buy milk\"}`\n- `GET /api/tasks` returns `{\"tasks\":[{\"id\":1,\"text\":\"Buy milk\"}]}`\n- `GET /api/tasks/1` returns `{\"id\":1,\"text\":\"Buy milk\"}`\n- `DELETE /api/tasks/1` returns `204 No Content`\n\n## Non-Goals\n\nThis path does not include:\n\n- authentication or authorization\n- task editing\n- due dates\n- priorities\n- categories or tags\n- multiple lists\n- syncing tasks across machines\n\n## Surface Expectations\n\nFor this path, the API adapter should expose these canonical routes:\n\n- `GET /api/tasks`\n- `POST /api/tasks`\n- `GET /api/tasks/:id`\n- `DELETE /api/tasks/:id`\n\nThe adapter should keep request parsing, route handling, and SQLite wiring thin, and it should delegate task validation and not-found behavior to the code layer.\n\n## Testing And Coverage Contract\n\nMinimum test expectations:\n\n- a test that blank task text is rejected\n- a test that tasks are listed in id order\n- a test that the first created task in a fresh database gets id `1`\n- a test that missing ids return `404`\n- tests for every adapter built in the chosen run that prove it returns `201` for create, `200` for list and fetch, and `204` for delete",
     )
 }
 
 fn render_go_todo_list_rest_json_postgres_spec_content() -> String {
     tutorial_file_markdown(
         "Spec",
-        "Build a Todo List API that uses REST-style JSON routes and persists task resources in Postgres.\n\n## Goal\n\nBuild a small project app that introduces:\n\n- resource-oriented task routes\n- database-generated numeric task ids\n- durable Postgres persistence\n- test-first service and adapter logic\n- thin adapters\n\n## Canonical Resource Shape\n\nEvery tutorial run for this path should treat the task resource as:\n\n```text\nid: integer\ntext: string\n```\n\nA fresh Postgres database should create ids in increasing numeric order beginning with `1`.\n\n## Core Logic Contract\n\nThe shared contracts for this path are:\n\n```text\nlist_tasks() -> task[]\ncreate_task(task_text: string) -> task\nget_task(task_id: integer) -> task | not_found\ndelete_task(task_id: integer) -> deleted | not_found\n```\n\nCanonical behavior:\n\n- blank or whitespace-only task text is rejected\n- task ids are generated by Postgres when rows are inserted\n- `GET /api/tasks` returns all tasks ordered by id ascending\n- `POST /api/tasks` creates one task and returns the created task resource\n- `GET /api/tasks/:id` returns the matching task resource or `404`\n- `DELETE /api/tasks/:id` deletes the matching task resource or returns `404`\n\nExamples with a fresh database:\n\n- `POST /api/tasks` with `{\"text\":\"Buy milk\"}` returns `{\"id\":1,\"text\":\"Buy milk\"}`\n- `GET /api/tasks` returns `{\"tasks\":[{\"id\":1,\"text\":\"Buy milk\"}]}`\n- `GET /api/tasks/1` returns `{\"id\":1,\"text\":\"Buy milk\"}`\n- `DELETE /api/tasks/1` returns `204 No Content`\n\n## Non-Goals\n\nThis path does not include:\n\n- authentication or authorization\n- task editing\n- due dates\n- priorities\n- categories or tags\n- multiple lists\n- syncing tasks across machines\n\n## Surface Expectations\n\nFor this path, the API adapter should expose these canonical routes:\n\n- `GET /api/tasks`\n- `POST /api/tasks`\n- `GET /api/tasks/:id`\n- `DELETE /api/tasks/:id`\n\nThe adapter should keep request parsing, route handling, and Postgres wiring thin, and it should delegate task validation and not-found behavior to the code layer.\n\n## Testing And Coverage Contract\n\nMinimum test expectations:\n\n- a test that blank task text is rejected\n- a test that tasks are listed in id order\n- a test that the first created task in a fresh database gets id `1`\n- a test that missing ids return `404`\n- tests for every adapter built in the chosen run that prove it returns `201` for create, `200` for list and fetch, and `204` for delete",
+        "Build a Todo List API that uses REST-style JSON routes and persists task resources in Postgres.\n\n## Goal\n\nBuild a small project app that introduces:\n\n- resource-oriented task routes\n- database-generated UUID task ids\n- durable Postgres persistence\n- `sqlc`-generated Go query code\n- test-first service and adapter logic\n- thin adapters\n\n## Canonical Resource Shape\n\nEvery tutorial run for this path should treat the task resource as:\n\n```text\nid: uuid string\ntext: string\n```\n\nA fresh Postgres database should create a new UUID string every time a task row is inserted.\n\n## Core Logic Contract\n\nThe shared contracts for this path are:\n\n```text\nlist_tasks() -> task[]\ncreate_task(task_text: string) -> task\nget_task(task_id: uuid string) -> task | not_found\ndelete_task(task_id: uuid string) -> deleted | not_found\n```\n\nCanonical behavior:\n\n- blank or whitespace-only task text is rejected\n- task ids are generated by Postgres as UUID strings when rows are inserted\n- the Postgres adapter uses `sqlc` to generate its CRUD query package from checked-in SQL files\n- `GET /api/tasks` returns all tasks ordered by text ascending, then id ascending\n- `POST /api/tasks` creates one task and returns the created task resource\n- `GET /api/tasks/:id` returns the matching task resource or `404`\n- `DELETE /api/tasks/:id` deletes the matching task resource or returns `404`\n\nExamples with a fresh database:\n\n- `POST /api/tasks` with `{\"text\":\"Buy milk\"}` returns `{\"id\":\"11111111-1111-1111-1111-111111111111\",\"text\":\"Buy milk\"}`\n- `GET /api/tasks` returns `{\"tasks\":[{\"id\":\"11111111-1111-1111-1111-111111111111\",\"text\":\"Buy milk\"}]}`\n- `GET /api/tasks/11111111-1111-1111-1111-111111111111` returns `{\"id\":\"11111111-1111-1111-1111-111111111111\",\"text\":\"Buy milk\"}`\n- `DELETE /api/tasks/11111111-1111-1111-1111-111111111111` returns `204 No Content`\n\n## Non-Goals\n\nThis path does not include:\n\n- authentication or authorization\n- task editing\n- due dates\n- priorities\n- categories or tags\n- multiple lists\n- syncing tasks across machines\n\n## Surface Expectations\n\nFor this path, the API adapter should expose these canonical routes:\n\n- `GET /api/tasks`\n- `POST /api/tasks`\n- `GET /api/tasks/:id`\n- `DELETE /api/tasks/:id`\n\nThe adapter should keep request parsing, route handling, and Postgres wiring thin, and it should delegate task validation and not-found behavior to the code layer.\n\n## Testing And Coverage Contract\n\nMinimum test expectations:\n\n- a test that blank task text is rejected\n- a test that tasks are listed in stable order\n- a test that created tasks receive non-empty UUID ids\n- a test that missing ids return `404`\n- tests for every adapter built in the chosen run that prove it returns `201` for create, `200` for list and fetch, and `204` for delete",
     )
 }
 
@@ -5010,12 +5015,24 @@ git commit --message "4. Green: Wire The Server Entry Point"
 }
 
 fn render_go_todo_list_contracts_content(_spec: &OutputRepoSpec) -> String {
-    if is_go_todo_list_rest_json_output_repo(_spec) {
+    if is_go_todo_list_http_json_sqlite_output_repo(_spec)
+        || is_go_todo_list_rest_json_output_repo(_spec)
+    {
         let contracts_file = "workspace/internal/contracts/task_api.go";
+        let task_id_type = if is_go_todo_list_rest_json_postgres_output_repo(_spec) {
+            "string"
+        } else {
+            "int64"
+        };
+        let commit_message = if is_go_todo_list_rest_json_postgres_output_repo(_spec) {
+            "Define todo-list REST contracts"
+        } else {
+            "Define todo-list HTTP JSON contracts"
+        };
         return tutorial_file_markdown(
             "Contracts",
             &rewrite_stage_commit_checkpoints(&rewrite_touch_creation_stage_only(&format!(
-                "Create the shared contract file:\n\n```bash\ntouch {contracts_file}\n```\n\nPut this exact content in `{contracts_file}`:\n\n```go\npackage contracts\n\nimport \"errors\"\n\nvar (\n\tErrTaskTextBlank = errors.New(\"task text must not be blank\")\n\tErrTaskNotFound  = errors.New(\"task not found\")\n)\n\ntype Task struct {{\n\tID   int64  `json:\"id\"`\n\tText string `json:\"text\"`\n}}\n\ntype TaskStore interface {{\n\tListTasks() ([]Task, error)\n\tCreateTask(taskText string) (Task, error)\n\tGetTask(taskID int64) (Task, bool, error)\n\tDeleteTask(taskID int64) (bool, error)\n}}\n\ntype TaskService interface {{\n\tListTasks() (TaskListResponse, error)\n\tCreateTask(taskText string) (Task, error)\n\tGetTask(taskID int64) (Task, error)\n\tDeleteTask(taskID int64) error\n}}\n\ntype TaskListResponse struct {{\n\tTasks []Task `json:\"tasks\"`\n}}\n\ntype CreateTaskRequest struct {{\n\tText string `json:\"text\"`\n}}\n\ntype ErrorResponse struct {{\n\tMessage string `json:\"message\"`\n}}\n```\n\nDo not add tests here. Keep this layer limited to interfaces, small shared types, and canonical error values.\n\nThen run:\n\n```bash\ngit add --all\ngit commit --message \"Define todo-list REST contracts\"\n```"
+                "Create the shared contract file:\n\n```bash\ntouch {contracts_file}\n```\n\nPut this exact content in `{contracts_file}`:\n\n```go\npackage contracts\n\nimport \"errors\"\n\nvar (\n\tErrTaskTextBlank = errors.New(\"task text must not be blank\")\n\tErrTaskNotFound  = errors.New(\"task not found\")\n)\n\ntype Task struct {{\n\tID   {task_id_type}  `json:\"id\"`\n\tText string `json:\"text\"`\n}}\n\ntype TaskStore interface {{\n\tListTasks() ([]Task, error)\n\tCreateTask(taskText string) (Task, error)\n\tGetTask(taskID {task_id_type}) (Task, bool, error)\n\tDeleteTask(taskID {task_id_type}) (bool, error)\n}}\n\ntype TaskService interface {{\n\tListTasks() (TaskListResponse, error)\n\tCreateTask(taskText string) (Task, error)\n\tGetTask(taskID {task_id_type}) (Task, error)\n\tDeleteTask(taskID {task_id_type}) error\n}}\n\ntype TaskListResponse struct {{\n\tTasks []Task `json:\"tasks\"`\n}}\n\ntype CreateTaskRequest struct {{\n\tText string `json:\"text\"`\n}}\n\ntype ErrorResponse struct {{\n\tMessage string `json:\"message\"`\n}}\n```\n\nDo not add tests here. Keep this layer limited to interfaces, small shared types, and canonical error values.\n\nThen run:\n\n```bash\ngit add --all\ngit commit --message \"{commit_message}\"\n```"
             ))),
         );
     }
@@ -5030,7 +5047,34 @@ fn render_go_todo_list_contracts_content(_spec: &OutputRepoSpec) -> String {
 }
 
 fn render_go_todo_list_code_content(_spec: &OutputRepoSpec) -> String {
-    if is_go_todo_list_rest_json_output_repo(_spec) {
+    if is_go_todo_list_http_json_sqlite_output_repo(_spec)
+        || is_go_todo_list_rest_json_output_repo(_spec)
+    {
+        let task_id_type = if is_go_todo_list_rest_json_postgres_output_repo(_spec) {
+            "string"
+        } else {
+            "int64"
+        };
+        let task_one_id = if is_go_todo_list_rest_json_postgres_output_repo(_spec) {
+            "\"11111111-1111-1111-1111-111111111111\""
+        } else {
+            "1"
+        };
+        let task_two_id = if is_go_todo_list_rest_json_postgres_output_repo(_spec) {
+            "\"22222222-2222-2222-2222-222222222222\""
+        } else {
+            "2"
+        };
+        let missing_task_id = if is_go_todo_list_rest_json_postgres_output_repo(_spec) {
+            "\"99999999-9999-9999-9999-999999999999\""
+        } else {
+            "int64(9)"
+        };
+        let missing_task_call = if is_go_todo_list_rest_json_postgres_output_repo(_spec) {
+            "\"99999999-9999-9999-9999-999999999999\""
+        } else {
+            "9"
+        };
         let body = r#"### 1. Red: List Tasks From The Store
 
 Create the first code test file:
@@ -5466,6 +5510,14 @@ just check-tests
 git add --all
 git commit --message "6. Green: Return Tasks By Id And Delete Existing Tasks"
 ```"#;
+
+        let body = body
+            .replace("int64(9)", missing_task_id)
+            .replace("GetTask(9)", &format!("GetTask({missing_task_call})"))
+            .replace("DeleteTask(9)", &format!("DeleteTask({missing_task_call})"))
+            .replace("int64", task_id_type)
+            .replace("ID: 1,", &format!("ID: {task_one_id},"))
+            .replace("ID: 2,", &format!("ID: {task_two_id},"));
 
         return tutorial_file_markdown(
             "Code",
@@ -6070,12 +6122,12 @@ func (m *MockTaskService) CreateTask(taskText string) (contracts.Task, error) {
 	return args.Get(0).(contracts.Task), args.Error(1)
 }
 
-func (m *MockTaskService) GetTask(taskID int64) (contracts.Task, error) {
+func (m *MockTaskService) GetTask(taskID string) (contracts.Task, error) {
 	args := m.Called(taskID)
 	return args.Get(0).(contracts.Task), args.Error(1)
 }
 
-func (m *MockTaskService) DeleteTask(taskID int64) error {
+func (m *MockTaskService) DeleteTask(taskID string) error {
 	args := m.Called(taskID)
 	return args.Error(0)
 }
@@ -6089,8 +6141,8 @@ func TestTaskHandlerListTasksReturnsTheCurrentTaskResources(t *testing.T) {
 	service := new(MockTaskService)
 	service.On("ListTasks").Return(contracts.TaskListResponse{
 		Tasks: []contracts.Task{
-			{ID: 1, Text: "Learn how to invert binary trees"},
-			{ID: 2, Text: "Buy milk"},
+			{ID: "11111111-1111-1111-1111-111111111111", Text: "Learn how to invert binary trees"},
+			{ID: "22222222-2222-2222-2222-222222222222", Text: "Buy milk"},
 		},
 	}, nil)
 
@@ -6105,8 +6157,8 @@ func TestTaskHandlerListTasksReturnsTheCurrentTaskResources(t *testing.T) {
 
 	assert.NoError(t, err)
 	assert.Equal(t, []contracts.Task{
-		{ID: 1, Text: "Learn how to invert binary trees"},
-		{ID: 2, Text: "Buy milk"},
+		{ID: "11111111-1111-1111-1111-111111111111", Text: "Learn how to invert binary trees"},
+		{ID: "22222222-2222-2222-2222-222222222222", Text: "Buy milk"},
 	}, body.Tasks)
 	service.AssertExpectations(t)
 }
@@ -6124,7 +6176,7 @@ func TestTaskHandlerCreateTaskReturnsCreatedResource(t *testing.T) {
 
 	service := new(MockTaskService)
 	service.On("CreateTask", "Buy milk").Return(contracts.Task{
-		ID:   1,
+		ID:   "11111111-1111-1111-1111-111111111111",
 		Text: "Buy milk",
 	}, nil)
 
@@ -6161,7 +6213,6 @@ package httpadapter
 import (
 	"errors"
 	"net/http"
-	"strconv"
 
 	"__MODULE_PATH__/internal/contracts"
 	"github.com/labstack/echo/v4"
@@ -6211,10 +6262,10 @@ func (h *TaskHandler) CreateTask(c echo.Context) error {
 }
 
 func (h *TaskHandler) GetTask(c echo.Context) error {
-	taskID, err := strconv.ParseInt(c.Param("id"), 10, 64)
-	if err != nil {
+	taskID := c.Param("id")
+	if taskID == "" {
 		return c.JSON(http.StatusBadRequest, contracts.ErrorResponse{
-			Message: "task id must be an integer",
+			Message: "task id must not be empty",
 		})
 	}
 
@@ -6235,14 +6286,14 @@ func (h *TaskHandler) GetTask(c echo.Context) error {
 }
 
 func (h *TaskHandler) DeleteTask(c echo.Context) error {
-	taskID, err := strconv.ParseInt(c.Param("id"), 10, 64)
-	if err != nil {
+	taskID := c.Param("id")
+	if taskID == "" {
 		return c.JSON(http.StatusBadRequest, contracts.ErrorResponse{
-			Message: "task id must be an integer",
+			Message: "task id must not be empty",
 		})
 	}
 
-	err = h.service.DeleteTask(taskID)
+	err := h.service.DeleteTask(taskID)
 	if err != nil {
 		if errors.Is(err, contracts.ErrTaskNotFound) {
 			return c.JSON(http.StatusNotFound, contracts.ErrorResponse{
@@ -6301,12 +6352,12 @@ func (m *MockTaskService) CreateTask(taskText string) (contracts.Task, error) {
 	return args.Get(0).(contracts.Task), args.Error(1)
 }
 
-func (m *MockTaskService) GetTask(taskID int64) (contracts.Task, error) {
+func (m *MockTaskService) GetTask(taskID string) (contracts.Task, error) {
 	args := m.Called(taskID)
 	return args.Get(0).(contracts.Task), args.Error(1)
 }
 
-func (m *MockTaskService) DeleteTask(taskID int64) error {
+func (m *MockTaskService) DeleteTask(taskID string) error {
 	args := m.Called(taskID)
 	return args.Error(0)
 }
@@ -6320,8 +6371,8 @@ func TestTaskHandlerListTasksReturnsTheCurrentTaskResources(t *testing.T) {
 	service := new(MockTaskService)
 	service.On("ListTasks").Return(contracts.TaskListResponse{
 		Tasks: []contracts.Task{
-			{ID: 1, Text: "Learn how to invert binary trees"},
-			{ID: 2, Text: "Buy milk"},
+			{ID: "11111111-1111-1111-1111-111111111111", Text: "Learn how to invert binary trees"},
+			{ID: "22222222-2222-2222-2222-222222222222", Text: "Buy milk"},
 		},
 	}, nil)
 
@@ -6346,7 +6397,7 @@ func TestTaskHandlerCreateTaskReturnsCreatedResource(t *testing.T) {
 
 	service := new(MockTaskService)
 	service.On("CreateTask", "Buy milk").Return(contracts.Task{
-		ID:   1,
+		ID:   "11111111-1111-1111-1111-111111111111",
 		Text: "Buy milk",
 	}, nil)
 
@@ -6360,16 +6411,16 @@ func TestTaskHandlerCreateTaskReturnsCreatedResource(t *testing.T) {
 
 func TestTaskHandlerGetTaskReturnsTheRequestedResource(t *testing.T) {
 	e := echo.New()
-	req := httptest.NewRequest(http.MethodGet, "/api/tasks/1", nil)
+	req := httptest.NewRequest(http.MethodGet, "/api/tasks/11111111-1111-1111-1111-111111111111", nil)
 	rec := httptest.NewRecorder()
 	ctx := e.NewContext(req, rec)
 	ctx.SetPath("/api/tasks/:id")
 	ctx.SetParamNames("id")
-	ctx.SetParamValues("1")
+	ctx.SetParamValues("11111111-1111-1111-1111-111111111111")
 
 	service := new(MockTaskService)
-	service.On("GetTask", int64(1)).Return(contracts.Task{
-		ID:   1,
+	service.On("GetTask", "11111111-1111-1111-1111-111111111111").Return(contracts.Task{
+		ID:   "11111111-1111-1111-1111-111111111111",
 		Text: "Buy milk",
 	}, nil)
 
@@ -6383,15 +6434,15 @@ func TestTaskHandlerGetTaskReturnsTheRequestedResource(t *testing.T) {
 
 func TestTaskHandlerDeleteTaskReturnsNoContent(t *testing.T) {
 	e := echo.New()
-	req := httptest.NewRequest(http.MethodDelete, "/api/tasks/1", nil)
+	req := httptest.NewRequest(http.MethodDelete, "/api/tasks/11111111-1111-1111-1111-111111111111", nil)
 	rec := httptest.NewRecorder()
 	ctx := e.NewContext(req, rec)
 	ctx.SetPath("/api/tasks/:id")
 	ctx.SetParamNames("id")
-	ctx.SetParamValues("1")
+	ctx.SetParamValues("11111111-1111-1111-1111-111111111111")
 
 	service := new(MockTaskService)
-	service.On("DeleteTask", int64(1)).Return(nil)
+	service.On("DeleteTask", "11111111-1111-1111-1111-111111111111").Return(nil)
 
 	handler := NewTaskHandler(service)
 	err := handler.DeleteTask(ctx)
@@ -6417,24 +6468,25 @@ import (
 	"regexp"
 	"testing"
 
+	storedb "__MODULE_PATH__/internal/adapter/storage/db"
 	"__MODULE_PATH__/internal/contracts"
 	sqlmock "github.com/DATA-DOG/go-sqlmock"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 
-func TestPostgresTaskStoreCreatesTasksWithIncreasingIds(t *testing.T) {
+func TestPostgresTaskStoreCreatesTasksWithDatabaseGeneratedUuids(t *testing.T) {
 	db, mock, err := sqlmock.New()
 	require.NoError(t, err)
 	t.Cleanup(func() { _ = db.Close() })
 
-	store := &PostgresTaskStore{db: db}
-	mock.ExpectQuery(regexp.QuoteMeta(`INSERT INTO tasks (text) VALUES ($1) RETURNING id`)).
+	store := &PostgresTaskStore{queries: storedb.New(db)}
+	mock.ExpectQuery(regexp.QuoteMeta(`INSERT INTO tasks (text) VALUES ($1) RETURNING id, text`)).
 		WithArgs("Learn how to invert binary trees").
-		WillReturnRows(sqlmock.NewRows([]string{"id"}).AddRow(int64(1)))
-	mock.ExpectQuery(regexp.QuoteMeta(`INSERT INTO tasks (text) VALUES ($1) RETURNING id`)).
+		WillReturnRows(sqlmock.NewRows([]string{"id", "text"}).AddRow("11111111-1111-1111-1111-111111111111", "Learn how to invert binary trees"))
+	mock.ExpectQuery(regexp.QuoteMeta(`INSERT INTO tasks (text) VALUES ($1) RETURNING id, text`)).
 		WithArgs("Buy milk").
-		WillReturnRows(sqlmock.NewRows([]string{"id"}).AddRow(int64(2)))
+		WillReturnRows(sqlmock.NewRows([]string{"id", "text"}).AddRow("22222222-2222-2222-2222-222222222222", "Buy milk"))
 
 	first, err := store.CreateTask("Learn how to invert binary trees")
 	require.NoError(t, err)
@@ -6442,8 +6494,8 @@ func TestPostgresTaskStoreCreatesTasksWithIncreasingIds(t *testing.T) {
 	second, err := store.CreateTask("Buy milk")
 	require.NoError(t, err)
 
-	assert.Equal(t, contracts.Task{ID: 1, Text: "Learn how to invert binary trees"}, first)
-	assert.Equal(t, contracts.Task{ID: 2, Text: "Buy milk"}, second)
+	assert.Equal(t, contracts.Task{ID: "11111111-1111-1111-1111-111111111111", Text: "Learn how to invert binary trees"}, first)
+	assert.Equal(t, contracts.Task{ID: "22222222-2222-2222-2222-222222222222", Text: "Buy milk"}, second)
 	assert.NoError(t, mock.ExpectationsWereMet())
 }
 
@@ -6452,28 +6504,28 @@ func TestPostgresTaskStoreListsGetsAndDeletesTasks(t *testing.T) {
 	require.NoError(t, err)
 	t.Cleanup(func() { _ = db.Close() })
 
-	store := &PostgresTaskStore{db: db}
-	mock.ExpectQuery(regexp.QuoteMeta(`SELECT id, text FROM tasks ORDER BY id ASC`)).
-		WillReturnRows(sqlmock.NewRows([]string{"id", "text"}).AddRow(int64(1), "Buy milk"))
+	store := &PostgresTaskStore{queries: storedb.New(db)}
+	mock.ExpectQuery(regexp.QuoteMeta(`SELECT id, text FROM tasks ORDER BY text ASC, id ASC`)).
+		WillReturnRows(sqlmock.NewRows([]string{"id", "text"}).AddRow("11111111-1111-1111-1111-111111111111", "Buy milk"))
 
 	listed, err := store.ListTasks()
 	require.NoError(t, err)
-	assert.Equal(t, []contracts.Task{{ID: 1, Text: "Buy milk"}}, listed)
+	assert.Equal(t, []contracts.Task{{ID: "11111111-1111-1111-1111-111111111111", Text: "Buy milk"}}, listed)
 
-	mock.ExpectQuery(regexp.QuoteMeta(`SELECT id, text FROM tasks WHERE id = $1`)).
-		WithArgs(int64(1)).
-		WillReturnRows(sqlmock.NewRows([]string{"id", "text"}).AddRow(int64(1), "Buy milk"))
+	mock.ExpectQuery(regexp.QuoteMeta(`SELECT id, text FROM tasks WHERE id = $1 LIMIT 1`)).
+		WithArgs("11111111-1111-1111-1111-111111111111").
+		WillReturnRows(sqlmock.NewRows([]string{"id", "text"}).AddRow("11111111-1111-1111-1111-111111111111", "Buy milk"))
 
-	got, found, err := store.GetTask(1)
+	got, found, err := store.GetTask("11111111-1111-1111-1111-111111111111")
 	require.NoError(t, err)
 	assert.True(t, found)
-	assert.Equal(t, contracts.Task{ID: 1, Text: "Buy milk"}, got)
+	assert.Equal(t, contracts.Task{ID: "11111111-1111-1111-1111-111111111111", Text: "Buy milk"}, got)
 
 	mock.ExpectExec(regexp.QuoteMeta(`DELETE FROM tasks WHERE id = $1`)).
-		WithArgs(int64(1)).
+		WithArgs("11111111-1111-1111-1111-111111111111").
 		WillReturnResult(sqlmock.NewResult(0, 1))
 
-	deleted, err := store.DeleteTask(1)
+	deleted, err := store.DeleteTask("11111111-1111-1111-1111-111111111111")
 	require.NoError(t, err)
 	assert.True(t, deleted)
 	assert.NoError(t, mock.ExpectationsWereMet())
@@ -6490,6 +6542,64 @@ git commit --message "3. Red: Add Fetch, Delete, And Postgres Store Tests"
 
 ### 4. Green: Add The Postgres Store And Server Wiring
 
+Create the `sqlc` configuration and SQL source files:
+
+```bash
+touch workspace/sqlc.yaml
+touch workspace/db/schema.sql
+touch workspace/db/query/tasks.sql
+```
+
+Put this exact content in `workspace/sqlc.yaml`:
+
+```yaml
+version: "2"
+sql:
+  - engine: "postgresql"
+    schema: "db/schema.sql"
+    queries: "db/query/tasks.sql"
+    gen:
+      go:
+        package: "storedb"
+        out: "internal/adapter/storage/db"
+        sql_package: "database/sql"
+```
+
+Put this exact content in `workspace/db/schema.sql`:
+
+```sql
+CREATE TABLE IF NOT EXISTS tasks (
+  id TEXT PRIMARY KEY DEFAULT gen_random_uuid()::text,
+  text TEXT NOT NULL
+);
+```
+
+Put this exact content in `workspace/db/query/tasks.sql`:
+
+```sql
+-- name: ListTasks :many
+SELECT id, text
+FROM tasks
+ORDER BY text ASC, id ASC;
+
+-- name: CreateTask :one
+INSERT INTO tasks (text)
+VALUES ($1)
+RETURNING id, text;
+
+-- name: GetTask :one
+SELECT id, text
+FROM tasks
+WHERE id = $1
+LIMIT 1;
+
+-- name: DeleteTask :execrows
+DELETE FROM tasks
+WHERE id = $1;
+```
+
+These files are the input to `sqlc generate`, which the generated `just check-tests` and `just run` commands invoke automatically before they compile the app.
+
 Create the Postgres store production file:
 
 ```bash
@@ -6502,14 +6612,18 @@ Put this exact content in `workspace/internal/adapter/storage/postgres_task_stor
 package storageadapter
 
 import (
+	"context"
 	"database/sql"
+	"errors"
 
+	storedb "__MODULE_PATH__/internal/adapter/storage/db"
 	"__MODULE_PATH__/internal/contracts"
 	_ "github.com/jackc/pgx/v5/stdlib"
 )
 
 type PostgresTaskStore struct {
-	db *sql.DB
+	db      *sql.DB
+	queries *storedb.Queries
 }
 
 func NewPostgresTaskStore(databaseURL string) (*PostgresTaskStore, error) {
@@ -6518,7 +6632,10 @@ func NewPostgresTaskStore(databaseURL string) (*PostgresTaskStore, error) {
 		return nil, err
 	}
 
-	store := &PostgresTaskStore{db: db}
+	store := &PostgresTaskStore{
+		db:      db,
+		queries: storedb.New(db),
+	}
 	if err := store.ensureSchema(); err != nil {
 		_ = db.Close()
 		return nil, err
@@ -6534,7 +6651,7 @@ func (s *PostgresTaskStore) Close() error {
 func (s *PostgresTaskStore) ensureSchema() error {
 	_, err := s.db.Exec(`
 		CREATE TABLE IF NOT EXISTS tasks (
-			id BIGSERIAL PRIMARY KEY,
+			id TEXT PRIMARY KEY DEFAULT gen_random_uuid()::text,
 			text TEXT NOT NULL
 		)
 	`)
@@ -6542,62 +6659,51 @@ func (s *PostgresTaskStore) ensureSchema() error {
 }
 
 func (s *PostgresTaskStore) ListTasks() ([]contracts.Task, error) {
-	rows, err := s.db.Query(`SELECT id, text FROM tasks ORDER BY id ASC`)
+	rows, err := s.queries.ListTasks(context.Background())
 	if err != nil {
 		return nil, err
 	}
-	defer rows.Close()
 
-	var tasks []contracts.Task
-	for rows.Next() {
-		var task contracts.Task
-		if err := rows.Scan(&task.ID, &task.Text); err != nil {
-			return nil, err
-		}
-		tasks = append(tasks, task)
+	tasks := make([]contracts.Task, 0, len(rows))
+	for _, row := range rows {
+		tasks = append(tasks, contracts.Task{
+			ID:   row.ID,
+			Text: row.Text,
+		})
 	}
 
-	return tasks, rows.Err()
+	return tasks, nil
 }
 
 func (s *PostgresTaskStore) CreateTask(taskText string) (contracts.Task, error) {
-	var taskID int64
-	if err := s.db.QueryRow(
-		`INSERT INTO tasks (text) VALUES ($1) RETURNING id`,
-		taskText,
-	).Scan(&taskID); err != nil {
+	row, err := s.queries.CreateTask(context.Background(), taskText)
+	if err != nil {
 		return contracts.Task{}, err
 	}
 
 	return contracts.Task{
-		ID:   taskID,
-		Text: taskText,
+		ID:   row.ID,
+		Text: row.Text,
 	}, nil
 }
 
-func (s *PostgresTaskStore) GetTask(taskID int64) (contracts.Task, bool, error) {
-	var task contracts.Task
-	err := s.db.QueryRow(
-		`SELECT id, text FROM tasks WHERE id = $1`,
-		taskID,
-	).Scan(&task.ID, &task.Text)
-	if err == sql.ErrNoRows {
+func (s *PostgresTaskStore) GetTask(taskID string) (contracts.Task, bool, error) {
+	row, err := s.queries.GetTask(context.Background(), taskID)
+	if errors.Is(err, sql.ErrNoRows) {
 		return contracts.Task{}, false, nil
 	}
 	if err != nil {
 		return contracts.Task{}, false, err
 	}
 
-	return task, true, nil
+	return contracts.Task{
+		ID:   row.ID,
+		Text: row.Text,
+	}, true, nil
 }
 
-func (s *PostgresTaskStore) DeleteTask(taskID int64) (bool, error) {
-	result, err := s.db.Exec(`DELETE FROM tasks WHERE id = $1`, taskID)
-	if err != nil {
-		return false, err
-	}
-
-	rowsAffected, err := result.RowsAffected()
+func (s *PostgresTaskStore) DeleteTask(taskID string) (bool, error) {
+	rowsAffected, err := s.queries.DeleteTask(context.Background(), taskID)
 	if err != nil {
 		return false, err
 	}
@@ -6671,7 +6777,7 @@ git commit --message "4. Green: Add The Postgres Store And Server Wiring"
         );
     }
 
-    if is_go_todo_list_rest_json_sqlite_output_repo(spec) {
+    if is_go_todo_list_http_json_sqlite_output_repo(spec) {
         let module_path = go_module_path(spec);
         let body = r#"### 1. Red: Add The REST Handler Tests
 
@@ -7823,14 +7929,14 @@ Put this exact content in `workspace/lib/contracts/task.dart`:
 
 ```dart
 class Task {{
-  final int id;
+  final String id;
   final String text;
 
   const Task({{required this.id, required this.text}});
 
   factory Task.fromJson(Map<String, dynamic> json) {{
     return Task(
-      id: json['id'] as int,
+      id: json['id'] as String,
       text: json['text'] as String,
     );
   }}
@@ -7866,7 +7972,7 @@ import 'task_list_response.dart';
 abstract class TaskApi {{
   Future<TaskListResponse> getTasks();
   Future<Task> createTask(String text);
-  Future<void> deleteTask(int taskId);
+  Future<void> deleteTask(String taskId);
 }}
 ```
 
@@ -8281,6 +8387,15 @@ git add --all
 git commit --message "6. Green: Reject Blank Tasks And Handle API Errors"
 ```"#,
     );
+    let body = body
+        .replace("Task(id: 1,", "Task(id: '11111111-1111-1111-1111-111111111111',")
+        .replace("Task(id: 2,", "Task(id: '22222222-2222-2222-2222-222222222222',")
+        .replace("api.deleteTask(2)", "api.deleteTask('22222222-2222-2222-2222-222222222222')")
+        .replace("removeTask(2, api)", "removeTask('22222222-2222-2222-2222-222222222222', api)")
+        .replace(
+            "Future<TaskListViewModel> removeTask(int taskId, TaskApi api) async {",
+            "Future<TaskListViewModel> removeTask(String taskId, TaskApi api) async {",
+        );
 
     tutorial_file_markdown(
         "Code",
@@ -8694,6 +8809,27 @@ git add --all
 git commit --message "5. Green: Wire The Real Application"
 ```"#,
     );
+    let body = body
+        .replace(r#"{"id":1,"text":"Learn how to invert binary trees"}"#, r#"{"id":"11111111-1111-1111-1111-111111111111","text":"Learn how to invert binary trees"}"#)
+        .replace(r#"{"id":2,"text":"Buy milk"}"#, r#"{"id":"22222222-2222-2222-2222-222222222222","text":"Buy milk"}"#)
+        .replace("expect(createdTask.id, 2);", "expect(createdTask.id, '22222222-2222-2222-2222-222222222222');")
+        .replace("await api.deleteTask(7);", "await api.deleteTask('77777777-7777-7777-7777-777777777777');")
+        .replace(
+            &format!(
+                "expect(requestedUri.toString(), 'http://localhost:{FOR_ALL_API_PORT}/api/tasks/7');"
+            ),
+            &format!(
+                "expect(requestedUri.toString(), 'http://localhost:{FOR_ALL_API_PORT}/api/tasks/77777777-7777-7777-7777-777777777777');"
+            ),
+        )
+        .replace(
+            "Future<void> deleteTask(int taskId) async {",
+            "Future<void> deleteTask(String taskId) async {",
+        )
+        .replace("Task(id: 1,", "Task(id: '11111111-1111-1111-1111-111111111111',")
+        .replace("Task(id: 2,", "Task(id: '22222222-2222-2222-2222-222222222222',")
+        .replace("api.deleteTask(2)", "api.deleteTask('22222222-2222-2222-2222-222222222222')")
+        .replace("Key('remove-2')", "Key('remove-22222222-2222-2222-2222-222222222222')");
 
     tutorial_file_markdown(
         "Adapter",
@@ -10469,11 +10605,11 @@ mod tests {
         }
     }
 
-    fn sample_todo_list_go_rest_json_sqlite_output_repo_spec() -> OutputRepoSpec {
+    fn sample_todo_list_go_http_json_sqlite_output_repo_spec() -> OutputRepoSpec {
         OutputRepoSpec {
             repo_name: "fa_tut_todo-list".to_string(),
             repo_description:
-                "Tutorial workspace for the Todo List project with go / go / testify / testify-mock / SQLite / web / API / echo / rest-json choices."
+                "Tutorial workspace for the Todo List project with go / go / testify / testify-mock / SQLite / web / API / echo / http-json choices."
                     .to_string(),
             project_slug: "todo-list".to_string(),
             selections: OutputRepoSelections {
@@ -10485,7 +10621,7 @@ mod tests {
                 surface: "web".to_string(),
                 target: "api".to_string(),
                 framework: "echo".to_string(),
-                protocol: Some("rest-json".to_string()),
+                protocol: Some("http-json".to_string()),
             },
         }
     }
@@ -10694,21 +10830,21 @@ mod tests {
     }
 
     #[test]
-    fn output_repo_selection_overrides_allow_switching_todo_list_to_go_rest_json_sqlite() {
+    fn output_repo_selection_overrides_allow_switching_todo_list_to_go_http_json_sqlite() {
         let overrides = BootstrapSelectionOverrides {
             ecosystem: Some("go".to_string()),
             storage: Some("database-sqlite".to_string()),
-            protocol: Some("rest-json".to_string()),
+            protocol: Some("http-json".to_string()),
             ..BootstrapSelectionOverrides::default()
         };
 
         let selections = output_repo_selections_for_project("todo-list", &overrides)
-            .expect("go todo-list rest sqlite should be supported");
+            .expect("go todo-list http sqlite should be supported");
 
         assert_eq!(selections.ecosystem, "go");
         assert_eq!(selections.storage, "database-sqlite");
         assert_eq!(selections.framework, "echo");
-        assert_eq!(selections.protocol, Some("rest-json".to_string()));
+        assert_eq!(selections.protocol, Some("http-json".to_string()));
     }
 
     #[test]
@@ -11017,8 +11153,8 @@ mod tests {
     }
 
     #[test]
-    fn todo_list_go_rest_json_sqlite_tutorial_readme_lists_sqlite_rest_choices() {
-        let spec = sample_todo_list_go_rest_json_sqlite_output_repo_spec();
+    fn todo_list_go_http_json_sqlite_tutorial_readme_lists_sqlite_http_choices() {
+        let spec = sample_todo_list_go_http_json_sqlite_output_repo_spec();
 
         let readme = render_output_repo_tutorial_readme_content(&spec);
 
@@ -11027,7 +11163,7 @@ mod tests {
         assert!(readme.contains("- Surface: `web`"));
         assert!(readme.contains("- Target: `API`"));
         assert!(readme.contains("- Framework: `echo`"));
-        assert!(readme.contains("- Protocol: `rest-json`"));
+        assert!(readme.contains("- Protocol: `http-json`"));
     }
 
     #[test]
@@ -11046,7 +11182,7 @@ mod tests {
 
     #[test]
     fn todo_list_go_rest_json_sqlite_setup_and_finish_content_use_sqlite_api_examples() {
-        let spec = sample_todo_list_go_rest_json_sqlite_output_repo_spec();
+        let spec = sample_todo_list_go_http_json_sqlite_output_repo_spec();
 
         let setup = render_output_repo_setup_content(&spec);
         let finish = render_output_repo_finish_content(&spec);
@@ -11071,23 +11207,30 @@ mod tests {
         let finish = render_output_repo_finish_content(&spec);
 
         assert!(justfile.contains("database_url := \"postgres://postgres@localhost:5432/todo_list?sslmode=disable\""));
+        assert!(justfile.contains("generate:\n\t(cd {{workspace}} && sqlc generate)"));
+        assert!(justfile.contains("just generate\n\t(cd {{workspace}} && go test ./...)"));
         assert!(justfile.contains("TODO_LIST_DATABASE_URL={{database_url}} go run ./cmd/server"));
+        assert!(justfile.contains("just generate\n\t(cd {{workspace}} && TODO_LIST_DATABASE_URL={{database_url}} go run ./cmd/server)"));
+        assert!(setup.contains("go install github.com/sqlc-dev/sqlc/cmd/sqlc@v1.30.0"));
         assert!(setup.contains("go get github.com/jackc/pgx/v5/stdlib"));
         assert!(setup.contains("go get github.com/DATA-DOG/go-sqlmock"));
+        assert!(setup.contains("sqlc.yaml"));
+        assert!(setup.contains("db/query/tasks.sql"));
         assert!(setup.contains("createdb --host localhost --username postgres todo_list"));
         assert!(setup.contains("TODO_LIST_DATABASE_URL"));
         assert!(setup.contains("postgres://postgres@localhost:5432/todo_list?sslmode=disable"));
         assert!(finish.contains("local Postgres database named `todo_list`"));
         assert!(finish.contains("createdb --host localhost --username postgres todo_list"));
+        assert!(finish.contains("just run` and `just check-tests` commands call `sqlc generate`"));
         assert!(finish.contains("just --set database_url \"postgres://<user>:<password>@localhost:5432/<database>?sslmode=disable\" run"));
         assert!(finish.contains("http://localhost:25664/api/tasks"));
         assert!(finish.contains("{\"tasks\":[]}"));
-        assert!(finish.contains("{\"id\":1,\"text\":\"Buy milk\"}"));
+        assert!(finish.contains("{\"id\":\"11111111-1111-1111-1111-111111111111\",\"text\":\"Buy milk\"}"));
     }
 
     #[test]
-    fn todo_list_go_rest_json_sqlite_contracts_code_and_adapter_tutorials_are_concrete() {
-        let spec = sample_todo_list_go_rest_json_sqlite_output_repo_spec();
+    fn todo_list_go_http_json_sqlite_contracts_code_and_adapter_tutorials_are_concrete() {
+        let spec = sample_todo_list_go_http_json_sqlite_output_repo_spec();
 
         let contracts = render_go_todo_list_contracts_content(&spec);
         let code = render_go_todo_list_code_content(&spec);
@@ -11126,10 +11269,16 @@ mod tests {
         assert!(code.contains("mkdir -p workspace/internal/code\ntouch workspace/internal/code/task_service_test.go"));
         assert!(code.contains("touch workspace/internal/code/task_service.go"));
         assert!(code.contains("TestTaskServiceCreateTaskRejectsBlankText"));
-        assert!(code.contains("GetTask(taskID int64)"));
+        assert!(code.contains("GetTask(taskID string)"));
         assert!(adapter.contains("mkdir -p workspace/internal/adapter/http\ntouch workspace/internal/adapter/http/task_handler_test.go"));
         assert!(adapter.contains("mkdir -p workspace/internal/adapter/storage\ntouch workspace/internal/adapter/storage/postgres_task_store_test.go"));
+        assert!(adapter.contains("touch workspace/sqlc.yaml"));
+        assert!(adapter.contains("mkdir -p workspace/db\ntouch workspace/db/schema.sql"));
+        assert!(adapter.contains("mkdir -p workspace/db/query\ntouch workspace/db/query/tasks.sql"));
         assert!(adapter.contains("mkdir -p workspace/internal/adapter/storage\ntouch workspace/internal/adapter/storage/postgres_task_store.go"));
+        assert!(adapter.contains("package: \"storedb\""));
+        assert!(adapter.contains("sqlc generate"));
+        assert!(adapter.contains("storedb.New(db)"));
         assert!(adapter.contains("NewPostgresTaskStore(databaseURL)"));
         assert!(adapter.contains("github.com/jackc/pgx/v5/stdlib"));
         assert!(adapter.contains("github.com/DATA-DOG/go-sqlmock"));
@@ -11157,15 +11306,16 @@ mod tests {
         .expect("spec utf8");
 
         assert!(spec_markdown.contains("REST-style JSON routes"));
-        assert!(spec_markdown.contains("database-generated numeric task ids"));
+        assert!(spec_markdown.contains("database-generated UUID task ids"));
+        assert!(spec_markdown.contains("`sqlc`-generated Go query code"));
         assert!(spec_markdown.contains("Postgres"));
         assert!(spec_markdown.contains("GET /api/tasks/:id"));
     }
 
     #[test]
-    fn todo_list_go_rest_json_sqlite_uses_custom_rest_spec() {
+    fn todo_list_go_http_json_sqlite_uses_custom_http_spec() {
         let app_root = app_root_for_tests();
-        let spec = sample_todo_list_go_rest_json_sqlite_output_repo_spec();
+        let spec = sample_todo_list_go_http_json_sqlite_output_repo_spec();
         let files = build_output_repo_tutorial_files(&app_root, &spec);
 
         let spec_markdown = String::from_utf8(
@@ -11178,7 +11328,7 @@ mod tests {
         )
         .expect("spec utf8");
 
-        assert!(spec_markdown.contains("REST-style JSON routes"));
+        assert!(spec_markdown.contains("HTTP JSON routes"));
         assert!(spec_markdown.contains("database-generated numeric task ids"));
         assert!(spec_markdown.contains("GET /api/tasks/:id"));
     }
@@ -11678,17 +11828,17 @@ mod tests {
         assert!(code.contains("Task must not be blank."));
         assert!(code.contains("Sorry, the task API is unavailable right now."));
         assert!(code.contains("api.createTask('Buy milk')"));
-        assert!(code.contains("api.deleteTask(2)"));
+        assert!(code.contains("api.deleteTask('22222222-2222-2222-2222-222222222222')"));
         assert!(adapter.contains("mkdir -p workspace/test/adapter\ntouch workspace/test/adapter/http_task_api_test.dart"));
         assert!(adapter.contains("touch workspace/test/adapter/http_task_api_test.dart"));
         assert!(adapter.contains("touch workspace/test/adapter/todo_list_page_test.dart"));
         assert!(adapter.contains("mkdir -p workspace/lib/adapter\ntouch workspace/lib/adapter/http_task_api.dart"));
         assert!(adapter.contains("touch workspace/lib/adapter/http_task_api.dart"));
         assert!(adapter.contains("touch workspace/lib/adapter/todo_list_page.dart"));
-        assert!(adapter.contains("expect(requestedUri.toString(), 'http://localhost:25664/api/tasks/7');"));
+        assert!(adapter.contains("expect(requestedUri.toString(), 'http://localhost:25664/api/tasks/77777777-7777-7777-7777-777777777777');"));
         assert!(adapter.contains("body: jsonEncode({'text': text})"));
         assert!(adapter.contains("Uri.parse('$baseUrl/api/tasks/$taskId')"));
-        assert!(adapter.contains("Future<void> deleteTask(int taskId) async"));
+        assert!(adapter.contains("Future<void> deleteTask(String taskId) async"));
         assert!(adapter.contains("Key('remove-${task.id}')"));
         assert!(adapter.contains("HttpTaskApi(baseUrl: apiBaseUrl)"));
         assert!(adapter.contains("TodoListPage(api: api)"));

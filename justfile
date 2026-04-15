@@ -194,7 +194,7 @@ bs-dotnet-csharp-cli owner="intrepion" project="saying-hello":
       --set bootstrap_framework no-framework \
       _bs "{{owner}}" "{{project}}"
 
-bs-go-echo-rest-json-sqlite-api owner="intrepion" project="todo-list":
+bs-go-echo-http-json-sqlite-api owner="intrepion" project="todo-list":
     just --set bootstrap_ecosystem go \
       --set bootstrap_language go \
       --set bootstrap_testing testify \
@@ -203,7 +203,7 @@ bs-go-echo-rest-json-sqlite-api owner="intrepion" project="todo-list":
       --set bootstrap_surface web \
       --set bootstrap_target api \
       --set bootstrap_framework echo \
-      --set bootstrap_protocol rest-json \
+      --set bootstrap_protocol http-json \
       _bs "{{owner}}" "{{project}}"
 
 bs-go-echo-rest-json-postgres-api owner="intrepion" project="todo-list":
@@ -230,7 +230,7 @@ bs-go-grpc-postgres-api owner="intrepion" project="todo-list":
       --set bootstrap_protocol grpc \
       _bs "{{owner}}" "{{project}}"
 
-bs-typescript-astro-web owner="intrepion" project="saying-hello":
+bs-typescript-astro-http-json-web owner="intrepion" project="saying-hello":
     just --set bootstrap_ecosystem javascript \
       --set bootstrap_language typescript \
       --set bootstrap_testing vitest \
