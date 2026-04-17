@@ -2085,11 +2085,15 @@ fn render_output_repo_setup_content(spec: &OutputRepoSpec) -> String {
             "(cd workspace && go get github.com/jackc/pgx/v5/stdlib)".to_string(),
             "(cd workspace && go get github.com/DATA-DOG/go-sqlmock)".to_string(),
             "(cd workspace && go get github.com/stretchr/testify/assert github.com/stretchr/testify/mock)".to_string(),
+            "mkdir -p workspace/db/query".to_string(),
+            "touch workspace/sqlc.yaml".to_string(),
+            "touch workspace/db/schema.sql".to_string(),
+            "touch workspace/db/query/tasks.sql".to_string(),
         ];
         return tutorial_file_markdown(
             "Setup",
             &format!(
-                "Keep the repository root for shared files like `README.md`, `LICENSE`, `.gitignore`, `.github/`, `justfile`, and `tutorial/`.\n\nPut all Go code inside a single `workspace/` folder.\n\nFrom the repository root, run each setup command and checkpoint it before moving to the next one:\n\n```bash\n{}\n```\n\nThis gives you:\n\n- a root-level `.gitignore` for operating-system noise and editor leftovers\n- a `workspace/.gitignore` for standard Go build output, local tooling files, and local runtime data\n- a Postgres-backed REST adapter that reads its connection string from `TODO_LIST_DATABASE_URL`\n- a generated root `justfile` that defaults `database_url` to `postgres://postgres@localhost:5432/todo_list?sslmode=disable`\n- a repo-local `workspace/bin/sqlc` installation for generating Go query code from `workspace/sqlc.yaml`, `workspace/db/schema.sql`, and `workspace/db/query/tasks.sql`\n\nBefore you run the server, create the default tutorial database with:\n\n```bash\ncreatedb --host localhost --username postgres todo_list\n```\n\nIf that does not match your local Postgres setup, create an equivalent database your user can access and override the generated `database_url` value in the root `justfile`.\n\nWhen the full workspace is finished, it should contain these files:\n\n```text\nworkspace/\n  .gitignore\n  bin/\n    sqlc\n  go.mod\n  go.sum\n  sqlc.yaml\n  db/\n    schema.sql\n    query/\n      tasks.sql\n  cmd/\n    server/\n      main.go\n  internal/\n    contracts/\n      task_api.go\n    code/\n      task_service.go\n      task_service_test.go\n    adapter/\n      http/\n        task_handler.go\n        task_handler_test.go\n      storage/\n        postgres_task_store.go\n        postgres_task_store_test.go\n        db/\n          ...generated Go files from sqlc...\n```",
+                "Keep the repository root for shared files like `README.md`, `LICENSE`, `.gitignore`, `.github/`, `justfile`, and `tutorial/`.\n\nPut all Go code inside a single `workspace/` folder.\n\nFrom the repository root, run each setup command and checkpoint it before moving to the next one:\n\n```bash\n{}\n```\n\nPut this exact content in `workspace/sqlc.yaml`:\n\n```yaml\nversion: \"2\"\nsql:\n  - engine: \"postgresql\"\n    schema: \"db/schema.sql\"\n    queries: \"db/query/tasks.sql\"\n    gen:\n      go:\n        package: \"storedb\"\n        out: \"internal/adapter/storage/db\"\n        sql_package: \"database/sql\"\n```\n\nPut this exact content in `workspace/db/schema.sql`:\n\n```sql\nCREATE TABLE IF NOT EXISTS tasks (\n  id TEXT PRIMARY KEY DEFAULT gen_random_uuid()::text,\n  text TEXT NOT NULL\n);\n```\n\nPut this exact content in `workspace/db/query/tasks.sql`:\n\n```sql\n-- name: ListTasks :many\nSELECT id, text\nFROM tasks\nORDER BY text ASC, id ASC;\n\n-- name: CreateTask :one\nINSERT INTO tasks (text)\nVALUES ($1)\nRETURNING id, text;\n\n-- name: GetTask :one\nSELECT id, text\nFROM tasks\nWHERE id = $1\nLIMIT 1;\n\n-- name: DeleteTask :execrows\nDELETE FROM tasks\nWHERE id = $1;\n```\n\nThen run:\n\n```bash\njust format\ngit add --all\ngit commit --message \"Add sqlc configuration and queries\"\n```\n\nThis gives you:\n\n- a root-level `.gitignore` for operating-system noise and editor leftovers\n- a `workspace/.gitignore` for standard Go build output, local tooling files, and local runtime data\n- a Postgres-backed REST adapter that reads its connection string from `TODO_LIST_DATABASE_URL`\n- a generated root `justfile` that defaults `database_url` to `postgres://postgres@localhost:5432/todo_list?sslmode=disable`\n- a repo-local `workspace/bin/sqlc` installation for generating Go query code from `workspace/sqlc.yaml`, `workspace/db/schema.sql`, and `workspace/db/query/tasks.sql`\n\nBefore you run the server, create the default tutorial database with:\n\n```bash\ncreatedb --host localhost --username postgres todo_list\n```\n\nIf that does not match your local Postgres setup, create an equivalent database your user can access and override the generated `database_url` value in the root `justfile`.\n\nWhen the full workspace is finished, it should contain these files:\n\n```text\nworkspace/\n  .gitignore\n  bin/\n    sqlc\n  go.mod\n  go.sum\n  sqlc.yaml\n  db/\n    schema.sql\n    query/\n      tasks.sql\n  cmd/\n    server/\n      main.go\n  internal/\n    contracts/\n      task_api.go\n    code/\n      task_service.go\n      task_service_test.go\n    adapter/\n      http/\n        task_handler.go\n        task_handler_test.go\n      storage/\n        postgres_task_store.go\n        postgres_task_store_test.go\n        db/\n          ...generated Go files from sqlc...\n```",
                 render_setup_commands_with_commits(&setup_commands, 0)
             ),
         );
@@ -6546,63 +6550,7 @@ git commit --message "3. Red: Add Fetch, Delete, And Postgres Store Tests"
 
 ### 4. Green: Add The Postgres Store And Server Wiring
 
-Create the `sqlc` configuration and SQL source files:
-
-```bash
-touch workspace/sqlc.yaml
-touch workspace/db/schema.sql
-touch workspace/db/query/tasks.sql
-```
-
-Put this exact content in `workspace/sqlc.yaml`:
-
-```yaml
-version: "2"
-sql:
-  - engine: "postgresql"
-    schema: "db/schema.sql"
-    queries: "db/query/tasks.sql"
-    gen:
-      go:
-        package: "storedb"
-        out: "internal/adapter/storage/db"
-        sql_package: "database/sql"
-```
-
-Put this exact content in `workspace/db/schema.sql`:
-
-```sql
-CREATE TABLE IF NOT EXISTS tasks (
-  id TEXT PRIMARY KEY DEFAULT gen_random_uuid()::text,
-  text TEXT NOT NULL
-);
-```
-
-Put this exact content in `workspace/db/query/tasks.sql`:
-
-```sql
--- name: ListTasks :many
-SELECT id, text
-FROM tasks
-ORDER BY text ASC, id ASC;
-
--- name: CreateTask :one
-INSERT INTO tasks (text)
-VALUES ($1)
-RETURNING id, text;
-
--- name: GetTask :one
-SELECT id, text
-FROM tasks
-WHERE id = $1
-LIMIT 1;
-
--- name: DeleteTask :execrows
-DELETE FROM tasks
-WHERE id = $1;
-```
-
-These files are the input to `sqlc generate`, which the generated `just check-tests` and `just run` commands invoke automatically before they compile the app.
+Use the `sqlc` configuration and SQL files that you created in `tutorial/setup.md`. The generated `just check-tests` and `just run` commands already call `sqlc generate` for you before they compile the app.
 
 Create the Postgres store production file:
 
@@ -11224,6 +11172,14 @@ mod tests {
         assert!(setup.contains("go get github.com/jackc/pgx/v5/stdlib"));
         assert!(setup.contains("go get github.com/DATA-DOG/go-sqlmock"));
         assert!(setup.contains("printf '\\n# Repo-local tools\\nbin/\\n\\n# Local runtime data\\ndata/\\n' >> workspace/.gitignore"));
+        assert!(setup.contains("touch workspace/sqlc.yaml"));
+        assert!(setup.contains("mkdir -p workspace/db/query"));
+        assert!(setup.contains("touch workspace/db/schema.sql"));
+        assert!(setup.contains("touch workspace/db/query/tasks.sql"));
+        assert!(setup.contains("version: \"2\""));
+        assert!(setup.contains("CREATE TABLE IF NOT EXISTS tasks"));
+        assert!(setup.contains("-- name: ListTasks :many"));
+        assert!(setup.contains("git commit --message \"Add sqlc configuration and queries\""));
         assert!(setup.contains("sqlc.yaml"));
         assert!(setup.contains("db/query/tasks.sql"));
         assert!(setup.contains("workspace/bin/sqlc"));
@@ -11232,7 +11188,7 @@ mod tests {
         assert!(setup.contains("postgres://postgres@localhost:5432/todo_list?sslmode=disable"));
         assert!(finish.contains("local Postgres database named `todo_list`"));
         assert!(finish.contains("createdb --host localhost --username postgres todo_list"));
-        assert!(finish.contains("just run` and `just check-tests` commands call `sqlc generate`"));
+        assert!(finish.contains("The generated `just run` and `just check-tests` commands call `sqlc generate`"));
         assert!(finish.contains("just --set database_url \"postgres://<user>:<password>@localhost:5432/<database>?sslmode=disable\" run"));
         assert!(finish.contains("http://localhost:25664/api/tasks"));
         assert!(finish.contains("{\"tasks\":[]}"));
@@ -11283,11 +11239,8 @@ mod tests {
         assert!(code.contains("GetTask(taskID string)"));
         assert!(adapter.contains("mkdir -p workspace/internal/adapter/http\ntouch workspace/internal/adapter/http/task_handler_test.go"));
         assert!(adapter.contains("mkdir -p workspace/internal/adapter/storage\ntouch workspace/internal/adapter/storage/postgres_task_store_test.go"));
-        assert!(adapter.contains("touch workspace/sqlc.yaml"));
-        assert!(adapter.contains("mkdir -p workspace/db\ntouch workspace/db/schema.sql"));
-        assert!(adapter.contains("mkdir -p workspace/db/query\ntouch workspace/db/query/tasks.sql"));
         assert!(adapter.contains("mkdir -p workspace/internal/adapter/storage\ntouch workspace/internal/adapter/storage/postgres_task_store.go"));
-        assert!(adapter.contains("package: \"storedb\""));
+        assert!(adapter.contains("Use the `sqlc` configuration and SQL files that you created in `tutorial/setup.md`."));
         assert!(adapter.contains("sqlc generate"));
         assert!(adapter.contains("storedb.New(db)"));
         assert!(adapter.contains("NewPostgresTaskStore(databaseURL)"));
