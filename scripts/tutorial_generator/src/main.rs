@@ -1636,6 +1636,10 @@ fn build_output_repo_tutorial_files(app_root: &Path, spec: &OutputRepoSpec) -> V
         return build_go_saying_hello_output_repo_tutorial_files(app_root, spec);
     }
 
+    if is_go_team_task_board_output_repo(spec) {
+        return build_go_team_task_board_output_repo_tutorial_files(app_root, spec);
+    }
+
     if is_go_todo_list_output_repo(spec) {
         return build_go_todo_list_output_repo_tutorial_files(app_root, spec);
     }
@@ -1820,6 +1824,50 @@ fn build_go_todo_list_output_repo_tutorial_files(
         ManagedRepoFile {
             relative_path: "tutorial/adapter.md".to_string(),
             contents: render_go_todo_list_adapter_content(spec).into_bytes(),
+        },
+        ManagedRepoFile {
+            relative_path: "tutorial/finish.md".to_string(),
+            contents: render_output_repo_finish_content(spec).into_bytes(),
+        },
+    ]
+}
+
+fn build_go_team_task_board_output_repo_tutorial_files(
+    app_root: &Path,
+    spec: &OutputRepoSpec,
+) -> Vec<ManagedRepoFile> {
+    let project_root = app_root.join("partials/projects").join(&spec.project_slug);
+    let spec_partial =
+        Partial::load(&project_root.join("spec/README.md")).expect("spec partial should exist");
+
+    vec![
+        ManagedRepoFile {
+            relative_path: "tutorial/README.md".to_string(),
+            contents: render_output_repo_tutorial_readme_content(spec).into_bytes(),
+        },
+        ManagedRepoFile {
+            relative_path: "tutorial/setup.md".to_string(),
+            contents: render_output_repo_setup_content(spec).into_bytes(),
+        },
+        ManagedRepoFile {
+            relative_path: "tutorial/spec.md".to_string(),
+            contents: tutorial_file_markdown(
+                "Spec",
+                &rewrite_for_single_repo_tutorial(&spec_partial.body),
+            )
+            .into_bytes(),
+        },
+        ManagedRepoFile {
+            relative_path: "tutorial/contracts.md".to_string(),
+            contents: render_go_team_task_board_contracts_content(spec).into_bytes(),
+        },
+        ManagedRepoFile {
+            relative_path: "tutorial/code.md".to_string(),
+            contents: render_go_team_task_board_code_content(spec).into_bytes(),
+        },
+        ManagedRepoFile {
+            relative_path: "tutorial/adapter.md".to_string(),
+            contents: render_go_team_task_board_adapter_content(spec).into_bytes(),
         },
         ManagedRepoFile {
             relative_path: "tutorial/finish.md".to_string(),
@@ -7923,6 +7971,384 @@ git commit --message "7. Green: Wire The Server Entry Point"
     tutorial_file_markdown(
         "Adapter",
         &rewrite_touch_creation_stage_only(&body.replace("__MODULE_PATH__", &module_path)),
+    )
+}
+
+fn render_go_team_task_board_contracts_content(_spec: &OutputRepoSpec) -> String {
+    tutorial_file_markdown(
+        "Contracts",
+        &rewrite_stage_commit_checkpoints(&rewrite_touch_creation_stage_only(
+            r#"Create the shared contract file:
+
+```bash
+touch workspace/internal/contracts/team_task_board.go
+```
+
+Put this exact content in `workspace/internal/contracts/team_task_board.go`:
+
+```go
+package contracts
+
+import "errors"
+
+var (
+	ErrTaskTextBlank = errors.New("task text must not be blank")
+	ErrTaskNotFound  = errors.New("task not found")
+)
+
+type Principal interface{ isPrincipal() }
+type AnonymousPrincipal struct{}
+type UserPrincipal struct{ UserID string }
+type AdminPrincipal struct{ UserID string }
+
+func (AnonymousPrincipal) isPrincipal() {}
+func (UserPrincipal) isPrincipal() {}
+func (AdminPrincipal) isPrincipal() {}
+
+type TeamTask struct {
+	ID          string `json:"id"`
+	OwnerUserID string `json:"owner_user_id"`
+	Text        string `json:"text"`
+	Visibility  string `json:"visibility"`
+}
+
+type TeamTaskStore interface {
+	ListTasks() ([]TeamTask, error)
+	CreateTask(ownerUserID, text, visibility string) (TeamTask, error)
+	GetTask(taskID string) (TeamTask, bool, error)
+	DeleteTask(taskID string) (bool, error)
+}
+
+type TeamTaskService interface {
+	ListTasks(principal Principal) ([]TeamTask, error)
+	CreateTask(ownerUserID, text, visibility string) (TeamTask, error)
+	GetTask(taskID string, principal Principal) (TeamTask, error)
+	DeleteTask(taskID string, principal Principal) error
+}
+```
+
+Do not add tests here. Keep this layer limited to the board principals, the task record shape, and the authorization interfaces.
+
+Then run:
+
+```bash
+git add --all
+git commit --message "Define team task board contracts"
+```"#,
+        )),
+    )
+}
+
+fn render_go_team_task_board_code_content(_spec: &OutputRepoSpec) -> String {
+    tutorial_file_markdown(
+        "Code",
+        r#"### 1. Red: Anonymous Users Only See Public Tasks
+
+Create the first code test file:
+
+```bash
+touch workspace/internal/code/team_task_board_service_test.go
+```
+
+Put this exact content in `workspace/internal/code/team_task_board_service_test.go`:
+
+```go
+package code
+
+import (
+	"testing"
+
+	"__MODULE_PATH__/internal/contracts"
+	"github.com/stretchr/testify/assert"
+)
+
+func TestFilterVisibleTasksReturnsOnlyPublicTasksForAnonymous(t *testing.T) {
+	tasks := []contracts.TeamTask{
+		{ID: "task-1", OwnerUserID: "user-alice", Text: "Draft release notes", Visibility: "public"},
+		{ID: "task-2", OwnerUserID: "user-bob", Text: "Fix login redirect bug", Visibility: "private"},
+	}
+
+	result := filterVisibleTasks(tasks, contracts.AnonymousPrincipal{})
+
+	assert.Equal(t, []contracts.TeamTask{
+		{ID: "task-1", OwnerUserID: "user-alice", Text: "Draft release notes", Visibility: "public"},
+	}, result)
+}
+
+func TestCanDeleteTaskAllowsOwnersAndAdmins(t *testing.T) {
+	task := contracts.TeamTask{ID: "task-2", OwnerUserID: "user-bob", Text: "Fix login redirect bug", Visibility: "private"}
+
+	assert.True(t, canDeleteTask(task, contracts.UserPrincipal{UserID: "user-bob"}))
+	assert.False(t, canDeleteTask(task, contracts.UserPrincipal{UserID: "user-alice"}))
+	assert.True(t, canDeleteTask(task, contracts.AdminPrincipal{UserID: "user-admin"}))
+	assert.False(t, canDeleteTask(task, contracts.AnonymousPrincipal{}))
+}
+```
+
+Run:
+
+```bash
+just check-tests
+git add --all
+git commit --message "1. Red: Anonymous Users Only See Public Tasks"
+```
+
+### 2. Green: Enforce Visibility And Deletion Rules
+
+Create the first production file:
+
+```bash
+touch workspace/internal/code/team_task_board_service.go
+```
+
+Put this exact content in `workspace/internal/code/team_task_board_service.go`:
+
+```go
+package code
+
+import (
+	"encoding/json"
+
+	"__MODULE_PATH__/internal/contracts"
+)
+
+func filterVisibleTasks(tasks []contracts.TeamTask, principal contracts.Principal) []contracts.TeamTask {
+	var result []contracts.TeamTask
+	for _, task := range tasks {
+		if task.Visibility == "public" {
+			result = append(result, task)
+			continue
+		}
+		if user, ok := principal.(contracts.UserPrincipal); ok && user.UserID == task.OwnerUserID {
+			result = append(result, task)
+			continue
+		}
+		if _, ok := principal.(contracts.AdminPrincipal); ok {
+			result = append(result, task)
+		}
+	}
+	return result
+}
+
+func canDeleteTask(task contracts.TeamTask, principal contracts.Principal) bool {
+	switch current := principal.(type) {
+	case contracts.UserPrincipal:
+		return current.UserID == task.OwnerUserID
+	case contracts.AdminPrincipal:
+		return true
+	default:
+		return false
+	}
+}
+
+func removeTaskById(tasks []contracts.TeamTask, taskID string, principal contracts.Principal) []contracts.TeamTask {
+	result := append([]contracts.TeamTask{}, tasks...)
+	for index, task := range result {
+		if task.ID == taskID && canDeleteTask(task, principal) {
+			return append(result[:index], result[index+1:]...)
+		}
+	}
+	return result
+}
+
+func formatTeamTaskList(tasks []contracts.TeamTask) []string {
+	lines := make([]string, 0, len(tasks))
+	for _, task := range tasks {
+		lines = append(lines, task.ID+" | "+task.Visibility+" | "+task.Text)
+	}
+	return lines
+}
+
+func serializeTeamTaskStorage(tasks []contracts.TeamTask) string {
+	storageBytes, _ := json.Marshal(tasks)
+	return string(storageBytes)
+}
+```
+
+Run:
+
+```bash
+just check-tests
+git add --all
+git commit --message "2. Green: Enforce Visibility And Deletion Rules"
+```
+"#,
+    )
+}
+
+fn render_go_team_task_board_adapter_content(_spec: &OutputRepoSpec) -> String {
+    tutorial_file_markdown(
+        "Adapter",
+        r#"### 1. Red: Render Anonymous Visibility In The Handler
+
+Create the first adapter test file:
+
+```bash
+touch workspace/internal/adapter/http/team_task_board_handler_test.go
+```
+
+Put this exact content in `workspace/internal/adapter/http/team_task_board_handler_test.go`:
+
+```go
+package httpadapter
+
+import (
+	"encoding/json"
+	"net/http"
+	"net/http/httptest"
+	"testing"
+
+	"__MODULE_PATH__/internal/contracts"
+	"github.com/labstack/echo/v4"
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/mock"
+)
+
+type MockTeamTaskService struct{ mock.Mock }
+
+func (m *MockTeamTaskService) ListTasks(principal contracts.Principal) ([]contracts.TeamTask, error) {
+	args := m.Called(principal)
+	return args.Get(0).([]contracts.TeamTask), args.Error(1)
+}
+
+func (m *MockTeamTaskService) CreateTask(ownerUserID, text, visibility string) (contracts.TeamTask, error) {
+	args := m.Called(ownerUserID, text, visibility)
+	return args.Get(0).(contracts.TeamTask), args.Error(1)
+}
+
+func (m *MockTeamTaskService) GetTask(taskID string, principal contracts.Principal) (contracts.TeamTask, error) {
+	args := m.Called(taskID, principal)
+	return args.Get(0).(contracts.TeamTask), args.Error(1)
+}
+
+func (m *MockTeamTaskService) DeleteTask(taskID string, principal contracts.Principal) error {
+	args := m.Called(taskID, principal)
+	return args.Error(0)
+}
+
+func TestTaskHandlerListsOnlyPublicTasksForAnonymousUsers(t *testing.T) {
+	e := echo.New()
+	req := httptest.NewRequest(http.MethodGet, "/api/tasks", nil)
+	rec := httptest.NewRecorder()
+	ctx := e.NewContext(req, rec)
+
+	service := new(MockTeamTaskService)
+	service.On("ListTasks", contracts.AnonymousPrincipal{}).Return([]contracts.TeamTask{
+		{ID: "task-1", OwnerUserID: "user-alice", Text: "Draft release notes", Visibility: "public"},
+	}, nil)
+
+	handler := NewTaskHandler(service)
+	err := handler.ListTasks(ctx)
+
+	assert.NoError(t, err)
+	assert.Equal(t, http.StatusOK, rec.Code)
+
+	var body struct {
+		Tasks []contracts.TeamTask `json:"tasks"`
+	}
+	err = json.Unmarshal(rec.Body.Bytes(), &body)
+	assert.NoError(t, err)
+	assert.Len(t, body.Tasks, 1)
+	service.AssertExpectations(t)
+}
+```
+
+Run:
+
+```bash
+just check-tests
+git add --all
+git commit --message "1. Red: Render Anonymous Visibility In The Handler"
+```
+
+### 2. Green: Wire The Visibility-Aware Handler
+
+Create the first adapter production file:
+
+```bash
+touch workspace/internal/adapter/http/team_task_board_handler.go
+```
+
+Put this exact content in `workspace/internal/adapter/http/team_task_board_handler.go`:
+
+```go
+package httpadapter
+
+import (
+	"net/http"
+
+	"__MODULE_PATH__/internal/contracts"
+	"github.com/labstack/echo/v4"
+)
+
+type TeamTaskHandler struct{ service contracts.TeamTaskService }
+
+func NewTaskHandler(service contracts.TeamTaskService) *TeamTaskHandler {
+	return &TeamTaskHandler{service: service}
+}
+
+func (h *TeamTaskHandler) ListTasks(c echo.Context) error {
+	tasks, err := h.service.ListTasks(contracts.AnonymousPrincipal{})
+	if err != nil {
+		return c.JSON(http.StatusInternalServerError, contracts.ErrorResponse{Message: "internal server error"})
+	}
+	return c.JSON(http.StatusOK, map[string]any{"tasks": tasks})
+}
+
+func (h *TeamTaskHandler) DeleteTask(c echo.Context) error {
+	taskID := c.Param("id")
+	if taskID == "" {
+		return c.JSON(http.StatusBadRequest, contracts.ErrorResponse{Message: "task id must not be empty"})
+	}
+
+	err := h.service.DeleteTask(taskID, contracts.AnonymousPrincipal{})
+	if err != nil {
+		return c.JSON(http.StatusForbidden, contracts.ErrorResponse{Message: "forbidden"})
+	}
+	return c.NoContent(http.StatusNoContent)
+}
+```
+
+Run:
+
+```bash
+just check-tests
+git add --all
+git commit --message "2. Green: Wire The Visibility-Aware Handler"
+```
+
+### 3. Red: Add Owner And Admin Deletion Tests
+
+Replace `workspace/internal/adapter/http/team_task_board_handler_test.go` with tests that prove:
+
+- a normal user can delete their own task
+- a normal user cannot delete another user's task
+- an admin can delete any task
+
+Run:
+
+```bash
+just check-tests
+git add --all
+git commit --message "3. Red: Add Owner And Admin Deletion Tests"
+```
+
+### 4. Green: Wire Principal-Aware Deletion
+
+Update `workspace/internal/adapter/http/team_task_board_handler.go` so:
+
+- `ListTasks` returns the filtered visible task list for the current principal
+- `DeleteTask` passes the current principal into the service and returns `404` or `403` as appropriate
+- the handler remains thin and delegates authorization to the core
+
+Run:
+
+```bash
+just check-tests
+git add --all
+git commit --message "4. Green: Wire Principal-Aware Deletion"
+```
+"#,
     )
 }
 
