@@ -518,16 +518,37 @@ fn is_flutter_todo_list_rest_json_output_repo(spec: &OutputRepoSpec) -> bool {
         && spec.selections.protocol.as_deref() == Some("rest-json")
 }
 
+fn is_flutter_team_task_board_rest_json_output_repo(spec: &OutputRepoSpec) -> bool {
+    spec.project_slug == "team-task-board"
+        && spec.selections.ecosystem == "dart"
+        && spec.selections.language == "dart"
+        && spec.selections.testing == "test"
+        && spec.selections.mocking == "mocktail"
+        && spec.selections.storage == "no-storage"
+        && spec.selections.surface == "client"
+        && spec.selections.target == "all"
+        && spec.selections.framework == "flutter"
+        && spec.selections.protocol.as_deref() == Some("rest-json")
+}
+
 fn is_flutter_todo_list_output_repo(spec: &OutputRepoSpec) -> bool {
     is_flutter_todo_list_rest_json_output_repo(spec)
 }
 
+fn is_flutter_team_task_board_output_repo(spec: &OutputRepoSpec) -> bool {
+    is_flutter_team_task_board_rest_json_output_repo(spec)
+}
+
 fn is_flutter_output_repo(spec: &OutputRepoSpec) -> bool {
-    is_flutter_saying_hello_output_repo(spec) || is_flutter_todo_list_output_repo(spec)
+    is_flutter_saying_hello_output_repo(spec)
+        || is_flutter_todo_list_output_repo(spec)
+        || is_flutter_team_task_board_output_repo(spec)
 }
 
 fn is_flutter_http_output_repo(spec: &OutputRepoSpec) -> bool {
-    is_flutter_http_saying_hello_output_repo(spec) || is_flutter_todo_list_output_repo(spec)
+    is_flutter_http_saying_hello_output_repo(spec)
+        || is_flutter_todo_list_output_repo(spec)
+        || is_flutter_team_task_board_output_repo(spec)
 }
 
 fn is_flutter_local_saying_hello_output_repo(spec: &OutputRepoSpec) -> bool {
@@ -718,6 +739,17 @@ fn supported_output_repo_selections(
             framework: "flutter".to_string(),
             protocol: Some("rest-json".to_string()),
         }),
+        ("team-task-board", "dart") => Some(OutputRepoSelections {
+            ecosystem: "dart".to_string(),
+            language: "dart".to_string(),
+            testing: "test".to_string(),
+            mocking: "mocktail".to_string(),
+            storage: "no-storage".to_string(),
+            surface: "client".to_string(),
+            target: "all".to_string(),
+            framework: "flutter".to_string(),
+            protocol: Some("rest-json".to_string()),
+        }),
         (_, "dotnet") => Some(OutputRepoSelections {
             ecosystem: "dotnet".to_string(),
             language: "csharp".to_string(),
@@ -821,6 +853,8 @@ fn validate_output_repo_selections(
         framework: "flutter".to_string(),
         protocol: Some("rest-json".to_string()),
     };
+    let supported_flutter_team_task_board_rest_json =
+        supported_flutter_todo_list_rest_json.clone();
 
     let supported_flutter_local = OutputRepoSelections {
         ecosystem: "dart".to_string(),
@@ -879,6 +913,12 @@ fn validate_output_repo_selections(
     }
 
     if project_slug == "todo-list" && selections == &supported_flutter_todo_list_rest_json {
+        return Ok(());
+    }
+
+    if project_slug == "team-task-board"
+        && selections == &supported_flutter_team_task_board_rest_json
+    {
         return Ok(());
     }
 
@@ -1652,6 +1692,10 @@ fn build_output_repo_tutorial_files(app_root: &Path, spec: &OutputRepoSpec) -> V
         return build_flutter_todo_list_output_repo_tutorial_files(app_root, spec);
     }
 
+    if is_flutter_team_task_board_output_repo(spec) {
+        return build_flutter_team_task_board_output_repo_tutorial_files(app_root, spec);
+    }
+
     if is_astro_saying_hello_output_repo(spec) {
         return build_astro_saying_hello_output_repo_tutorial_files(app_root, spec);
     }
@@ -1956,6 +2000,52 @@ fn build_flutter_todo_list_output_repo_tutorial_files(
     ]
 }
 
+fn build_flutter_team_task_board_output_repo_tutorial_files(
+    app_root: &Path,
+    spec: &OutputRepoSpec,
+) -> Vec<ManagedRepoFile> {
+    let project_root = app_root.join("partials/projects").join(&spec.project_slug);
+    let spec_partial =
+        Partial::load(&project_root.join("spec/README.md")).expect("spec partial should exist");
+
+    vec![
+        ManagedRepoFile {
+            relative_path: "tutorial/README.md".to_string(),
+            contents: render_output_repo_tutorial_readme_content(spec).into_bytes(),
+        },
+        ManagedRepoFile {
+            relative_path: "tutorial/setup.md".to_string(),
+            contents: render_output_repo_setup_content(spec).into_bytes(),
+        },
+        ManagedRepoFile {
+            relative_path: "tutorial/spec.md".to_string(),
+            contents: tutorial_file_markdown(
+                "Spec",
+                &rewrite_for_single_repo_tutorial(&spec_partial.body),
+            )
+            .into_bytes(),
+        },
+        ManagedRepoFile {
+            relative_path: "tutorial/contracts.md".to_string(),
+            contents: render_flutter_team_task_board_rest_json_contracts_content(spec)
+                .into_bytes(),
+        },
+        ManagedRepoFile {
+            relative_path: "tutorial/code.md".to_string(),
+            contents: render_flutter_team_task_board_rest_json_code_content(spec).into_bytes(),
+        },
+        ManagedRepoFile {
+            relative_path: "tutorial/adapter.md".to_string(),
+            contents: render_flutter_team_task_board_rest_json_adapter_content(spec)
+                .into_bytes(),
+        },
+        ManagedRepoFile {
+            relative_path: "tutorial/finish.md".to_string(),
+            contents: render_output_repo_finish_content(spec).into_bytes(),
+        },
+    ]
+}
+
 fn build_astro_saying_hello_output_repo_tutorial_files(
     app_root: &Path,
     spec: &OutputRepoSpec,
@@ -2037,10 +2127,18 @@ fn render_output_repo_tutorial_readme_content(spec: &OutputRepoSpec) -> String {
 
         choices.push(format!("- App Port: `{FOR_ALL_FRONTEND_PORT}`"));
 
-        return format!(
+        let mut body = format!(
             "# Tutorial\n\nChoices for this repo:\n\n{}\n\nWork through these files in order:\n\n1. [Spec](spec.md)\n2. [Setup](setup.md)\n3. [Contracts](contracts.md)\n4. [Code](code.md)\n5. [Adapter](adapter.md)\n6. [Finish](finish.md)\n",
             choices.join("\n")
         );
+
+        if is_flutter_team_task_board_output_repo(spec) {
+            body.push_str(
+                "\nThis tutorial builds a Flutter client for a team task board with public and private tasks, anonymous/user/admin principals, and owner-vs-admin deletion rules.",
+            );
+        }
+
+        return body;
     }
 
     let mut choices = vec![
@@ -2099,7 +2197,7 @@ fn render_output_repo_tutorial_readme_content(spec: &OutputRepoSpec) -> String {
         choices.join("\n"),
     );
 
-    if is_go_team_task_board_output_repo(spec) {
+    if is_go_team_task_board_output_repo(spec) || is_flutter_team_task_board_output_repo(spec) {
         body.push_str(
             "\nThis tutorial builds a team task board with public and private tasks, anonymous/user/admin principals, and owner-vs-admin deletion rules.",
         );
@@ -2215,7 +2313,7 @@ fn render_output_repo_setup_content(spec: &OutputRepoSpec) -> String {
         );
     }
 
-    if is_flutter_todo_list_output_repo(spec) {
+    if is_flutter_todo_list_output_repo(spec) || is_flutter_team_task_board_output_repo(spec) {
         let package_name = flutter_package_name(&spec.project_slug);
         let setup_commands = vec![
             format!("flutter create --platforms=web,android,ios,macos,windows,linux --org com.intrepion --project-name {package_name} workspace"),
@@ -2268,14 +2366,66 @@ git commit --message "Enable macOS network client entitlement"
         let macos_http_note = format!(
             "\nIf the macOS desktop app does not appear to reach the API, rerun it with the host URL made explicit:\n\n```bash\njust --set api_base_url http://localhost:{FOR_ALL_API_PORT} run-macos\n```"
         );
+        let workspace_tree = if is_flutter_team_task_board_output_repo(spec) {
+            r#"workspace/
+  pubspec.yaml
+  lib/
+    contracts/
+      team_task.dart
+      team_task_api.dart
+      team_task_list_response.dart
+    code/
+      team_task_board_controller.dart
+    adapter/
+      http_team_task_api.dart
+      team_task_board_page.dart
+  test/
+    code/
+      team_task_board_controller_test.dart
+    adapter/
+      http_team_task_api_test.dart
+      team_task_board_page_test.dart
+  integration_test/
+    app_test.dart
+  lib/main.dart"#
+        } else {
+            r#"workspace/
+  pubspec.yaml
+  lib/
+    contracts/
+      task.dart
+      task_api.dart
+      task_list_response.dart
+    code/
+      task_list_controller.dart
+    adapter/
+      http_task_api.dart
+      todo_list_page.dart
+  test/
+    code/
+      task_list_controller_test.dart
+    adapter/
+      http_task_api_test.dart
+      todo_list_page_test.dart
+  integration_test/
+    app_test.dart
+  lib/main.dart"#
+        };
+        let project_intro = if is_flutter_team_task_board_output_repo(spec) {
+            "This Flutter client talks to the Team Task Board REST API and models anonymous, normal-user, and admin views of public and private tasks."
+        } else {
+            "This Flutter client talks to the Todo List REST API."
+        };
 
         return tutorial_file_markdown(
             "Setup",
             &format!(
-                "Keep the repository root for shared files like `README.md`, `LICENSE`, `.gitignore`, `.github/`, `justfile`, and `tutorial/`.\n\nPut all Flutter code inside a single `workspace/` folder.\n\nFrom the repository root, run each setup command and checkpoint it before moving to the next one:\n\n```bash\n{}\n```\n\n{}\n\nWhen the full workspace is finished, it should contain these files:\n\n```text\nworkspace/\n  pubspec.yaml\n  lib/\n    contracts/\n      task.dart\n      task_api.dart\n      task_list_response.dart\n    code/\n      task_list_controller.dart\n    adapter/\n      http_task_api.dart\n      todo_list_page.dart\n  test/\n    code/\n      task_list_controller_test.dart\n    adapter/\n      http_task_api_test.dart\n      todo_list_page_test.dart\n  integration_test/\n    app_test.dart\n  lib/main.dart\n```\n\nBefore you try any run command, make sure Flutter can see a supported target:\n\n```bash\njust devices\n```\n\nFor web, use the default web command:\n\n```bash\njust run\n```\n\nor, explicitly:\n\n```bash\njust run-web\n```\n\nOn macOS for iOS, install CocoaPods first if you have not already:\n\n```bash\nsudo gem install cocoapods\n```\n\nThen open the simulator, list devices, and run the iOS app with an actual simulator id or name:\n\n```bash\nopen -a Simulator\njust devices\njust run-ios device=\"<ios-device-id-or-name>\"\n```\n\nFlutter does not accept bare `ios` as a generic simulator target, so if `just devices` does not show your simulator yet, wait a moment and run it again.\n\nFor Android, list available emulators, launch one, list devices again, and then run the Android app:\n\n```bash\njust emulators\nflutter emulators --launch <emulator-id>\njust devices\njust --set api_base_url http://10.0.2.2:{FOR_ALL_API_PORT} run-android device=\"<android-device-id-or-name>\"\n```\n\nFor macOS desktop, use:\n\n```bash\njust run-macos\n```\n{}{newline}For Windows or Linux, run the matching command on that host platform:\n\n```bash\njust run-windows\njust run-linux\n```\n\nAfter your first successful iOS run, if CocoaPods added shared iOS project files like these:\n\n- `workspace/ios/Runner.xcodeproj/project.pbxproj`\n- `workspace/ios/Runner.xcworkspace/contents.xcworkspacedata`\n- `workspace/ios/Podfile.lock`\n\nthen run:\n\n```bash\ngit add --all\ngit commit --message \"Add iOS CocoaPods workspace files\"\n```\n\nAfter your first successful macOS run, if CocoaPods added shared macOS project files like these:\n\n- `workspace/macos/Runner.xcodeproj/project.pbxproj`\n- `workspace/macos/Runner.xcworkspace/contents.xcworkspacedata`\n- `workspace/macos/Podfile.lock`\n\nthen run:\n\n```bash\ngit add --all\ngit commit --message \"Add macOS CocoaPods workspace files\"\n```\n\nDo not commit local machine output like these:\n\n- `workspace/ios/Pods/`\n- `workspace/macos/Pods/`\n- `workspace/build/`\n- `workspace/.dart_tool/`\n\nFor Android, a normal first run usually should not add shared tracked files. If it does change shared files under `workspace/android/`, review them carefully and commit only the project-level changes. Do not commit machine-specific files like:\n\n- `workspace/android/local.properties`\n- `workspace/.gradle/`\n- `workspace/build/`",
+                "Keep the repository root for shared files like `README.md`, `LICENSE`, `.gitignore`, `.github/`, `justfile`, and `tutorial/`.\n\nPut all Flutter code inside a single `workspace/` folder.\n\n{project_intro}\n\nFrom the repository root, run each setup command and checkpoint it before moving to the next one:\n\n```bash\n{}\n```\n\n{}\n\nWhen the full workspace is finished, it should contain these files:\n\n```text\n{workspace_tree}\n```\n\nBefore you try any run command, make sure Flutter can see a supported target:\n\n```bash\njust devices\n```\n\nFor web, use the default web command:\n\n```bash\njust run\n```\n\nor, explicitly:\n\n```bash\njust run-web\n```\n\nOn macOS for iOS, install CocoaPods first if you have not already:\n\n```bash\nsudo gem install cocoapods\n```\n\nThen open the simulator, list devices, and run the iOS app with an actual simulator id or name:\n\n```bash\nopen -a Simulator\njust devices\njust run-ios device=\"<ios-device-id-or-name>\"\n```\n\nFlutter does not accept bare `ios` as a generic simulator target, so if `just devices` does not show your simulator yet, wait a moment and run it again.\n\nFor Android, list available emulators, launch one, list devices again, and then run the Android app:\n\n```bash\njust emulators\nflutter emulators --launch <emulator-id>\njust devices\njust --set api_base_url http://10.0.2.2:{FOR_ALL_API_PORT} run-android device=\"<android-device-id-or-name>\"\n```\n\nFor macOS desktop, use:\n\n```bash\njust run-macos\n```\n{macos_http_note}{newline}For Windows or Linux, run the matching command on that host platform:\n\n```bash\njust run-windows\njust run-linux\n```\n\nAfter your first successful iOS run, if CocoaPods added shared iOS project files like these:\n\n- `workspace/ios/Runner.xcodeproj/project.pbxproj`\n- `workspace/ios/Runner.xcworkspace/contents.xcworkspacedata`\n- `workspace/ios/Podfile.lock`\n\nthen run:\n\n```bash\ngit add --all\ngit commit --message \"Add iOS CocoaPods workspace files\"\n```\n\nAfter your first successful macOS run, if CocoaPods added shared macOS project files like these:\n\n- `workspace/macos/Runner.xcodeproj/project.pbxproj`\n- `workspace/macos/Runner.xcworkspace/contents.xcworkspacedata`\n- `workspace/macos/Podfile.lock`\n\nthen run:\n\n```bash\ngit add --all\ngit commit --message \"Add macOS CocoaPods workspace files\"\n```\n\nDo not commit local machine output like these:\n\n- `workspace/ios/Pods/`\n- `workspace/macos/Pods/`\n- `workspace/build/`\n- `workspace/.dart_tool/`\n\nFor Android, a normal first run usually should not add shared tracked files. If it does change shared files under `workspace/android/`, review them carefully and commit only the project-level changes. Do not commit machine-specific files like:\n\n- `workspace/android/local.properties`\n- `workspace/.gradle/`\n- `workspace/build/`",
                 render_setup_commands_with_commits(&setup_commands, 2),
                 macos_entitlements_note,
-                macos_http_note,
+                project_intro = project_intro,
+                workspace_tree = workspace_tree,
+                macos_http_note = macos_http_note,
                 newline = if macos_http_note.is_empty() { "" } else { "\n" },
             ),
         );
@@ -2776,6 +2926,15 @@ fn render_output_repo_finish_content(spec: &OutputRepoSpec) -> String {
             "Finish",
             &format!(
                 "Start the API server from the repository root:\n\n```bash\njust run\n```\n\nThis API is configured to accept browser requests from `http://localhost:{FOR_ALL_FRONTEND_PORT}` and to persist tasks in `workspace/data/tasks.json`.\n\nIn another terminal, try these requests:\n\n```bash\ncurl \"http://localhost:{FOR_ALL_API_PORT}/api/tasks\"\ncurl -X POST \"http://localhost:{FOR_ALL_API_PORT}/api/tasks\" \\\n  -H \"Content-Type: application/json\" \\\n  -d '{{\"task\":\"Buy milk\"}}'\ncurl -X DELETE \"http://localhost:{FOR_ALL_API_PORT}/api/tasks?task=Buy%20milk\"\n```\n\nThe initial `GET` should return an empty task list:\n\n```json\n{{\"tasks\":[],\"lines\":[]}}\n```\n\nAfter the `POST`, you should get:\n\n```json\n{{\"tasks\":[\"Buy milk\"],\"lines\":[\"Buy milk\"]}}\n```\n\nAfter the `DELETE`, the task list should be empty again.\n\nIf you later build a browser client at `http://localhost:{FOR_ALL_FRONTEND_PORT}`, it can call this API without additional CORS setup."
+            ),
+        );
+    }
+
+    if is_flutter_team_task_board_output_repo(spec) {
+        return tutorial_file_markdown(
+            "Finish",
+            &format!(
+                "Make sure the matching Team Task Board API is running on your development machine at port `{FOR_ALL_API_PORT}`.\n\nFor web, start the Flutter app from the repository root with:\n\n```bash\njust run\n```\n\nor:\n\n```bash\njust run-web\n```\n\nThen open `http://localhost:{FOR_ALL_FRONTEND_PORT}` in your browser.\n\nFor iOS, open the simulator, list devices, and run with an actual simulator id or name:\n\n```bash\nopen -a Simulator\njust devices\njust run-ios device=\"<ios-device-id-or-name>\"\n```\n\nFor Android, use:\n\n```bash\njust --set api_base_url http://10.0.2.2:{FOR_ALL_API_PORT} run-android device=\"<android-device-id-or-name>\"\n```\n\nFor macOS desktop, use:\n\n```bash\njust run-macos\n```\n\nIf the macOS desktop app does not appear to reach the API, rerun it with the host URL made explicit:\n\n```bash\njust --set api_base_url http://localhost:{FOR_ALL_API_PORT} run-macos\n```\n\nFor Windows or Linux, run the matching command on that host platform:\n\n```bash\njust run-windows\njust run-linux\n```\n\nAfter the first successful iOS run, if CocoaPods added shared iOS project files like these:\n\n- `workspace/ios/Runner.xcodeproj/project.pbxproj`\n- `workspace/ios/Runner.xcworkspace/contents.xcworkspacedata`\n- `workspace/ios/Podfile.lock`\n\nthen run:\n\n```bash\ngit add --all\ngit commit --message \"Add iOS CocoaPods workspace files\"\n```\n\nAfter the first successful macOS run, if CocoaPods added shared macOS project files like these:\n\n- `workspace/macos/Runner.xcodeproj/project.pbxproj`\n- `workspace/macos/Runner.xcworkspace/contents.xcworkspacedata`\n- `workspace/macos/Podfile.lock`\n\nthen run:\n\n```bash\ngit add --all\ngit commit --message \"Add macOS CocoaPods workspace files\"\n```\n\nA normal Android run usually should not add shared tracked files. Do not commit machine-specific files like `workspace/android/local.properties`, `workspace/.gradle/`, `workspace/build/`, or `workspace/macos/Pods/`.\n\nTry this flow:\n\n- load the board as `anonymous` and confirm you only see public tasks\n- switch to `user` with `user-alice` and load again to reveal Alice's private tasks\n- add a new `public` task for `user-alice`\n- switch to `admin` with `user-admin` and remove a task\n\nIf the API is unavailable, the app should show `Sorry, the team task API is unavailable right now.`"
             ),
         );
     }
@@ -8914,6 +9073,1205 @@ git commit --message "Define todo-list Flutter contracts"
     )
 }
 
+fn render_flutter_team_task_board_rest_json_contracts_content(spec: &OutputRepoSpec) -> String {
+    let _package_name = flutter_package_name(&spec.project_slug);
+    tutorial_file_markdown(
+        "Contracts",
+        &rewrite_stage_commit_checkpoints(&rewrite_touch_creation_stage_only(
+            r#"Create the shared contract files:
+
+```bash
+touch workspace/lib/contracts/team_task.dart
+touch workspace/lib/contracts/team_task_list_response.dart
+touch workspace/lib/contracts/team_task_api.dart
+```
+
+Put this exact content in `workspace/lib/contracts/team_task.dart`:
+
+```dart
+class TeamTask {
+  final String id;
+  final String ownerUserId;
+  final String text;
+  final String visibility;
+
+  const TeamTask({
+    required this.id,
+    required this.ownerUserId,
+    required this.text,
+    required this.visibility,
+  });
+
+  factory TeamTask.fromJson(Map<String, dynamic> json) {
+    return TeamTask(
+      id: json['id'] as String,
+      ownerUserId: json['owner_user_id'] as String,
+      text: json['text'] as String,
+      visibility: json['visibility'] as String,
+    );
+  }
+}
+```
+
+Put this exact content in `workspace/lib/contracts/team_task_list_response.dart`:
+
+```dart
+import 'team_task.dart';
+
+class TeamTaskListResponse {
+  final List<TeamTask> tasks;
+
+  const TeamTaskListResponse({required this.tasks});
+
+  factory TeamTaskListResponse.fromJson(Map<String, dynamic> json) {
+    return TeamTaskListResponse(
+      tasks: (json['tasks'] as List<dynamic>)
+          .map(
+            (taskJson) => TeamTask.fromJson(taskJson as Map<String, dynamic>),
+          )
+          .toList(),
+    );
+  }
+}
+```
+
+Put this exact content in `workspace/lib/contracts/team_task_api.dart`:
+
+```dart
+import 'team_task.dart';
+import 'team_task_list_response.dart';
+
+abstract class TeamTaskApi {
+  Future<TeamTaskListResponse> getTasks({
+    required String principal,
+    String? userId,
+  });
+
+  Future<TeamTask> createTask({
+    required String ownerUserId,
+    required String text,
+    required String visibility,
+  });
+
+  Future<void> deleteTask(
+    String taskId, {
+    required String principal,
+    String? userId,
+  });
+}
+```
+
+Do not add tests here. Keep this layer limited to interfaces and small shared types.
+
+Then run:
+
+```bash
+git add --all
+git commit --message "Define team-task-board Flutter contracts"
+```"#,
+        )),
+    )
+}
+
+fn render_flutter_team_task_board_rest_json_code_content(spec: &OutputRepoSpec) -> String {
+    let package_name = flutter_package_name(&spec.project_slug);
+    tutorial_file_markdown(
+        "Code",
+        &rewrite_touch_creation_stage_only(&format!(
+            r#"### 1. Red: Load The Board For The Current Principal
+
+Create the first code test file:
+
+```bash
+touch workspace/test/code/team_task_board_controller_test.dart
+```
+
+Put this exact content in `workspace/test/code/team_task_board_controller_test.dart`:
+
+```dart
+import 'package:mocktail/mocktail.dart';
+import 'package:{package_name}/code/team_task_board_controller.dart';
+import 'package:{package_name}/contracts/team_task.dart';
+import 'package:{package_name}/contracts/team_task_api.dart';
+import 'package:{package_name}/contracts/team_task_list_response.dart';
+import 'package:test/test.dart';
+
+class MockTeamTaskApi extends Mock implements TeamTaskApi {{}}
+
+void main() {{
+  test('loads the board for the current principal', () async {{
+    final api = MockTeamTaskApi();
+    when(
+      () => api.getTasks(principal: 'user', userId: 'user-alice'),
+    ).thenAnswer(
+      (_) async => const TeamTaskListResponse(
+        tasks: [
+          TeamTask(
+            id: 'task-1',
+            ownerUserId: 'user-alice',
+            text: 'Draft release notes',
+            visibility: 'public',
+          ),
+          TeamTask(
+            id: 'task-2',
+            ownerUserId: 'user-alice',
+            text: 'Prepare hiring packet',
+            visibility: 'private',
+          ),
+        ],
+      ),
+    );
+
+    final result = await loadBoard(
+      principal: 'user',
+      actingUserId: 'user-alice',
+      api: api,
+    );
+
+    expect(result.tasks.map((task) => task.text).toList(), [
+      'Draft release notes',
+      'Prepare hiring packet',
+    ]);
+    expect(result.errorMessage, isNull);
+  }});
+}}
+```
+
+Run:
+
+```bash
+just check-tests
+git add --all
+git commit --message "1. Red: Load The Board For The Current Principal"
+```
+
+### 2. Green: Load The Board And Handle Common Errors
+
+Create the first production file:
+
+```bash
+touch workspace/lib/code/team_task_board_controller.dart
+```
+
+Put this exact content in `workspace/lib/code/team_task_board_controller.dart`:
+
+```dart
+import '../contracts/team_task.dart';
+import '../contracts/team_task_api.dart';
+import '../contracts/team_task_list_response.dart';
+
+class TeamTaskBoardViewModel {{
+  final List<TeamTask> tasks;
+  final String principal;
+  final String actingUserId;
+  final String? errorMessage;
+
+  const TeamTaskBoardViewModel({{
+    required this.tasks,
+    required this.principal,
+    required this.actingUserId,
+    this.errorMessage,
+  }});
+
+  factory TeamTaskBoardViewModel.fromResponse({{
+    required TeamTaskListResponse response,
+    required String principal,
+    required String actingUserId,
+  }}) {{
+    return TeamTaskBoardViewModel(
+      tasks: response.tasks,
+      principal: principal,
+      actingUserId: actingUserId,
+    );
+  }}
+}}
+
+String? normalizedUserId(String principal, String actingUserId) {{
+  final trimmed = actingUserId.trim();
+  if (principal == 'anonymous' || trimmed.isEmpty) {{
+    return null;
+  }}
+  return trimmed;
+}}
+
+Future<TeamTaskBoardViewModel> loadBoard({{
+  required String principal,
+  required String actingUserId,
+  required TeamTaskApi api,
+}}) async {{
+  try {{
+    final response = await api.getTasks(
+      principal: principal,
+      userId: normalizedUserId(principal, actingUserId),
+    );
+    return TeamTaskBoardViewModel.fromResponse(
+      response: response,
+      principal: principal,
+      actingUserId: actingUserId,
+    );
+  }} catch (_) {{
+    return TeamTaskBoardViewModel(
+      tasks: const [],
+      principal: principal,
+      actingUserId: actingUserId,
+      errorMessage: 'Sorry, the team task API is unavailable right now.',
+    );
+  }}
+}}
+
+Future<TeamTaskBoardViewModel> addTeamTask({{
+  required String principal,
+  required String actingUserId,
+  required String ownerUserId,
+  required String text,
+  required String visibility,
+  required TeamTaskApi api,
+}}) async {{
+  final trimmedText = text.trim();
+  if (trimmedText.isEmpty) {{
+    return TeamTaskBoardViewModel(
+      tasks: const [],
+      principal: principal,
+      actingUserId: actingUserId,
+      errorMessage: 'Task must not be blank.',
+    );
+  }}
+
+  try {{
+    await api.createTask(
+      ownerUserId: ownerUserId.trim(),
+      text: trimmedText,
+      visibility: visibility,
+    );
+    return loadBoard(
+      principal: principal,
+      actingUserId: actingUserId,
+      api: api,
+    );
+  }} catch (_) {{
+    return TeamTaskBoardViewModel(
+      tasks: const [],
+      principal: principal,
+      actingUserId: actingUserId,
+      errorMessage: 'Sorry, the team task API is unavailable right now.',
+    );
+  }}
+}}
+
+Future<TeamTaskBoardViewModel> deleteTeamTask({{
+  required String principal,
+  required String actingUserId,
+  required String taskId,
+  required TeamTaskApi api,
+}}) async {{
+  try {{
+    await api.deleteTask(
+      taskId,
+      principal: principal,
+      userId: normalizedUserId(principal, actingUserId),
+    );
+    return loadBoard(
+      principal: principal,
+      actingUserId: actingUserId,
+      api: api,
+    );
+  }} catch (_) {{
+    return TeamTaskBoardViewModel(
+      tasks: const [],
+      principal: principal,
+      actingUserId: actingUserId,
+      errorMessage: 'Sorry, the team task API is unavailable right now.',
+    );
+  }}
+}}
+```
+
+Run:
+
+```bash
+just check-tests
+git add --all
+git commit --message "2. Green: Load The Board And Handle Common Errors"
+```
+
+### 3. Red: Reject Blank Task Text Before Calling The API
+
+Replace `workspace/test/code/team_task_board_controller_test.dart` with:
+
+```dart
+import 'package:mocktail/mocktail.dart';
+import 'package:{package_name}/code/team_task_board_controller.dart';
+import 'package:{package_name}/contracts/team_task.dart';
+import 'package:{package_name}/contracts/team_task_api.dart';
+import 'package:{package_name}/contracts/team_task_list_response.dart';
+import 'package:test/test.dart';
+
+class MockTeamTaskApi extends Mock implements TeamTaskApi {{}}
+
+void main() {{
+  test('loads the board for the current principal', () async {{
+    final api = MockTeamTaskApi();
+    when(
+      () => api.getTasks(principal: 'user', userId: 'user-alice'),
+    ).thenAnswer(
+      (_) async => const TeamTaskListResponse(
+        tasks: [
+          TeamTask(
+            id: 'task-1',
+            ownerUserId: 'user-alice',
+            text: 'Draft release notes',
+            visibility: 'public',
+          ),
+          TeamTask(
+            id: 'task-2',
+            ownerUserId: 'user-alice',
+            text: 'Prepare hiring packet',
+            visibility: 'private',
+          ),
+        ],
+      ),
+    );
+
+    final result = await loadBoard(
+      principal: 'user',
+      actingUserId: 'user-alice',
+      api: api,
+    );
+
+    expect(result.tasks.map((task) => task.text).toList(), [
+      'Draft release notes',
+      'Prepare hiring packet',
+    ]);
+    expect(result.errorMessage, isNull);
+  }});
+
+  test('rejects blank task text before calling the API', () async {{
+    final api = MockTeamTaskApi();
+
+    final result = await addTeamTask(
+      principal: 'user',
+      actingUserId: 'user-alice',
+      ownerUserId: 'user-alice',
+      text: '   ',
+      visibility: 'public',
+      api: api,
+    );
+
+    expect(result.errorMessage, 'Task must not be blank.');
+    verifyNever(
+      () => api.createTask(
+        ownerUserId: any(named: 'ownerUserId'),
+        text: any(named: 'text'),
+        visibility: any(named: 'visibility'),
+      ),
+    );
+  }});
+}}
+```
+
+Run:
+
+```bash
+just check-tests
+git add --all
+git commit --message "3. Red: Reject Blank Task Text Before Calling The API"
+```
+
+### 4. Green: Reload After Create And Delete
+
+Replace `workspace/test/code/team_task_board_controller_test.dart` with:
+
+```dart
+import 'package:mocktail/mocktail.dart';
+import 'package:{package_name}/code/team_task_board_controller.dart';
+import 'package:{package_name}/contracts/team_task.dart';
+import 'package:{package_name}/contracts/team_task_api.dart';
+import 'package:{package_name}/contracts/team_task_list_response.dart';
+import 'package:test/test.dart';
+
+class MockTeamTaskApi extends Mock implements TeamTaskApi {{}}
+
+void main() {{
+  test('loads the board for the current principal', () async {{
+    final api = MockTeamTaskApi();
+    when(
+      () => api.getTasks(principal: 'user', userId: 'user-alice'),
+    ).thenAnswer(
+      (_) async => const TeamTaskListResponse(
+        tasks: [
+          TeamTask(
+            id: 'task-1',
+            ownerUserId: 'user-alice',
+            text: 'Draft release notes',
+            visibility: 'public',
+          ),
+          TeamTask(
+            id: 'task-2',
+            ownerUserId: 'user-alice',
+            text: 'Prepare hiring packet',
+            visibility: 'private',
+          ),
+        ],
+      ),
+    );
+
+    final result = await loadBoard(
+      principal: 'user',
+      actingUserId: 'user-alice',
+      api: api,
+    );
+
+    expect(result.tasks.map((task) => task.text).toList(), [
+      'Draft release notes',
+      'Prepare hiring packet',
+    ]);
+    expect(result.errorMessage, isNull);
+  }});
+
+  test('rejects blank task text before calling the API', () async {{
+    final api = MockTeamTaskApi();
+
+    final result = await addTeamTask(
+      principal: 'user',
+      actingUserId: 'user-alice',
+      ownerUserId: 'user-alice',
+      text: '   ',
+      visibility: 'public',
+      api: api,
+    );
+
+    expect(result.errorMessage, 'Task must not be blank.');
+    verifyNever(
+      () => api.createTask(
+        ownerUserId: any(named: 'ownerUserId'),
+        text: any(named: 'text'),
+        visibility: any(named: 'visibility'),
+      ),
+    );
+  }});
+
+  test('reloads the board after creating a task', () async {{
+    final api = MockTeamTaskApi();
+    when(
+      () => api.createTask(
+        ownerUserId: 'user-alice',
+        text: 'Draft release notes',
+        visibility: 'public',
+      ),
+    ).thenAnswer(
+      (_) async => const TeamTask(
+        id: 'task-1',
+        ownerUserId: 'user-alice',
+        text: 'Draft release notes',
+        visibility: 'public',
+      ),
+    );
+    when(
+      () => api.getTasks(principal: 'user', userId: 'user-alice'),
+    ).thenAnswer(
+      (_) async => const TeamTaskListResponse(
+        tasks: [
+          TeamTask(
+            id: 'task-1',
+            ownerUserId: 'user-alice',
+            text: 'Draft release notes',
+            visibility: 'public',
+          ),
+        ],
+      ),
+    );
+
+    final result = await addTeamTask(
+      principal: 'user',
+      actingUserId: 'user-alice',
+      ownerUserId: 'user-alice',
+      text: 'Draft release notes',
+      visibility: 'public',
+      api: api,
+    );
+
+    expect(result.tasks.single.text, 'Draft release notes');
+    expect(result.errorMessage, isNull);
+  }});
+
+  test('reloads the board after deleting a task', () async {{
+    final api = MockTeamTaskApi();
+    when(
+      () => api.deleteTask(
+        'task-1',
+        principal: 'admin',
+        userId: 'user-admin',
+      ),
+    ).thenAnswer((_) async {{}});
+    when(
+      () => api.getTasks(principal: 'admin', userId: 'user-admin'),
+    ).thenAnswer((_) async => const TeamTaskListResponse(tasks: []));
+
+    final result = await deleteTeamTask(
+      principal: 'admin',
+      actingUserId: 'user-admin',
+      taskId: 'task-1',
+      api: api,
+    );
+
+    expect(result.tasks, isEmpty);
+    expect(result.errorMessage, isNull);
+  }});
+}}
+```
+
+Run:
+
+```bash
+just check-tests
+git add --all
+git commit --message "4. Green: Reload After Create And Delete"
+```"#,
+        )),
+    )
+}
+
+fn render_flutter_team_task_board_rest_json_adapter_content(spec: &OutputRepoSpec) -> String {
+    let package_name = flutter_package_name(&spec.project_slug);
+    let body = r#"### 1. Red: Add The HTTP Team Task API Test
+
+Create the HTTP adapter test file:
+
+```bash
+touch workspace/test/adapter/http_team_task_api_test.dart
+```
+
+Put this exact content in `workspace/test/adapter/http_team_task_api_test.dart`:
+
+```dart
+import 'package:http/http.dart' as http;
+import 'package:http/testing.dart';
+import 'package:__PACKAGE_NAME__/adapter/http_team_task_api.dart';
+import 'package:test/test.dart';
+
+void main() {
+  test('loads the current board with principal headers', () async {
+    late http.Request capturedRequest;
+    final client = MockClient((request) async {
+      capturedRequest = request;
+      return http.Response(
+        '{"tasks":[{"id":"task-1","owner_user_id":"user-alice","text":"Draft release notes","visibility":"public"}]}',
+        200,
+        headers: {'content-type': 'application/json'},
+      );
+    });
+
+    final api = HttpTeamTaskApi(
+      baseUrl: 'http://localhost:__API_PORT__',
+      client: client,
+    );
+    final result = await api.getTasks(
+      principal: 'user',
+      userId: 'user-alice',
+    );
+
+    expect(
+      capturedRequest.url.toString(),
+      'http://localhost:__API_PORT__/api/tasks',
+    );
+    expect(capturedRequest.headers['X-Team-Task-Principal'], 'user');
+    expect(capturedRequest.headers['X-Team-Task-User-ID'], 'user-alice');
+    expect(result.tasks.single.visibility, 'public');
+  });
+
+  test('posts a new team task resource', () async {
+    late String requestBody;
+    final client = MockClient((request) async {
+      requestBody = request.body;
+      return http.Response(
+        '{"id":"task-2","owner_user_id":"user-alice","text":"Prepare hiring packet","visibility":"private"}',
+        201,
+        headers: {'content-type': 'application/json'},
+      );
+    });
+
+    final api = HttpTeamTaskApi(
+      baseUrl: 'http://localhost:__API_PORT__',
+      client: client,
+    );
+    final createdTask = await api.createTask(
+      ownerUserId: 'user-alice',
+      text: 'Prepare hiring packet',
+      visibility: 'private',
+    );
+
+    expect(
+      requestBody,
+      '{"owner_user_id":"user-alice","text":"Prepare hiring packet","visibility":"private"}',
+    );
+    expect(createdTask.ownerUserId, 'user-alice');
+    expect(createdTask.visibility, 'private');
+  });
+
+  test('deletes a task with principal headers', () async {
+    late http.Request capturedRequest;
+    final client = MockClient((request) async {
+      capturedRequest = request;
+      return http.Response('', 204);
+    });
+
+    final api = HttpTeamTaskApi(
+      baseUrl: 'http://localhost:__API_PORT__',
+      client: client,
+    );
+    await api.deleteTask(
+      'task-2',
+      principal: 'admin',
+      userId: 'user-admin',
+    );
+
+    expect(
+      capturedRequest.url.toString(),
+      'http://localhost:__API_PORT__/api/tasks/task-2',
+    );
+    expect(capturedRequest.headers['X-Team-Task-Principal'], 'admin');
+    expect(capturedRequest.headers['X-Team-Task-User-ID'], 'user-admin');
+  });
+}
+```
+
+Run:
+
+```bash
+just check-tests
+git add --all
+git commit --message "1. Red: Add The HTTP Team Task API Test"
+```
+
+### 2. Green: Call The Canonical Team Task API Endpoints
+
+Create the HTTP adapter production file:
+
+```bash
+touch workspace/lib/adapter/http_team_task_api.dart
+```
+
+Put this exact content in `workspace/lib/adapter/http_team_task_api.dart`:
+
+```dart
+import 'dart:convert';
+
+import 'package:http/http.dart' as http;
+
+import '../contracts/team_task.dart';
+import '../contracts/team_task_api.dart';
+import '../contracts/team_task_list_response.dart';
+
+class HttpTeamTaskApi implements TeamTaskApi {
+  final String baseUrl;
+  final http.Client client;
+
+  HttpTeamTaskApi({required this.baseUrl, http.Client? client})
+    : client = client ?? http.Client();
+
+  Map<String, String> _principalHeaders(String principal, String? userId) {
+    final headers = <String, String>{
+      'X-Team-Task-Principal': principal,
+    };
+    if (userId != null && userId.isNotEmpty) {
+      headers['X-Team-Task-User-ID'] = userId;
+    }
+    return headers;
+  }
+
+  @override
+  Future<TeamTaskListResponse> getTasks({
+    required String principal,
+    String? userId,
+  }) async {
+    final response = await client.get(
+      Uri.parse('$baseUrl/api/tasks'),
+      headers: _principalHeaders(principal, userId),
+    );
+    if (response.statusCode != 200) {
+      throw Exception('failed to load team tasks');
+    }
+    return TeamTaskListResponse.fromJson(
+      jsonDecode(response.body) as Map<String, dynamic>,
+    );
+  }
+
+  @override
+  Future<TeamTask> createTask({
+    required String ownerUserId,
+    required String text,
+    required String visibility,
+  }) async {
+    final response = await client.post(
+      Uri.parse('$baseUrl/api/tasks'),
+      headers: {'Content-Type': 'application/json'},
+      body: jsonEncode({
+        'owner_user_id': ownerUserId,
+        'text': text,
+        'visibility': visibility,
+      }),
+    );
+    if (response.statusCode != 201) {
+      throw Exception('failed to create team task');
+    }
+    return TeamTask.fromJson(jsonDecode(response.body) as Map<String, dynamic>);
+  }
+
+  @override
+  Future<void> deleteTask(
+    String taskId, {
+    required String principal,
+    String? userId,
+  }) async {
+    final response = await client.delete(
+      Uri.parse('$baseUrl/api/tasks/$taskId'),
+      headers: _principalHeaders(principal, userId),
+    );
+    if (response.statusCode != 204) {
+      throw Exception('failed to delete team task');
+    }
+  }
+}
+```
+
+Run:
+
+```bash
+just check-tests
+git add --all
+git commit --message "2. Green: Call The Canonical Team Task API Endpoints"
+```
+
+### 3. Red: Add The Team Task Board Page Widget Test
+
+Create the widget test file:
+
+```bash
+touch workspace/test/adapter/team_task_board_page_test.dart
+```
+
+Put this exact content in `workspace/test/adapter/team_task_board_page_test.dart`:
+
+```dart
+import 'package:flutter/material.dart';
+import 'package:flutter_test/flutter_test.dart';
+import 'package:mocktail/mocktail.dart';
+import 'package:__PACKAGE_NAME__/adapter/team_task_board_page.dart';
+import 'package:__PACKAGE_NAME__/contracts/team_task.dart';
+import 'package:__PACKAGE_NAME__/contracts/team_task_api.dart';
+import 'package:__PACKAGE_NAME__/contracts/team_task_list_response.dart';
+
+class MockTeamTaskApi extends Mock implements TeamTaskApi {}
+
+void main() {
+  testWidgets('loads, adds, and deletes board tasks across principals', (
+    tester,
+  ) async {
+    final api = MockTeamTaskApi();
+
+    when(
+      () => api.getTasks(principal: 'anonymous', userId: null),
+    ).thenAnswer(
+      (_) async => const TeamTaskListResponse(
+        tasks: [
+          TeamTask(
+            id: 'task-1',
+            ownerUserId: 'user-alice',
+            text: 'Draft release notes',
+            visibility: 'public',
+          ),
+        ],
+      ),
+    );
+    when(
+      () => api.createTask(
+        ownerUserId: 'user-alice',
+        text: 'Prepare hiring packet',
+        visibility: 'public',
+      ),
+    ).thenAnswer(
+      (_) async => const TeamTask(
+        id: 'task-2',
+        ownerUserId: 'user-alice',
+        text: 'Prepare hiring packet',
+        visibility: 'public',
+      ),
+    );
+    when(
+      () => api.getTasks(principal: 'user', userId: 'user-alice'),
+    ).thenAnswer(
+      (_) async => const TeamTaskListResponse(
+        tasks: [
+          TeamTask(
+            id: 'task-1',
+            ownerUserId: 'user-alice',
+            text: 'Draft release notes',
+            visibility: 'public',
+          ),
+          TeamTask(
+            id: 'task-2',
+            ownerUserId: 'user-alice',
+            text: 'Prepare hiring packet',
+            visibility: 'public',
+          ),
+        ],
+      ),
+    );
+    when(
+      () => api.getTasks(principal: 'admin', userId: 'user-admin'),
+    ).thenAnswer(
+      (_) async => const TeamTaskListResponse(
+        tasks: [
+          TeamTask(
+            id: 'task-1',
+            ownerUserId: 'user-alice',
+            text: 'Draft release notes',
+            visibility: 'public',
+          ),
+          TeamTask(
+            id: 'task-2',
+            ownerUserId: 'user-alice',
+            text: 'Prepare hiring packet',
+            visibility: 'public',
+          ),
+        ],
+      ),
+    );
+    when(
+      () => api.deleteTask(
+        'task-2',
+        principal: 'admin',
+        userId: 'user-admin',
+      ),
+    ).thenAnswer((_) async {});
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: TeamTaskBoardPage(api: api),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.text('Draft release notes'), findsOneWidget);
+
+    await tester.tap(find.byKey(const Key('principal-input')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('user').last);
+    await tester.pumpAndSettle();
+
+    await tester.enterText(
+      find.byKey(const Key('acting-user-id-input')),
+      'user-alice',
+    );
+    await tester.enterText(
+      find.byKey(const Key('owner-user-id-input')),
+      'user-alice',
+    );
+    await tester.enterText(
+      find.byKey(const Key('task-text-input')),
+      'Prepare hiring packet',
+    );
+    await tester.tap(find.text('Add task'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Prepare hiring packet'), findsOneWidget);
+
+    await tester.tap(find.byKey(const Key('principal-input')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('admin').last);
+    await tester.pumpAndSettle();
+
+    await tester.enterText(
+      find.byKey(const Key('acting-user-id-input')),
+      'user-admin',
+    );
+    await tester.tap(find.text('Load board'));
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byKey(const Key('remove-task-2')));
+    await tester.pumpAndSettle();
+
+    verify(
+      () => api.deleteTask(
+        'task-2',
+        principal: 'admin',
+        userId: 'user-admin',
+      ),
+    ).called(1);
+  });
+}
+```
+
+Run:
+
+```bash
+just check-tests
+git add --all
+git commit --message "3. Red: Add The Team Task Board Page Widget Test"
+```
+
+### 4. Green: Build The Team Task Board Page
+
+Create the page production file:
+
+```bash
+touch workspace/lib/adapter/team_task_board_page.dart
+```
+
+Put this exact content in `workspace/lib/adapter/team_task_board_page.dart`:
+
+```dart
+import 'package:flutter/material.dart';
+
+import '../code/team_task_board_controller.dart';
+import '../contracts/team_task.dart';
+import '../contracts/team_task_api.dart';
+
+class TeamTaskBoardPage extends StatefulWidget {
+  final TeamTaskApi api;
+
+  const TeamTaskBoardPage({super.key, required this.api});
+
+  @override
+  State<TeamTaskBoardPage> createState() => _TeamTaskBoardPageState();
+}
+
+class _TeamTaskBoardPageState extends State<TeamTaskBoardPage> {
+  final TextEditingController _actingUserIdController = TextEditingController();
+  final TextEditingController _ownerUserIdController = TextEditingController();
+  final TextEditingController _taskTextController = TextEditingController();
+
+  String _principal = 'anonymous';
+  String _visibility = 'public';
+  TeamTaskBoardViewModel _viewModel = const TeamTaskBoardViewModel(
+    tasks: [],
+    principal: 'anonymous',
+    actingUserId: '',
+  );
+
+  @override
+  void initState() {
+    super.initState();
+    _refreshBoard();
+  }
+
+  @override
+  void dispose() {
+    _actingUserIdController.dispose();
+    _ownerUserIdController.dispose();
+    _taskTextController.dispose();
+    super.dispose();
+  }
+
+  Future<void> _refreshBoard() async {
+    final nextViewModel = await loadBoard(
+      principal: _principal,
+      actingUserId: _actingUserIdController.text,
+      api: widget.api,
+    );
+    if (!mounted) {
+      return;
+    }
+    setState(() {
+      _viewModel = nextViewModel;
+    });
+  }
+
+  Future<void> _addTask() async {
+    final nextViewModel = await addTeamTask(
+      principal: _principal,
+      actingUserId: _actingUserIdController.text,
+      ownerUserId: _ownerUserIdController.text,
+      text: _taskTextController.text,
+      visibility: _visibility,
+      api: widget.api,
+    );
+    _taskTextController.clear();
+    if (!mounted) {
+      return;
+    }
+    setState(() {
+      _viewModel = nextViewModel;
+    });
+  }
+
+  Future<void> _deleteTask(TeamTask task) async {
+    final nextViewModel = await deleteTeamTask(
+      principal: _principal,
+      actingUserId: _actingUserIdController.text,
+      taskId: task.id,
+      api: widget.api,
+    );
+    if (!mounted) {
+      return;
+    }
+    setState(() {
+      _viewModel = nextViewModel;
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(title: const Text('Team Task Board')),
+      body: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            DropdownButtonFormField<String>(
+              key: const Key('principal-input'),
+              initialValue: _principal,
+              decoration: const InputDecoration(labelText: 'Principal'),
+              items: const [
+                DropdownMenuItem(value: 'anonymous', child: Text('anonymous')),
+                DropdownMenuItem(value: 'user', child: Text('user')),
+                DropdownMenuItem(value: 'admin', child: Text('admin')),
+              ],
+              onChanged: (value) {
+                if (value == null) {
+                  return;
+                }
+                setState(() {
+                  _principal = value;
+                });
+              },
+            ),
+            const SizedBox(height: 12),
+            TextField(
+              key: const Key('acting-user-id-input'),
+              controller: _actingUserIdController,
+              decoration: const InputDecoration(labelText: 'Acting user id'),
+            ),
+            const SizedBox(height: 12),
+            ElevatedButton(
+              onPressed: _refreshBoard,
+              child: const Text('Load board'),
+            ),
+            const Divider(height: 32),
+            TextField(
+              key: const Key('owner-user-id-input'),
+              controller: _ownerUserIdController,
+              decoration: const InputDecoration(labelText: 'Owner user id'),
+            ),
+            const SizedBox(height: 12),
+            DropdownButtonFormField<String>(
+              key: const Key('visibility-input'),
+              initialValue: _visibility,
+              decoration: const InputDecoration(labelText: 'Visibility'),
+              items: const [
+                DropdownMenuItem(value: 'public', child: Text('public')),
+                DropdownMenuItem(value: 'private', child: Text('private')),
+              ],
+              onChanged: (value) {
+                if (value == null) {
+                  return;
+                }
+                setState(() {
+                  _visibility = value;
+                });
+              },
+            ),
+            const SizedBox(height: 12),
+            TextField(
+              key: const Key('task-text-input'),
+              controller: _taskTextController,
+              decoration: const InputDecoration(labelText: 'Task text'),
+            ),
+            const SizedBox(height: 12),
+            ElevatedButton(
+              onPressed: _addTask,
+              child: const Text('Add task'),
+            ),
+            if (_viewModel.errorMessage != null) ...[
+              const SizedBox(height: 12),
+              Text(_viewModel.errorMessage!),
+            ],
+            const SizedBox(height: 12),
+            Expanded(
+              child: ListView(
+                children: _viewModel.tasks
+                    .map(
+                      (task) => ListTile(
+                        title: Text(task.text),
+                        subtitle: Text(
+                          '${task.ownerUserId} | ${task.visibility}',
+                        ),
+                        trailing: IconButton(
+                          key: Key('remove-${task.id}'),
+                          onPressed: () => _deleteTask(task),
+                          icon: const Icon(Icons.delete_outline),
+                        ),
+                      ),
+                    )
+                    .toList(),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+```
+
+Run:
+
+```bash
+just check-tests
+git add --all
+git commit --message "4. Green: Build The Team Task Board Page"
+```
+
+### 5. Green: Wire The Real Application
+
+Replace `workspace/lib/main.dart` with:
+
+```dart
+import 'package:flutter/material.dart';
+
+import 'adapter/http_team_task_api.dart';
+import 'adapter/team_task_board_page.dart';
+
+const apiBaseUrl = String.fromEnvironment(
+  'API_BASE_URL',
+  defaultValue: 'http://localhost:__API_PORT__',
+);
+
+void main() {
+  runApp(const TeamTaskBoardApp());
+}
+
+class TeamTaskBoardApp extends StatelessWidget {
+  const TeamTaskBoardApp({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return MaterialApp(
+      title: 'Team Task Board',
+      home: TeamTaskBoardPage(
+        api: HttpTeamTaskApi(baseUrl: apiBaseUrl),
+      ),
+    );
+  }
+}
+```
+
+Run:
+
+```bash
+just check-tests
+git add --all
+git commit --message "5. Green: Wire The Real Application"
+```"#
+        .replace("__PACKAGE_NAME__", &package_name)
+        .replace("__API_PORT__", &FOR_ALL_API_PORT.to_string());
+    tutorial_file_markdown(
+        "Adapter",
+        &rewrite_touch_creation_stage_only(&body),
+    )
+}
+
 fn render_flutter_todo_list_rest_json_code_content(spec: &OutputRepoSpec) -> String {
     let package_name = flutter_package_name(&spec.project_slug);
     let body = format!(
@@ -11643,6 +13001,27 @@ mod tests {
         }
     }
 
+    fn sample_team_task_board_flutter_output_repo_spec() -> OutputRepoSpec {
+        OutputRepoSpec {
+            repo_name: "fa_tut_team-task-board".to_string(),
+            repo_description:
+                "Tutorial workspace for the Team Task Board project with Dart / Dart / test / mocktail / no-storage / client / all / Flutter / rest-json choices."
+                    .to_string(),
+            project_slug: "team-task-board".to_string(),
+            selections: OutputRepoSelections {
+                ecosystem: "dart".to_string(),
+                language: "dart".to_string(),
+                testing: "test".to_string(),
+                mocking: "mocktail".to_string(),
+                storage: "no-storage".to_string(),
+                surface: "client".to_string(),
+                target: "all".to_string(),
+                framework: "flutter".to_string(),
+                protocol: Some("rest-json".to_string()),
+            },
+        }
+    }
+
     fn sample_flutter_local_output_repo_spec() -> OutputRepoSpec {
         OutputRepoSpec {
             repo_name: "fa_tut_saying-hello".to_string(),
@@ -12543,6 +13922,19 @@ mod tests {
     }
 
     #[test]
+    fn team_task_board_flutter_output_repo_tutorial_readme_lists_client_rest_json_choices() {
+        let spec = sample_team_task_board_flutter_output_repo_spec();
+
+        let readme = render_output_repo_tutorial_readme_content(&spec);
+
+        assert!(readme.contains("- Project: `team-task-board`"));
+        assert!(readme.contains("- Protocol: `rest-json`"));
+        assert!(readme.contains("- API Port: `25664`"));
+        assert!(readme.contains("- App Port: `25616`"));
+        assert!(readme.contains("Flutter client for a team task board"));
+    }
+
+    #[test]
     fn flutter_local_output_repo_tutorial_readme_lists_client_choices_without_protocol() {
         let spec = sample_flutter_local_output_repo_spec();
 
@@ -12650,6 +14042,24 @@ mod tests {
         assert!(setup.contains("git commit --message \"Enable macOS network client entitlement\""));
         assert!(setup.contains("git commit --message \"Add iOS CocoaPods workspace files\""));
         assert!(setup.contains("git commit --message \"Add macOS CocoaPods workspace files\""));
+    }
+
+    #[test]
+    fn team_task_board_flutter_output_repo_setup_content_uses_cross_platform_flutter_workspace_layout() {
+        let spec = sample_team_task_board_flutter_output_repo_spec();
+
+        let setup = render_output_repo_setup_content(&spec);
+
+        assert!(setup.contains("flutter create --platforms=web,android,ios,macos,windows,linux --org com.intrepion --project-name team_task_board workspace"));
+        assert!(setup.contains("This Flutter client talks to the Team Task Board REST API"));
+        assert!(setup.contains("team_task.dart"));
+        assert!(setup.contains("team_task_api.dart"));
+        assert!(setup.contains("team_task_list_response.dart"));
+        assert!(setup.contains("team_task_board_controller.dart"));
+        assert!(setup.contains("http_team_task_api.dart"));
+        assert!(setup.contains("team_task_board_page.dart"));
+        assert!(setup.contains("just --set api_base_url http://10.0.2.2:25664 run-android device=\"<android-device-id-or-name>\""));
+        assert!(setup.contains("git commit --message \"Enable macOS network client entitlement\""));
     }
 
     #[test]
@@ -12833,6 +14243,39 @@ mod tests {
         assert!(finish.contains("just --set api_base_url http://10.0.2.2:25664 run-android device=\"<android-device-id-or-name>\""));
         assert!(finish.contains("just --set api_base_url http://localhost:25664 run-macos"));
         assert!(finish.contains("git commit --message \"Add macOS CocoaPods workspace files\""));
+    }
+
+    #[test]
+    fn team_task_board_flutter_contracts_code_adapter_and_finish_are_concrete() {
+        let spec = sample_team_task_board_flutter_output_repo_spec();
+
+        let contracts = render_flutter_team_task_board_rest_json_contracts_content(&spec);
+        let code = render_flutter_team_task_board_rest_json_code_content(&spec);
+        let adapter = render_flutter_team_task_board_rest_json_adapter_content(&spec);
+        let finish = render_output_repo_finish_content(&spec);
+
+        assert!(contracts.contains("class TeamTask {"));
+        assert!(contracts.contains("abstract class TeamTaskApi"));
+        assert!(contracts.contains("Future<TeamTaskListResponse> getTasks"));
+        assert!(contracts.contains("touch workspace/lib/contracts/team_task.dart"));
+        assert!(code.contains("touch workspace/test/code/team_task_board_controller_test.dart"));
+        assert!(code.contains("touch workspace/lib/code/team_task_board_controller.dart"));
+        assert!(code.contains("normalizedUserId"));
+        assert!(code.contains("Sorry, the team task API is unavailable right now."));
+        assert!(code.contains("Task must not be blank."));
+        assert!(adapter.contains("touch workspace/test/adapter/http_team_task_api_test.dart"));
+        assert!(adapter.contains("touch workspace/lib/adapter/http_team_task_api.dart"));
+        assert!(adapter.contains("touch workspace/test/adapter/team_task_board_page_test.dart"));
+        assert!(adapter.contains("touch workspace/lib/adapter/team_task_board_page.dart"));
+        assert!(adapter.contains("X-Team-Task-Principal"));
+        assert!(adapter.contains("owner_user_id"));
+        assert!(adapter.contains("visibility"));
+        assert!(adapter.contains("TeamTaskBoardPage(api: api)"));
+        assert!(finish.contains("matching Team Task Board API is running"));
+        assert!(finish.contains("anonymous"));
+        assert!(finish.contains("user-alice"));
+        assert!(finish.contains("user-admin"));
+        assert!(finish.contains("Sorry, the team task API is unavailable right now."));
     }
 
     #[test]

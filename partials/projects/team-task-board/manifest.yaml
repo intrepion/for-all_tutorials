@@ -20,3 +20,22 @@ compiled_outputs:
       - partials/projects/team-task-board/instructions/README.md
       - partials/projects/team-task-board/instructions/core.md
       - partials/projects/team-task-board/instructions/adapter.md
+  - id: dart-dart-test-mocktail-no-storage-client-all-flutter-rest-json
+    kind: adapter
+    tutorial_path: tutorials/team-task-board/dart/dart/adapters/no-storage/client/all/flutter/rest-json/test/README.md
+    selections:
+      ecosystem: dart
+      language: dart
+      testing: test
+      mocking: mocktail
+      storage: no-storage
+      surface: client
+      target: all
+      framework: flutter
+      protocol: rest-json
+    sources:
+      - partials/projects/team-task-board/README.md
+      - partials/projects/team-task-board/spec/README.md
+      - partials/projects/team-task-board/instructions/README.md
+      - partials/projects/team-task-board/instructions/core.md
+      - partials/projects/team-task-board/instructions/adapter.md
