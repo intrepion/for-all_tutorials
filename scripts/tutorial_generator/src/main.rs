@@ -9961,14 +9961,17 @@ void main() {
       find.byKey(const Key('acting-user-id-input')),
       'user-alice',
     );
+    await tester.pump();
     await tester.enterText(
       find.byKey(const Key('owner-user-id-input')),
       'user-alice',
     );
+    await tester.pump();
     await tester.enterText(
       find.byKey(const Key('task-text-input')),
       'Prepare hiring packet',
     );
+    await tester.pump();
     await tester.tap(find.text('Add task'));
     await tester.pumpAndSettle();
 
@@ -9981,6 +9984,7 @@ void main() {
       find.byKey(const Key('acting-user-id-input')),
       'user-admin',
     );
+    await tester.pump();
     await tester.tap(find.text('Load board'));
     await tester.pumpAndSettle();
 
