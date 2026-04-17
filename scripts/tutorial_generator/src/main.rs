@@ -2129,33 +2129,6 @@ fn render_output_repo_setup_content(spec: &OutputRepoSpec) -> String {
                 render_setup_commands_with_commits(&setup_commands, 0)
             ),
         );
-        let setup_commands = vec![
-            "curl -L -s https://raw.githubusercontent.com/github/gitignore/refs/heads/main/Go.gitignore > workspace/.gitignore".to_string(),
-            "printf '\\n# Repo-local tools\\nbin/\\n\\n# Local runtime data\\ndata/\\n' >> workspace/.gitignore".to_string(),
-            format!("(cd workspace && go mod init {module_path})"),
-            "(cd workspace && GOBIN=$(pwd)/bin go install github.com/sqlc-dev/sqlc/cmd/sqlc@v1.30.0)".to_string(),
-            "(cd workspace && go get github.com/labstack/echo/v4)".to_string(),
-            "(cd workspace && go get github.com/labstack/echo/v4/middleware)".to_string(),
-            "(cd workspace && go get github.com/jackc/pgx/v5/stdlib)".to_string(),
-            "(cd workspace && go get github.com/DATA-DOG/go-sqlmock)".to_string(),
-            "(cd workspace && go get github.com/stretchr/testify/assert github.com/stretchr/testify/mock)".to_string(),
-            "mkdir -p workspace/db/query".to_string(),
-            "touch workspace/sqlc.yaml".to_string(),
-            "touch workspace/db/schema.sql".to_string(),
-            "touch workspace/db/query/tasks.sql".to_string(),
-        ];
-        let visibility_line = if spec.project_slug == "team-task-board" {
-            "This API is configured to accept browser requests from `http://localhost:{FOR_ALL_FRONTEND_PORT}` and to persist team task records in Postgres with owner, visibility, and UUID id columns."
-        } else {
-            "This API is configured to accept browser requests from `http://localhost:{FOR_ALL_FRONTEND_PORT}` and to persist tasks in `workspace/data/tasks.db`."
-        };
-        let database_name = project_database_name(&spec.project_slug);
-        let database_env_var = project_database_env_var(&spec.project_slug);
-        let setup_body = format!(
-            "Keep the repository root for shared files like `README.md`, `LICENSE`, `.gitignore`, `.github/`, `justfile`, and `tutorial/`.\n\nPut all Go code inside a single `workspace/` folder.\n\nThis tutorial builds a team task board with public and private tasks, anonymous/user/admin principals, and owner-vs-admin deletion rules.\n\n{visibility_line}\n\nFrom the repository root, run each setup command and checkpoint it before moving to the next one:\n\n```bash\n{}\n```\n\nPut this exact content in `workspace/sqlc.yaml`:\n\n```yaml\nversion: \"2\"\nsql:\n  - engine: \"postgresql\"\n    schema: \"db/schema.sql\"\n    queries: \"db/query/tasks.sql\"\n    gen:\n      go:\n        package: \"storedb\"\n        out: \"internal/adapter/storage/db\"\n        sql_package: \"database/sql\"\n```\n\nPut this exact content in `workspace/db/schema.sql`:\n\n```sql\nCREATE TABLE IF NOT EXISTS tasks (\n  id TEXT PRIMARY KEY DEFAULT gen_random_uuid()::text,\n  text TEXT NOT NULL\n);\n```\n\nPut this exact content in `workspace/db/query/tasks.sql`:\n\n```sql\n-- name: ListTasks :many\nSELECT id, text\nFROM tasks\nORDER BY text ASC, id ASC;\n\n-- name: CreateTask :one\nINSERT INTO tasks (text)\nVALUES ($1)\nRETURNING id, text;\n\n-- name: GetTask :one\nSELECT id, text\nFROM tasks\nWHERE id = $1\nLIMIT 1;\n\n-- name: DeleteTask :execrows\nDELETE FROM tasks\nWHERE id = $1;\n```\n\nThen run:\n\n```bash\njust format\ngit add --all\ngit commit --message \"Add sqlc configuration and queries\"\n```\n\nThis gives you:\n\n- a root-level `.gitignore` for operating-system noise and editor leftovers\n- a `workspace/.gitignore` for standard Go build output, local tooling files, and local runtime data\n- a Postgres-backed REST adapter that reads its connection string from `{database_env_var}`\n- a generated root `justfile` that defaults `database_url` to `postgres://postgres@localhost:5432/{database_name}?sslmode=disable`\n- a repo-local `workspace/bin/sqlc` installation for generating Go query code from `workspace/sqlc.yaml`, `workspace/db/schema.sql`, and `workspace/db/query/tasks.sql`\n\nBefore you run the server, create the default tutorial database with:\n\n```bash\ncreatedb --host localhost --username postgres {database_name}\n```\n\nIf that does not match your local Postgres setup, create an equivalent database your user can access and override the generated `database_url` value in the root `justfile`.\n\nWhen the full workspace is finished, it should contain these files:\n\n```text\nworkspace/\n  .gitignore\n  bin/\n    sqlc\n  go.mod\n  go.sum\n  sqlc.yaml\n  db/\n    schema.sql\n    query/\n      tasks.sql\n  cmd/\n    server/\n      main.go\n  internal/\n    contracts/\n      task_api.go\n    code/\n      task_service.go\n      task_service_test.go\n    adapter/\n      http/\n        task_handler.go\n        task_handler_test.go\n      storage/\n        postgres_task_store.go\n        postgres_task_store_test.go\n        db/\n          ...generated Go files from sqlc...\n```",
-            render_setup_commands_with_commits(&setup_commands, 0)
-        );
-        return tutorial_file_markdown("Setup", &setup_body);
     }
 
     if is_go_todo_list_http_json_sqlite_output_repo(spec) {
