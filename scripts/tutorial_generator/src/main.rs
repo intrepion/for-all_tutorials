@@ -2129,55 +2129,6 @@ fn render_output_repo_setup_content(spec: &OutputRepoSpec) -> String {
                 render_setup_commands_with_commits(&setup_commands, 0)
             ),
         );
-    }
-
-    if is_go_todo_list_http_json_sqlite_output_repo(spec) {
-        let module_path = format!(
-            "github.com/{}/{}/workspace",
-            GITHUB_OWNER, spec.repo_name
-        );
-        let setup_commands = vec![
-            "curl -L -s https://raw.githubusercontent.com/github/gitignore/refs/heads/main/Go.gitignore > workspace/.gitignore".to_string(),
-            "printf '\\n# Repo-local tools\\nbin/\\n\\n# Local runtime data\\ndata/\\n' >> workspace/.gitignore".to_string(),
-            format!("(cd workspace && go mod init {module_path})"),
-            "(cd workspace && go get github.com/labstack/echo/v4)".to_string(),
-            "(cd workspace && go get github.com/labstack/echo/v4/middleware)".to_string(),
-            "(cd workspace && go get modernc.org/sqlite)".to_string(),
-            "(cd workspace && go get github.com/stretchr/testify/assert github.com/stretchr/testify/mock)".to_string(),
-            "mkdir -p workspace/data".to_string(),
-        ];
-        return tutorial_file_markdown(
-            "Setup",
-            &format!(
-                "Keep the repository root for shared files like `README.md`, `LICENSE`, `.gitignore`, `.github/`, `justfile`, and `tutorial/`.\n\nPut all Go code inside a single `workspace/` folder.\n\nFrom the repository root, run each setup command and checkpoint it before moving to the next one:\n\n```bash\n{}\n```\n\nThis gives you:\n\n- a root-level `.gitignore` for operating-system noise and editor leftovers\n- a `workspace/.gitignore` for standard Go build output, local tooling files, and local runtime data\n- a `workspace/data/tasks.db` file path for the durable SQLite task store used by the REST API adapter\n\nWhen the full workspace is finished, it should contain these files:\n\n```text\nworkspace/\n  .gitignore\n  go.mod\n  go.sum\n  cmd/\n    server/\n      main.go\n  data/\n    tasks.db\n  internal/\n    contracts/\n      task_api.go\n    code/\n      task_service.go\n      task_service_test.go\n    adapter/\n      http/\n        task_handler.go\n        task_handler_test.go\n      storage/\n        sqlite_task_store.go\n        sqlite_task_store_test.go\n```",
-                render_setup_commands_with_commits(&setup_commands, 0)
-            ),
-        );
-    }
-
-    if is_go_todo_list_rest_json_postgres_output_repo(spec)
-        || is_go_team_task_board_rest_json_postgres_output_repo(spec)
-    {
-        let module_path = format!(
-            "github.com/{}/{}/workspace",
-            GITHUB_OWNER, spec.repo_name
-        );
-        let database_name = project_database_name(&spec.project_slug);
-        let database_env_var = project_database_env_var(&spec.project_slug);
-        let visibility_line = if spec.project_slug == "team-task-board" {
-            "This API is configured to accept browser requests from `http://localhost:{FOR_ALL_FRONTEND_PORT}` and to persist team task records in `workspace/data/tasks.db`."
-        } else {
-            "This API is configured to accept browser requests from `http://localhost:{FOR_ALL_FRONTEND_PORT}` and to persist tasks in `workspace/data/tasks.db`."
-        };
-        let try_requests = if spec.project_slug == "team-task-board" {
-            format!(
-                "In another terminal, try these requests:\n\n```bash\ncurl \"http://localhost:{FOR_ALL_API_PORT}/api/tasks\"\ncurl -X POST \"http://localhost:{FOR_ALL_API_PORT}/api/tasks\" \\\n  -H \"Content-Type: application/json\" \\\n  -d '{{\"owner_user_id\":\"user-alice\",\"text\":\"Draft release notes\",\"visibility\":\"public\"}}'\ncurl \"http://localhost:{FOR_ALL_API_PORT}/api/tasks/11111111-1111-1111-1111-111111111111\"\ncurl -i -X DELETE \"http://localhost:{FOR_ALL_API_PORT}/api/tasks/11111111-1111-1111-1111-111111111111\"\n```\n\nWith a fresh database, the first `GET` should return an empty list:\n\n```json\n{{\"tasks\":[]}}\n```\n\nThe `POST` should return a created task resource with a UUID id, owner id, and visibility, for example:\n\n```json\n{{\"id\":\"11111111-1111-1111-1111-111111111111\",\"owner_user_id\":\"user-alice\",\"text\":\"Draft release notes\",\"visibility\":\"public\"}}\n```\n\nThe next `GET /api/tasks/<uuid>` should return the same task resource. The `DELETE` should return `204 No Content`.\n\nWhen you later add the adapter behavior for the board, anonymous users should see only public tasks, normal users should see public tasks plus their own private tasks, and admins should be able to delete any task."
-            )
-        } else {
-            format!(
-                "In another terminal, try these requests:\n\n```bash\ncurl \"http://localhost:{FOR_ALL_API_PORT}/api/tasks\"\ncurl -X POST \"http://localhost:{FOR_ALL_API_PORT}/api/tasks\" \\\n  -H \"Content-Type: application/json\" \\\n  -d '{{\"text\":\"Buy milk\"}}'\ncurl \"http://localhost:{FOR_ALL_API_PORT}/api/tasks/11111111-1111-1111-1111-111111111111\"\ncurl -i -X DELETE \"http://localhost:{FOR_ALL_API_PORT}/api/tasks/11111111-1111-1111-1111-111111111111\"\n```\n\nWith a fresh database, the first `GET` should return an empty list:\n\n```json\n{{\"tasks\":[]}}\n```\n\nThe `POST` should return a created task resource with a UUID id, for example:\n\n```json\n{{\"id\":\"11111111-1111-1111-1111-111111111111\",\"text\":\"Buy milk\"}}\n```\n\nThe next `GET /api/tasks/<uuid>` should return the same task resource. The `DELETE` should return `204 No Content`.\n\nIf you already have rows in the database, Postgres will assign a different UUID than the example above."
-            )
-        };
         let setup_commands = vec![
             "curl -L -s https://raw.githubusercontent.com/github/gitignore/refs/heads/main/Go.gitignore > workspace/.gitignore".to_string(),
             "printf '\\n# Repo-local tools\\nbin/\\n\\n# Local runtime data\\ndata/\\n' >> workspace/.gitignore".to_string(),
@@ -2193,8 +2144,76 @@ fn render_output_repo_setup_content(spec: &OutputRepoSpec) -> String {
             "touch workspace/db/schema.sql".to_string(),
             "touch workspace/db/query/tasks.sql".to_string(),
         ];
+        let visibility_line = if spec.project_slug == "team-task-board" {
+            "This API is configured to accept browser requests from `http://localhost:{FOR_ALL_FRONTEND_PORT}` and to persist team task records in Postgres with owner, visibility, and UUID id columns."
+        } else {
+            "This API is configured to accept browser requests from `http://localhost:{FOR_ALL_FRONTEND_PORT}` and to persist tasks in `workspace/data/tasks.db`."
+        };
+        let database_name = project_database_name(&spec.project_slug);
+        let database_env_var = project_database_env_var(&spec.project_slug);
         let setup_body = format!(
-            "Keep the repository root for shared files like `README.md`, `LICENSE`, `.gitignore`, `.github/`, `justfile`, and `tutorial/`.\n\nPut all Go code inside a single `workspace/` folder.\n\nThis tutorial builds a team task board with public and private tasks, anonymous/user/admin principals, and owner-vs-admin deletion rules.\n\n{visibility_line}\n\nFrom the repository root, run each setup command and checkpoint it before moving to the next one:\n\n```bash\n{}\n```\n\nPut this exact content in `workspace/sqlc.yaml`:\n\n```yaml\nversion: \"2\"\nsql:\n  - engine: \"postgresql\"\n    schema: \"db/schema.sql\"\n    queries: \"db/query/tasks.sql\"\n    gen:\n      go:\n        package: \"storedb\"\n        out: \"internal/adapter/storage/db\"\n        sql_package: \"database/sql\"\n```\n\nPut this exact content in `workspace/db/schema.sql`:\n\n```sql\nCREATE TABLE IF NOT EXISTS tasks (\n  id TEXT PRIMARY KEY DEFAULT gen_random_uuid()::text,\n  text TEXT NOT NULL\n);\n```\n\nPut this exact content in `workspace/db/query/tasks.sql`:\n\n```sql\n-- name: ListTasks :many\nSELECT id, text\nFROM tasks\nORDER BY text ASC, id ASC;\n\n-- name: CreateTask :one\nINSERT INTO tasks (text)\nVALUES ($1)\nRETURNING id, text;\n\n-- name: GetTask :one\nSELECT id, text\nFROM tasks\nWHERE id = $1\nLIMIT 1;\n\n-- name: DeleteTask :execrows\nDELETE FROM tasks\nWHERE id = $1;\n```\n\nThen run:\n\n```bash\njust format\ngit add --all\ngit commit --message \"Add sqlc configuration and queries\"\n```\n\nThis gives you:\n\n- a root-level `.gitignore` for operating-system noise and editor leftovers\n- a `workspace/.gitignore` for standard Go build output, local tooling files, and local runtime data\n- a Postgres-backed REST adapter that reads its connection string from `{database_env_var}`\n- a generated root `justfile` that defaults `database_url` to `postgres://postgres@localhost:5432/{database_name}?sslmode=disable`\n- a repo-local `workspace/bin/sqlc` installation for generating Go query code from `workspace/sqlc.yaml`, `workspace/db/schema.sql`, and `workspace/db/query/tasks.sql`\n\nBefore you run the server, create the default tutorial database with:\n\n```bash\ncreatedb --host localhost --username postgres {database_name}\n```\n\nIf that does not match your local Postgres setup, create an equivalent database your user can access and override the generated `database_url` value in the root `justfile`.\n\n{try_requests}\n\nWhen the full workspace is finished, it should contain these files:\n\n```text\nworkspace/\n  .gitignore\n  bin/\n    sqlc\n  go.mod\n  go.sum\n  sqlc.yaml\n  db/\n    schema.sql\n    query/\n      tasks.sql\n  cmd/\n    server/\n      main.go\n  internal/\n    contracts/\n      task_api.go\n    code/\n      task_service.go\n      task_service_test.go\n    adapter/\n      http/\n        task_handler.go\n        task_handler_test.go\n      storage/\n        postgres_task_store.go\n        postgres_task_store_test.go\n        db/\n          ...generated Go files from sqlc...\n```",
+            "Keep the repository root for shared files like `README.md`, `LICENSE`, `.gitignore`, `.github/`, `justfile`, and `tutorial/`.\n\nPut all Go code inside a single `workspace/` folder.\n\nThis tutorial builds a team task board with public and private tasks, anonymous/user/admin principals, and owner-vs-admin deletion rules.\n\n{visibility_line}\n\nFrom the repository root, run each setup command and checkpoint it before moving to the next one:\n\n```bash\n{}\n```\n\nPut this exact content in `workspace/sqlc.yaml`:\n\n```yaml\nversion: \"2\"\nsql:\n  - engine: \"postgresql\"\n    schema: \"db/schema.sql\"\n    queries: \"db/query/tasks.sql\"\n    gen:\n      go:\n        package: \"storedb\"\n        out: \"internal/adapter/storage/db\"\n        sql_package: \"database/sql\"\n```\n\nPut this exact content in `workspace/db/schema.sql`:\n\n```sql\nCREATE TABLE IF NOT EXISTS tasks (\n  id TEXT PRIMARY KEY DEFAULT gen_random_uuid()::text,\n  text TEXT NOT NULL\n);\n```\n\nPut this exact content in `workspace/db/query/tasks.sql`:\n\n```sql\n-- name: ListTasks :many\nSELECT id, text\nFROM tasks\nORDER BY text ASC, id ASC;\n\n-- name: CreateTask :one\nINSERT INTO tasks (text)\nVALUES ($1)\nRETURNING id, text;\n\n-- name: GetTask :one\nSELECT id, text\nFROM tasks\nWHERE id = $1\nLIMIT 1;\n\n-- name: DeleteTask :execrows\nDELETE FROM tasks\nWHERE id = $1;\n```\n\nThen run:\n\n```bash\njust format\ngit add --all\ngit commit --message \"Add sqlc configuration and queries\"\n```\n\nThis gives you:\n\n- a root-level `.gitignore` for operating-system noise and editor leftovers\n- a `workspace/.gitignore` for standard Go build output, local tooling files, and local runtime data\n- a Postgres-backed REST adapter that reads its connection string from `{database_env_var}`\n- a generated root `justfile` that defaults `database_url` to `postgres://postgres@localhost:5432/{database_name}?sslmode=disable`\n- a repo-local `workspace/bin/sqlc` installation for generating Go query code from `workspace/sqlc.yaml`, `workspace/db/schema.sql`, and `workspace/db/query/tasks.sql`\n\nBefore you run the server, create the default tutorial database with:\n\n```bash\ncreatedb --host localhost --username postgres {database_name}\n```\n\nIf that does not match your local Postgres setup, create an equivalent database your user can access and override the generated `database_url` value in the root `justfile`.\n\nWhen the full workspace is finished, it should contain these files:\n\n```text\nworkspace/\n  .gitignore\n  bin/\n    sqlc\n  go.mod\n  go.sum\n  sqlc.yaml\n  db/\n    schema.sql\n    query/\n      tasks.sql\n  cmd/\n    server/\n      main.go\n  internal/\n    contracts/\n      task_api.go\n    code/\n      task_service.go\n      task_service_test.go\n    adapter/\n      http/\n        task_handler.go\n        task_handler_test.go\n      storage/\n        postgres_task_store.go\n        postgres_task_store_test.go\n        db/\n          ...generated Go files from sqlc...\n```",
+            render_setup_commands_with_commits(&setup_commands, 0)
+        );
+        return tutorial_file_markdown("Setup", &setup_body);
+    }
+
+    if is_go_todo_list_http_json_sqlite_output_repo(spec) {
+        let module_path = format!(
+            "github.com/{}/{}/workspace",
+            GITHUB_OWNER, spec.repo_name
+        );
+        let setup_commands = vec![
+            "curl -L -s https://raw.githubusercontent.com/github/gitignore/refs/heads/main/Go.gitignore > workspace/.gitignore".to_string(),
+            "printf '\\n# Repo-local tools\\nbin/\\n\\n# Local runtime data\\ndata/\\n' >> workspace/.gitignore".to_string(),
+            format!("(cd workspace && go mod init {module_path})"),
+            "(cd workspace && go get github.com/labstack/echo/v4)".to_string(),
+            "(cd workspace && go get github.com/labstack/echo/v4/middleware)".to_string(),
+            "(cd workspace && go get github.com/stretchr/testify/assert github.com/stretchr/testify/mock)".to_string(),
+            "(cd workspace && go get modernc.org/sqlite)".to_string(),
+            "mkdir -p workspace/data".to_string(),
+            "touch workspace/data/tasks.db".to_string(),
+        ];
+        return tutorial_file_markdown(
+            "Setup",
+            &format!(
+                "Keep the repository root for shared files like `README.md`, `LICENSE`, `.gitignore`, `.github/`, `justfile`, and `tutorial/`.\n\nPut all Go code inside a single `workspace/` folder.\n\nFrom the repository root, run each setup command and checkpoint it before moving to the next one:\n\n```bash\n{}\n```\n\nThis gives you:\n\n- a root-level `.gitignore` for operating-system noise and editor leftovers\n- a `workspace/.gitignore` for standard Go build output, local tooling files, and local runtime data\n- a `workspace/data/tasks.db` file path for the durable local SQLite task store used by the API adapter\n\nWhen the full workspace is finished, it should contain these files:\n\n```text\nworkspace/\n  .gitignore\n  go.mod\n  go.sum\n  cmd/\n    server/\n      main.go\n  data/\n    tasks.db\n  internal/\n    contracts/\n      task_api.go\n    code/\n      task_service.go\n      task_service_test.go\n    adapter/\n      http/\n        task_handler.go\n        task_handler_test.go\n      storage/\n        sqlite_task_store.go\n        sqlite_task_store_test.go\n```",
+                render_setup_commands_with_commits(&setup_commands, 0)
+            ),
+        );
+    }
+
+    if is_go_todo_list_rest_json_postgres_output_repo(spec)
+        || is_go_team_task_board_rest_json_postgres_output_repo(spec)
+    {
+        let module_path = format!(
+            "github.com/{}/{}/workspace",
+            GITHUB_OWNER, spec.repo_name
+        );
+        let database_name = project_database_name(&spec.project_slug);
+        let database_env_var = project_database_env_var(&spec.project_slug);
+        let setup_commands = vec![
+            "curl -L -s https://raw.githubusercontent.com/github/gitignore/refs/heads/main/Go.gitignore > workspace/.gitignore".to_string(),
+            "printf '\\n# Repo-local tools\\nbin/\\n\\n# Local runtime data\\ndata/\\n' >> workspace/.gitignore".to_string(),
+            format!("(cd workspace && go mod init {module_path})"),
+            "(cd workspace && GOBIN=$(pwd)/bin go install github.com/sqlc-dev/sqlc/cmd/sqlc@v1.30.0)".to_string(),
+            "(cd workspace && go get github.com/labstack/echo/v4)".to_string(),
+            "(cd workspace && go get github.com/labstack/echo/v4/middleware)".to_string(),
+            "(cd workspace && go get github.com/jackc/pgx/v5/stdlib)".to_string(),
+            "(cd workspace && go get github.com/DATA-DOG/go-sqlmock)".to_string(),
+            "(cd workspace && go get github.com/stretchr/testify/assert github.com/stretchr/testify/mock)".to_string(),
+            "mkdir -p workspace/db/query".to_string(),
+            "touch workspace/sqlc.yaml".to_string(),
+            "touch workspace/db/schema.sql".to_string(),
+            "touch workspace/db/query/tasks.sql".to_string(),
+        ];
+        let visibility_line = if spec.project_slug == "team-task-board" {
+            "This API is configured to accept browser requests from `http://localhost:{FOR_ALL_FRONTEND_PORT}` and to persist team task records in Postgres with owner, visibility, and UUID id columns."
+        } else {
+            "This API is configured to accept browser requests from `http://localhost:{FOR_ALL_FRONTEND_PORT}` and to persist tasks in `workspace/data/tasks.db`."
+        };
+        let setup_body = format!(
+            "Keep the repository root for shared files like `README.md`, `LICENSE`, `.gitignore`, `.github/`, `justfile`, and `tutorial/`.\n\nPut all Go code inside a single `workspace/` folder.\n\nThis tutorial builds a team task board with public and private tasks, anonymous/user/admin principals, and owner-vs-admin deletion rules.\n\n{visibility_line}\n\nFrom the repository root, run each setup command and checkpoint it before moving to the next one:\n\n```bash\n{}\n```\n\nPut this exact content in `workspace/sqlc.yaml`:\n\n```yaml\nversion: \"2\"\nsql:\n  - engine: \"postgresql\"\n    schema: \"db/schema.sql\"\n    queries: \"db/query/tasks.sql\"\n    gen:\n      go:\n        package: \"storedb\"\n        out: \"internal/adapter/storage/db\"\n        sql_package: \"database/sql\"\n```\n\nPut this exact content in `workspace/db/schema.sql`:\n\n```sql\nCREATE TABLE IF NOT EXISTS tasks (\n  id TEXT PRIMARY KEY DEFAULT gen_random_uuid()::text,\n  text TEXT NOT NULL\n);\n```\n\nPut this exact content in `workspace/db/query/tasks.sql`:\n\n```sql\n-- name: ListTasks :many\nSELECT id, text\nFROM tasks\nORDER BY text ASC, id ASC;\n\n-- name: CreateTask :one\nINSERT INTO tasks (text)\nVALUES ($1)\nRETURNING id, text;\n\n-- name: GetTask :one\nSELECT id, text\nFROM tasks\nWHERE id = $1\nLIMIT 1;\n\n-- name: DeleteTask :execrows\nDELETE FROM tasks\nWHERE id = $1;\n```\n\nThen run:\n\n```bash\njust format\ngit add --all\ngit commit --message \"Add sqlc configuration and queries\"\n```\n\nThis gives you:\n\n- a root-level `.gitignore` for operating-system noise and editor leftovers\n- a `workspace/.gitignore` for standard Go build output, local tooling files, and local runtime data\n- a Postgres-backed REST adapter that reads its connection string from `{database_env_var}`\n- a generated root `justfile` that defaults `database_url` to `postgres://postgres@localhost:5432/{database_name}?sslmode=disable`\n- a repo-local `workspace/bin/sqlc` installation for generating Go query code from `workspace/sqlc.yaml`, `workspace/db/schema.sql`, and `workspace/db/query/tasks.sql`\n\nBefore you run the server, create the default tutorial database with:\n\n```bash\ncreatedb --host localhost --username postgres {database_name}\n```\n\nIf that does not match your local Postgres setup, create an equivalent database your user can access and override the generated `database_url` value in the root `justfile`.\n",
             render_setup_commands_with_commits(&setup_commands, 0)
         );
         return tutorial_file_markdown("Setup", &setup_body);
@@ -2769,7 +2788,7 @@ fn render_output_repo_finish_content(spec: &OutputRepoSpec) -> String {
         let is_team_task_board = spec.project_slug == "team-task-board";
         let finish_body = if is_team_task_board {
             format!(
-                "Make sure you have a local Postgres database named `{database_name}`. The default tutorial command for that is:\n\n```bash\ncreatedb --host localhost --username postgres {database_name}\n```\n\nStart the API server from the repository root:\n\n```bash\njust run\n```\n\nThe generated `just run` and `just check-tests` commands call `sqlc generate` for you before compiling the app.\n\nIf your local Postgres uses a different connection string, run:\n\n```bash\njust --set database_url \"postgres://<user>:<password>@localhost:5432/<database>?sslmode=disable\" run\n```\n\nThis team task board API is configured to accept browser requests from `http://localhost:{FOR_ALL_FRONTEND_PORT}` and to model team task visibility for anonymous, normal-user, and admin principals.\n\nIn another terminal, try these requests:\n\n```bash\ncurl \"http://localhost:{FOR_ALL_API_PORT}/api/tasks\"\ncurl -X POST \"http://localhost:{FOR_ALL_API_PORT}/api/tasks\" \\\n  -H \"Content-Type: application/json\" \\\n  -d '{{\"owner_user_id\":\"user-alice\",\"text\":\"Draft release notes\",\"visibility\":\"public\"}}'\ncurl \"http://localhost:{FOR_ALL_API_PORT}/api/tasks/11111111-1111-1111-1111-111111111111\"\ncurl -i -X DELETE \"http://localhost:{FOR_ALL_API_PORT}/api/tasks/11111111-1111-1111-1111-111111111111\"\n```\n\nWith a fresh database, the first `GET` should return an empty list:\n\n```json\n{{\"tasks\":[]}}\n```\n\nThe `POST` should return a created team task resource with a UUID id, for example:\n\n```json\n{{\"id\":\"11111111-1111-1111-1111-111111111111\",\"owner_user_id\":\"user-alice\",\"text\":\"Draft release notes\",\"visibility\":\"public\"}}\n```\n\nThe next `GET /api/tasks/<uuid>` should return the same task resource. The `DELETE` should return `204 No Content`.\n\nAfter that, the board rules should be easy to reason about:\n\n- anonymous users see only public tasks\n- normal users see public tasks plus their own private tasks\n- admins can delete any task\n\nIf you already have rows in the database, Postgres will assign a different UUID than the example above."
+                "Make sure you have a local Postgres database named `{database_name}`. The default tutorial command for that is:\n\n```bash\ncreatedb --host localhost --username postgres {database_name}\n```\n\nStart the API server from the repository root:\n\n```bash\njust run\n```\n\nThe generated `just run` and `just check-tests` commands call `sqlc generate` for you before compiling the app.\n\nIf your local Postgres uses a different connection string, run:\n\n```bash\njust --set database_url \"postgres://<user>:<password>@localhost:5432/<database>?sslmode=disable\" run\n```\n\nThis team task board API is configured to accept browser requests from `http://localhost:{FOR_ALL_FRONTEND_PORT}` and to model team task visibility for anonymous, normal-user, and admin principals.\n\nIn another terminal, try these requests:\n\n```bash\ncurl \"http://localhost:{FOR_ALL_API_PORT}/api/tasks\"\ncurl -X POST \"http://localhost:{FOR_ALL_API_PORT}/api/tasks\" \\\n  -H \"Content-Type: application/json\" \\\n  -d '{{\"owner_user_id\":\"user-alice\",\"text\":\"Draft release notes\",\"visibility\":\"public\"}}'\ncurl \"http://localhost:{FOR_ALL_API_PORT}/api/tasks/11111111-1111-1111-1111-111111111111\"\ncurl -i -X DELETE \"http://localhost:{FOR_ALL_API_PORT}/api/tasks/11111111-1111-1111-1111-111111111111\"\n```\n\nWith a fresh database, the first `GET` should return an empty list:\n\n```json\n{{\"tasks\":[]}}\n```\n\nThe `POST` should return a created team task resource with a UUID id, for example:\n\n```json\n{{\"id\":\"11111111-1111-1111-1111-111111111111\",\"owner_user_id\":\"user-alice\",\"text\":\"Draft release notes\",\"visibility\":\"public\"}}\n```\n\nThe next `GET /api/tasks/<uuid>` should return the same task resource. The `DELETE` should return `204 No Content`.\n\nAfter that, the board rules should be easy to reason about:\n\n- anonymous users see only public tasks\n- normal users see public tasks plus their own private tasks\n- admins can delete any task\n\nThe key generated files are `workspace/internal/contracts/team_task_board.go` and `workspace/cmd/server/main.go`.\n\nWhen the full workspace is finished, it should contain these files:\n\n```text\nworkspace/\n  .gitignore\n  bin/\n    sqlc\n  go.mod\n  go.sum\n  sqlc.yaml\n  db/\n    schema.sql\n    query/\n      tasks.sql\n  cmd/\n    server/\n      main.go\n  internal/\n    contracts/\n      team_task_board.go\n    code/\n      team_task_board_service.go\n      team_task_board_service_test.go\n    adapter/\n      http/\n        team_task_board_handler.go\n        team_task_board_handler_test.go\n      storage/\n        postgres_team_task_store.go\n        postgres_team_task_store_test.go\n        db/\n          ...generated Go files from sqlc...\n```\n\nIf you already have rows in the database, Postgres will assign a different UUID than the example above."
             )
         } else {
             format!(
@@ -8168,6 +8187,74 @@ func serializeTeamTaskStorage(tasks []contracts.TeamTask) string {
 	storageBytes, _ := json.Marshal(tasks)
 	return string(storageBytes)
 }
+
+type DefaultTeamTaskService struct {
+	store contracts.TeamTaskStore
+}
+
+func NewTeamTaskService(store contracts.TeamTaskStore) contracts.TeamTaskService {
+	return DefaultTeamTaskService{store: store}
+}
+
+func canViewTask(task contracts.TeamTask, principal contracts.Principal) bool {
+	if task.Visibility == "public" {
+		return true
+	}
+	if user, ok := principal.(contracts.UserPrincipal); ok && user.UserID == task.OwnerUserID {
+		return true
+	}
+	_, ok := principal.(contracts.AdminPrincipal)
+	return ok
+}
+
+func (s DefaultTeamTaskService) ListTasks(principal contracts.Principal) ([]contracts.TeamTask, error) {
+	tasks, err := s.store.ListTasks()
+	if err != nil {
+		return nil, err
+	}
+
+	return filterVisibleTasks(tasks, principal), nil
+}
+
+func (s DefaultTeamTaskService) CreateTask(ownerUserID, text, visibility string) (contracts.TeamTask, error) {
+	if text == "" {
+		return contracts.TeamTask{}, contracts.ErrTaskTextBlank
+	}
+
+	return s.store.CreateTask(ownerUserID, text, visibility)
+}
+
+func (s DefaultTeamTaskService) GetTask(taskID string, principal contracts.Principal) (contracts.TeamTask, error) {
+	task, found, err := s.store.GetTask(taskID)
+	if err != nil {
+		return contracts.TeamTask{}, err
+	}
+	if !found || !canViewTask(task, principal) {
+		return contracts.TeamTask{}, contracts.ErrTaskNotFound
+	}
+
+	return task, nil
+}
+
+func (s DefaultTeamTaskService) DeleteTask(taskID string, principal contracts.Principal) error {
+	task, found, err := s.store.GetTask(taskID)
+	if err != nil {
+		return err
+	}
+	if !found || !canDeleteTask(task, principal) {
+		return contracts.ErrTaskNotFound
+	}
+
+	deleted, err := s.store.DeleteTask(taskID)
+	if err != nil {
+		return err
+	}
+	if !deleted {
+		return contracts.ErrTaskNotFound
+	}
+
+	return nil
+}
 ```
 
 Run:
@@ -8294,6 +8381,12 @@ import (
 
 type TeamTaskHandler struct{ service contracts.TeamTaskService }
 
+type TeamTaskCreateRequest struct {
+	OwnerUserID string `json:"owner_user_id"`
+	Text        string `json:"text"`
+	Visibility  string `json:"visibility"`
+}
+
 func NewTaskHandler(service contracts.TeamTaskService) *TeamTaskHandler {
 	return &TeamTaskHandler{service: service}
 }
@@ -8304,6 +8397,40 @@ func (h *TeamTaskHandler) ListTasks(c echo.Context) error {
 		return c.JSON(http.StatusInternalServerError, contracts.ErrorResponse{Message: "internal server error"})
 	}
 	return c.JSON(http.StatusOK, map[string]any{"tasks": tasks})
+}
+
+func (h *TeamTaskHandler) CreateTask(c echo.Context) error {
+	var request TeamTaskCreateRequest
+	if err := c.Bind(&request); err != nil {
+		return c.JSON(http.StatusBadRequest, contracts.ErrorResponse{Message: "invalid task request"})
+	}
+
+	task, err := h.service.CreateTask(request.OwnerUserID, request.Text, request.Visibility)
+	if err != nil {
+		if err == contracts.ErrTaskTextBlank {
+			return c.JSON(http.StatusBadRequest, contracts.ErrorResponse{Message: err.Error()})
+		}
+		return c.JSON(http.StatusInternalServerError, contracts.ErrorResponse{Message: "internal server error"})
+	}
+
+	return c.JSON(http.StatusCreated, task)
+}
+
+func (h *TeamTaskHandler) GetTask(c echo.Context) error {
+	taskID := c.Param("id")
+	if taskID == "" {
+		return c.JSON(http.StatusBadRequest, contracts.ErrorResponse{Message: "task id must not be empty"})
+	}
+
+	task, err := h.service.GetTask(taskID, principalFromContext(c))
+	if err != nil {
+		if err == contracts.ErrTaskNotFound {
+			return c.JSON(http.StatusNotFound, contracts.ErrorResponse{Message: "task not found"})
+		}
+		return c.JSON(http.StatusForbidden, contracts.ErrorResponse{Message: "forbidden"})
+	}
+
+	return c.JSON(http.StatusOK, task)
 }
 
 func (h *TeamTaskHandler) DeleteTask(c echo.Context) error {
@@ -8372,6 +8499,8 @@ func (m *MockTeamTaskService) DeleteTask(taskID string, principal contracts.Prin
 func TestTaskHandlerAllowsOwnersToDeleteTheirOwnTask(t *testing.T) {
 	e := echo.New()
 	req := httptest.NewRequest(http.MethodDelete, "/api/tasks/task-1", nil)
+	req.Header.Set("X-Team-Task-Principal", "user")
+	req.Header.Set("X-Team-Task-User-ID", "user-alice")
 	rec := httptest.NewRecorder()
 	ctx := e.NewContext(req, rec)
 	ctx.SetParamNames("id")
@@ -8391,6 +8520,8 @@ func TestTaskHandlerAllowsOwnersToDeleteTheirOwnTask(t *testing.T) {
 func TestTaskHandlerRejectsOtherUsersTaskDeletion(t *testing.T) {
 	e := echo.New()
 	req := httptest.NewRequest(http.MethodDelete, "/api/tasks/task-2", nil)
+	req.Header.Set("X-Team-Task-Principal", "user")
+	req.Header.Set("X-Team-Task-User-ID", "user-alice")
 	rec := httptest.NewRecorder()
 	ctx := e.NewContext(req, rec)
 	ctx.SetParamNames("id")
@@ -8410,6 +8541,8 @@ func TestTaskHandlerRejectsOtherUsersTaskDeletion(t *testing.T) {
 func TestTaskHandlerAllowsAdminsToDeleteAnyTask(t *testing.T) {
 	e := echo.New()
 	req := httptest.NewRequest(http.MethodDelete, "/api/tasks/task-2", nil)
+	req.Header.Set("X-Team-Task-Principal", "admin")
+	req.Header.Set("X-Team-Task-User-ID", "user-admin")
 	rec := httptest.NewRecorder()
 	ctx := e.NewContext(req, rec)
 	ctx.SetParamNames("id")
@@ -8501,6 +8634,188 @@ just check-tests
 just format
 git add --all
 git commit --message "4. Green: Wire Principal-Aware Deletion"
+```
+### 5. Green: Add The Postgres Store And Server Wiring
+
+Create the Postgres store and server files:
+
+```bash
+mkdir -p workspace/internal/adapter/storage
+mkdir -p workspace/cmd/server
+touch workspace/internal/adapter/storage/postgres_team_task_store.go
+touch workspace/cmd/server/main.go
+```
+
+Put this exact content in `workspace/internal/adapter/storage/postgres_team_task_store.go`:
+
+```go
+package storageadapter
+
+import (
+	"context"
+	"database/sql"
+	"errors"
+
+	storedb "__MODULE_PATH__/internal/adapter/storage/db"
+	"__MODULE_PATH__/internal/contracts"
+	_ "github.com/jackc/pgx/v5/stdlib"
+)
+
+type PostgresTeamTaskStore struct {
+	db      *sql.DB
+	queries *storedb.Queries
+}
+
+func NewPostgresTeamTaskStore(databaseURL string) (*PostgresTeamTaskStore, error) {
+	db, err := sql.Open("pgx", databaseURL)
+	if err != nil {
+		return nil, err
+	}
+
+	store := &PostgresTeamTaskStore{
+		db:      db,
+		queries: storedb.New(db),
+	}
+	if err := store.ensureSchema(); err != nil {
+		_ = db.Close()
+		return nil, err
+	}
+
+	return store, nil
+}
+
+func (s *PostgresTeamTaskStore) Close() error {
+	return s.db.Close()
+}
+
+func (s *PostgresTeamTaskStore) ensureSchema() error {
+	_, err := s.db.Exec(`
+		CREATE TABLE IF NOT EXISTS tasks (
+			id TEXT PRIMARY KEY DEFAULT gen_random_uuid()::text,
+			owner_user_id TEXT NOT NULL,
+			text TEXT NOT NULL,
+			visibility TEXT NOT NULL
+		)
+	`)
+	return err
+}
+
+func (s *PostgresTeamTaskStore) ListTasks() ([]contracts.TeamTask, error) {
+	rows, err := s.queries.ListTasks(context.Background())
+	if err != nil {
+		return nil, err
+	}
+
+	tasks := make([]contracts.TeamTask, 0, len(rows))
+	for _, row := range rows {
+		tasks = append(tasks, contracts.TeamTask{
+			ID:          row.ID,
+			OwnerUserID: row.OwnerUserID,
+			Text:        row.Text,
+			Visibility:  row.Visibility,
+		})
+	}
+
+	return tasks, nil
+}
+
+func (s *PostgresTeamTaskStore) CreateTask(ownerUserID, text, visibility string) (contracts.TeamTask, error) {
+	row, err := s.queries.CreateTask(context.Background(), storedb.CreateTaskParams{
+		OwnerUserID: ownerUserID,
+		Text:        text,
+		Visibility:  visibility,
+	})
+	if err != nil {
+		return contracts.TeamTask{}, err
+	}
+
+	return contracts.TeamTask{
+		ID:          row.ID,
+		OwnerUserID: row.OwnerUserID,
+		Text:        row.Text,
+		Visibility:  row.Visibility,
+	}, nil
+}
+
+func (s *PostgresTeamTaskStore) GetTask(taskID string) (contracts.TeamTask, bool, error) {
+	row, err := s.queries.GetTask(context.Background(), taskID)
+	if errors.Is(err, sql.ErrNoRows) {
+		return contracts.TeamTask{}, false, nil
+	}
+	if err != nil {
+		return contracts.TeamTask{}, false, err
+	}
+
+	return contracts.TeamTask{
+		ID:          row.ID,
+		OwnerUserID: row.OwnerUserID,
+		Text:        row.Text,
+		Visibility:  row.Visibility,
+	}, true, nil
+}
+
+func (s *PostgresTeamTaskStore) DeleteTask(taskID string) (bool, error) {
+	rowsAffected, err := s.queries.DeleteTask(context.Background(), taskID)
+	if err != nil {
+		return false, err
+	}
+
+	return rowsAffected > 0, nil
+}
+```
+
+Put this exact content in `workspace/cmd/server/main.go`:
+
+```go
+package main
+
+import (
+	"log"
+	"os"
+
+	httpadapter "__MODULE_PATH__/internal/adapter/http"
+	storageadapter "__MODULE_PATH__/internal/adapter/storage"
+	"__MODULE_PATH__/internal/code"
+	"github.com/labstack/echo/v4"
+	"github.com/labstack/echo/v4/middleware"
+)
+
+func main() {
+	e := echo.New()
+	e.Use(middleware.CORSWithConfig(middleware.CORSConfig{
+		AllowOrigins: []string{"http://localhost:25616"},
+	}))
+
+	databaseURL := os.Getenv("TEAM_TASK_BOARD_DATABASE_URL")
+	if databaseURL == "" {
+		log.Fatal("TEAM_TASK_BOARD_DATABASE_URL must not be empty")
+	}
+
+	store, err := storageadapter.NewPostgresTeamTaskStore(databaseURL)
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer store.Close()
+
+	service := code.NewTeamTaskService(store)
+	handler := httpadapter.NewTaskHandler(service)
+
+	e.GET("/api/tasks", handler.ListTasks)
+	e.POST("/api/tasks", handler.CreateTask)
+	e.GET("/api/tasks/:id", handler.GetTask)
+	e.DELETE("/api/tasks/:id", handler.DeleteTask)
+
+	log.Fatal(e.Start(":25664"))
+}
+```
+
+Run:
+
+```bash
+just check-tests
+just format
+git add --all
+git commit --message "5. Green: Add The Postgres Store And Server Wiring"
 ```
 "#;
 
@@ -11714,6 +12029,7 @@ mod tests {
         let setup = render_output_repo_setup_content(&spec);
         let finish = render_output_repo_finish_content(&spec);
 
+        println!("{setup}");
         assert!(setup.contains("rm -rf workspace"));
         assert!(setup.contains("go mod init github.com/intrepion/fa_tut_todo-list/workspace"));
         assert!(setup.contains("Go.gitignore > workspace/.gitignore"));
@@ -11886,6 +12202,7 @@ mod tests {
         assert!(finish.contains("anonymous users see only public tasks"));
         assert!(finish.contains("normal users see public tasks plus their own private tasks"));
         assert!(finish.contains("admins can delete any task"));
+        assert!(finish.contains("The key generated files are `workspace/internal/contracts/team_task_board.go` and `workspace/cmd/server/main.go`."));
     }
 
     #[test]
