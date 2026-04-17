@@ -8395,7 +8395,7 @@ func (h *TeamTaskHandler) GetTask(c echo.Context) error {
 		return c.JSON(http.StatusBadRequest, contracts.ErrorResponse{Message: "task id must not be empty"})
 	}
 
-	task, err := h.service.GetTask(taskID, principalFromContext(c))
+	task, err := h.service.GetTask(taskID, contracts.AnonymousPrincipal{})
 	if err != nil {
 		if err == contracts.ErrTaskNotFound {
 			return c.JSON(http.StatusNotFound, contracts.ErrorResponse{Message: "task not found"})
