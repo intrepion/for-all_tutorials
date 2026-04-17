@@ -9954,9 +9954,7 @@ void main() {
 
     expect(find.text('Draft release notes'), findsOneWidget);
 
-    await tester.tap(find.byKey(const Key('principal-input')));
-    await tester.pumpAndSettle();
-    await tester.tap(find.text('user').last);
+    await tester.tap(find.byKey(const Key('principal-user')));
     await tester.pumpAndSettle();
 
     await tester.enterText(
@@ -9976,9 +9974,7 @@ void main() {
 
     expect(find.text('Prepare hiring packet'), findsOneWidget);
 
-    await tester.tap(find.byKey(const Key('principal-input')));
-    await tester.pumpAndSettle();
-    await tester.tap(find.text('admin').last);
+    await tester.tap(find.byKey(const Key('principal-admin')));
     await tester.pumpAndSettle();
 
     await tester.enterText(
@@ -10119,23 +10115,42 @@ class _TeamTaskBoardPageState extends State<TeamTaskBoardPage> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            DropdownButtonFormField<String>(
-              key: const Key('principal-input'),
-              initialValue: _principal,
-              decoration: const InputDecoration(labelText: 'Principal'),
-              items: const [
-                DropdownMenuItem(value: 'anonymous', child: Text('anonymous')),
-                DropdownMenuItem(value: 'user', child: Text('user')),
-                DropdownMenuItem(value: 'admin', child: Text('admin')),
+            const Text('Principal'),
+            const SizedBox(height: 8),
+            Wrap(
+              spacing: 8,
+              children: [
+                ChoiceChip(
+                  key: const Key('principal-anonymous'),
+                  label: const Text('anonymous'),
+                  selected: _principal == 'anonymous',
+                  onSelected: (_) {
+                    setState(() {
+                      _principal = 'anonymous';
+                    });
+                  },
+                ),
+                ChoiceChip(
+                  key: const Key('principal-user'),
+                  label: const Text('user'),
+                  selected: _principal == 'user',
+                  onSelected: (_) {
+                    setState(() {
+                      _principal = 'user';
+                    });
+                  },
+                ),
+                ChoiceChip(
+                  key: const Key('principal-admin'),
+                  label: const Text('admin'),
+                  selected: _principal == 'admin',
+                  onSelected: (_) {
+                    setState(() {
+                      _principal = 'admin';
+                    });
+                  },
+                ),
               ],
-              onChanged: (value) {
-                if (value == null) {
-                  return;
-                }
-                setState(() {
-                  _principal = value;
-                });
-              },
             ),
             const SizedBox(height: 12),
             TextField(
