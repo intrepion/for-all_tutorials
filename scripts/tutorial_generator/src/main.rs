@@ -7977,11 +7977,14 @@ git commit --message "7. Green: Wire The Server Entry Point"
 fn render_go_team_task_board_contracts_content(_spec: &OutputRepoSpec) -> String {
     tutorial_file_markdown(
         "Contracts",
-        &rewrite_stage_commit_checkpoints(&rewrite_touch_creation_stage_only(
-            r#"Create the shared contract file:
+        r#"Create the shared contract file:
 
 ```bash
+mkdir -p workspace/internal/contracts
 touch workspace/internal/contracts/team_task_board.go
+just format
+git add --all
+git commit --message 'touch workspace/internal/contracts/team_task_board.go'
 ```
 
 Put this exact content in `workspace/internal/contracts/team_task_board.go`:
@@ -8032,22 +8035,25 @@ Do not add tests here. Keep this layer limited to the board principals, the task
 Then run:
 
 ```bash
+just format
 git add --all
 git commit --message "Define team task board contracts"
-```"#,
-        )),
+```"#
     )
 }
 
 fn render_go_team_task_board_code_content(_spec: &OutputRepoSpec) -> String {
-    tutorial_file_markdown(
-        "Code",
-        r#"### 1. Red: Anonymous Users Only See Public Tasks
+    let module_path = go_module_path(_spec);
+    let body = r#"### 1. Red: Anonymous Users Only See Public Tasks
 
 Create the first code test file:
 
 ```bash
+mkdir -p workspace/internal/code
 touch workspace/internal/code/team_task_board_service_test.go
+just format
+git add --all
+git commit --message 'touch workspace/internal/code/team_task_board_service_test.go'
 ```
 
 Put this exact content in `workspace/internal/code/team_task_board_service_test.go`:
@@ -8099,6 +8105,9 @@ Create the first production file:
 
 ```bash
 touch workspace/internal/code/team_task_board_service.go
+just format
+git add --all
+git commit --message 'touch workspace/internal/code/team_task_board_service.go'
 ```
 
 Put this exact content in `workspace/internal/code/team_task_board_service.go`:
@@ -8172,19 +8181,26 @@ just check-tests
 git add --all
 git commit --message "2. Green: Enforce Visibility And Deletion Rules"
 ```
-"#,
+"#;
+
+    tutorial_file_markdown(
+        "Code",
+        &rewrite_touch_creation_stage_only(&body.replace("__MODULE_PATH__", &module_path)),
     )
 }
 
 fn render_go_team_task_board_adapter_content(_spec: &OutputRepoSpec) -> String {
-    tutorial_file_markdown(
-        "Adapter",
-        r#"### 1. Red: Render Anonymous Visibility In The Handler
+    let module_path = go_module_path(_spec);
+    let body = r#"### 1. Red: Render Anonymous Visibility In The Handler
 
 Create the first adapter test file:
 
 ```bash
+mkdir -p workspace/internal/adapter/http
 touch workspace/internal/adapter/http/team_task_board_handler_test.go
+just format
+git add --all
+git commit --message 'touch workspace/internal/adapter/http/team_task_board_handler_test.go'
 ```
 
 Put this exact content in `workspace/internal/adapter/http/team_task_board_handler_test.go`:
@@ -8267,6 +8283,9 @@ Create the first adapter production file:
 
 ```bash
 touch workspace/internal/adapter/http/team_task_board_handler.go
+just format
+git add --all
+git commit --message 'touch workspace/internal/adapter/http/team_task_board_handler.go'
 ```
 
 Put this exact content in `workspace/internal/adapter/http/team_task_board_handler.go`:
@@ -8348,7 +8367,11 @@ just check-tests
 git add --all
 git commit --message "4. Green: Wire Principal-Aware Deletion"
 ```
-"#,
+"#;
+
+    tutorial_file_markdown(
+        "Adapter",
+        &rewrite_touch_creation_stage_only(&body.replace("__MODULE_PATH__", &module_path)),
     )
 }
 
