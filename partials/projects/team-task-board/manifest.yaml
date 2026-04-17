@@ -1,3 +1,22 @@
 project: team-task-board
 partial_version: 1
-compiled_outputs: []
+compiled_outputs:
+  - id: go-go-testify-no-storage-web-api-echo-rest-json-postgres
+    kind: adapter
+    tutorial_path: tutorials/team-task-board/go/go/adapters/database-postgres/web/api/echo/rest-json/testify/README.md
+    selections:
+      ecosystem: go
+      language: go
+      testing: testify
+      mocking: testify-mock
+      storage: database-postgres
+      surface: web
+      target: api
+      framework: echo
+      protocol: rest-json
+    sources:
+      - partials/projects/team-task-board/README.md
+      - partials/projects/team-task-board/spec/README.md
+      - partials/projects/team-task-board/instructions/README.md
+      - partials/projects/team-task-board/instructions/core.md
+      - partials/projects/team-task-board/instructions/adapter.md

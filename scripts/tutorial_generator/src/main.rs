@@ -454,6 +454,23 @@ fn is_go_todo_list_rest_json_postgres_output_repo(spec: &OutputRepoSpec) -> bool
         && spec.selections.protocol.as_deref() == Some("rest-json")
 }
 
+fn is_go_team_task_board_rest_json_postgres_output_repo(spec: &OutputRepoSpec) -> bool {
+    spec.project_slug == "team-task-board"
+        && spec.selections.ecosystem == "go"
+        && spec.selections.language == "go"
+        && spec.selections.testing == "testify"
+        && spec.selections.mocking == "testify-mock"
+        && spec.selections.storage == "database-postgres"
+        && spec.selections.surface == "web"
+        && spec.selections.target == "api"
+        && spec.selections.framework == "echo"
+        && spec.selections.protocol.as_deref() == Some("rest-json")
+}
+
+fn is_go_team_task_board_output_repo(spec: &OutputRepoSpec) -> bool {
+    is_go_team_task_board_rest_json_postgres_output_repo(spec)
+}
+
 fn is_go_todo_list_rest_json_output_repo(spec: &OutputRepoSpec) -> bool {
     is_go_todo_list_rest_json_postgres_output_repo(spec)
 }
@@ -465,7 +482,9 @@ fn is_go_todo_list_output_repo(spec: &OutputRepoSpec) -> bool {
 }
 
 fn is_go_output_repo(spec: &OutputRepoSpec) -> bool {
-    is_go_saying_hello_output_repo(spec) || is_go_todo_list_output_repo(spec)
+    is_go_saying_hello_output_repo(spec)
+        || is_go_todo_list_output_repo(spec)
+        || is_go_team_task_board_output_repo(spec)
 }
 
 fn is_astro_saying_hello_output_repo(spec: &OutputRepoSpec) -> bool {
@@ -765,6 +784,7 @@ fn validate_output_repo_selections(
         framework: "echo".to_string(),
         protocol: Some("rest-json".to_string()),
     };
+    let supported_go_team_task_board_rest_json_postgres = supported_go_todo_list_rest_json_postgres.clone();
 
     let supported_astro = OutputRepoSelections {
         ecosystem: "javascript".to_string(),
@@ -843,6 +863,10 @@ fn validate_output_repo_selections(
     }
 
     if project_slug == "todo-list" && selections == &supported_go_todo_list_rest_json_postgres {
+        return Ok(());
+    }
+
+    if project_slug == "team-task-board" && selections == &supported_go_team_task_board_rest_json_postgres {
         return Ok(());
     }
 
@@ -1259,15 +1283,20 @@ fn render_output_repo_readme_content(owner: &str, spec: &OutputRepoSpec) -> Stri
 }
 
 fn render_output_repo_root_justfile_content(spec: &OutputRepoSpec) -> String {
-    if is_go_todo_list_rest_json_postgres_output_repo(spec) {
+    if is_go_todo_list_rest_json_postgres_output_repo(spec)
+        || is_go_team_task_board_rest_json_postgres_output_repo(spec)
+    {
+        let database_name = project_database_name(&spec.project_slug);
+        let database_env_var = project_database_env_var(&spec.project_slug);
         return format!(
             "set shell := [\"bash\", \"-eu\", \"-c\"]\n\n\
 default:\n\
 \t@just --list\n\n\
 workspace := \"workspace\"\n\
-database_url := \"postgres://postgres@localhost:5432/todo_list?sslmode=disable\"\n\n\
+database_url := \"postgres://postgres@localhost:5432/{database_name}?sslmode=disable\"\n\n\
 restore:\n\
-\t(cd {{{{workspace}}}} && go mod download)\n\n\
+\t(cd {{{{workspace}}}} && go mod download)\n\
+\t(cd {{{{workspace}}}} && GOBIN=$(pwd)/bin go install github.com/sqlc-dev/sqlc/cmd/sqlc@v1.30.0)\n\n\
 generate:\n\
 \t(cd {{{{workspace}}}} && ./bin/sqlc generate)\n\n\
 format:\n\
@@ -1279,7 +1308,7 @@ check-tests:\n\
 \t(cd {{{{workspace}}}} && go test ./...)\n\n\
 run:\n\
 \tjust generate\n\
-\t(cd {{{{workspace}}}} && TODO_LIST_DATABASE_URL={{{{database_url}}}} go run ./cmd/server)\n\n\
+\t(cd {{{{workspace}}}} && {database_env_var}={{{{database_url}}}} go run ./cmd/server)\n\n\
 check-all:\n\
 \tjust check-formatting\n\
 \tjust check-tests\n"
@@ -2070,11 +2099,15 @@ fn render_output_repo_setup_content(spec: &OutputRepoSpec) -> String {
         );
     }
 
-    if is_go_todo_list_rest_json_postgres_output_repo(spec) {
+    if is_go_todo_list_rest_json_postgres_output_repo(spec)
+        || is_go_team_task_board_rest_json_postgres_output_repo(spec)
+    {
         let module_path = format!(
             "github.com/{}/{}/workspace",
             GITHUB_OWNER, spec.repo_name
         );
+        let database_name = project_database_name(&spec.project_slug);
+        let database_env_var = project_database_env_var(&spec.project_slug);
         let setup_commands = vec![
             "curl -L -s https://raw.githubusercontent.com/github/gitignore/refs/heads/main/Go.gitignore > workspace/.gitignore".to_string(),
             "printf '\\n# Repo-local tools\\nbin/\\n\\n# Local runtime data\\ndata/\\n' >> workspace/.gitignore".to_string(),
@@ -2093,7 +2126,7 @@ fn render_output_repo_setup_content(spec: &OutputRepoSpec) -> String {
         return tutorial_file_markdown(
             "Setup",
             &format!(
-                "Keep the repository root for shared files like `README.md`, `LICENSE`, `.gitignore`, `.github/`, `justfile`, and `tutorial/`.\n\nPut all Go code inside a single `workspace/` folder.\n\nFrom the repository root, run each setup command and checkpoint it before moving to the next one:\n\n```bash\n{}\n```\n\nPut this exact content in `workspace/sqlc.yaml`:\n\n```yaml\nversion: \"2\"\nsql:\n  - engine: \"postgresql\"\n    schema: \"db/schema.sql\"\n    queries: \"db/query/tasks.sql\"\n    gen:\n      go:\n        package: \"storedb\"\n        out: \"internal/adapter/storage/db\"\n        sql_package: \"database/sql\"\n```\n\nPut this exact content in `workspace/db/schema.sql`:\n\n```sql\nCREATE TABLE IF NOT EXISTS tasks (\n  id TEXT PRIMARY KEY DEFAULT gen_random_uuid()::text,\n  text TEXT NOT NULL\n);\n```\n\nPut this exact content in `workspace/db/query/tasks.sql`:\n\n```sql\n-- name: ListTasks :many\nSELECT id, text\nFROM tasks\nORDER BY text ASC, id ASC;\n\n-- name: CreateTask :one\nINSERT INTO tasks (text)\nVALUES ($1)\nRETURNING id, text;\n\n-- name: GetTask :one\nSELECT id, text\nFROM tasks\nWHERE id = $1\nLIMIT 1;\n\n-- name: DeleteTask :execrows\nDELETE FROM tasks\nWHERE id = $1;\n```\n\nThen run:\n\n```bash\njust format\ngit add --all\ngit commit --message \"Add sqlc configuration and queries\"\n```\n\nThis gives you:\n\n- a root-level `.gitignore` for operating-system noise and editor leftovers\n- a `workspace/.gitignore` for standard Go build output, local tooling files, and local runtime data\n- a Postgres-backed REST adapter that reads its connection string from `TODO_LIST_DATABASE_URL`\n- a generated root `justfile` that defaults `database_url` to `postgres://postgres@localhost:5432/todo_list?sslmode=disable`\n- a repo-local `workspace/bin/sqlc` installation for generating Go query code from `workspace/sqlc.yaml`, `workspace/db/schema.sql`, and `workspace/db/query/tasks.sql`\n\nBefore you run the server, create the default tutorial database with:\n\n```bash\ncreatedb --host localhost --username postgres todo_list\n```\n\nIf that does not match your local Postgres setup, create an equivalent database your user can access and override the generated `database_url` value in the root `justfile`.\n\nWhen the full workspace is finished, it should contain these files:\n\n```text\nworkspace/\n  .gitignore\n  bin/\n    sqlc\n  go.mod\n  go.sum\n  sqlc.yaml\n  db/\n    schema.sql\n    query/\n      tasks.sql\n  cmd/\n    server/\n      main.go\n  internal/\n    contracts/\n      task_api.go\n    code/\n      task_service.go\n      task_service_test.go\n    adapter/\n      http/\n        task_handler.go\n        task_handler_test.go\n      storage/\n        postgres_task_store.go\n        postgres_task_store_test.go\n        db/\n          ...generated Go files from sqlc...\n```",
+                "Keep the repository root for shared files like `README.md`, `LICENSE`, `.gitignore`, `.github/`, `justfile`, and `tutorial/`.\n\nPut all Go code inside a single `workspace/` folder.\n\nFrom the repository root, run each setup command and checkpoint it before moving to the next one:\n\n```bash\n{}\n```\n\nPut this exact content in `workspace/sqlc.yaml`:\n\n```yaml\nversion: \"2\"\nsql:\n  - engine: \"postgresql\"\n    schema: \"db/schema.sql\"\n    queries: \"db/query/tasks.sql\"\n    gen:\n      go:\n        package: \"storedb\"\n        out: \"internal/adapter/storage/db\"\n        sql_package: \"database/sql\"\n```\n\nPut this exact content in `workspace/db/schema.sql`:\n\n```sql\nCREATE TABLE IF NOT EXISTS tasks (\n  id TEXT PRIMARY KEY DEFAULT gen_random_uuid()::text,\n  text TEXT NOT NULL\n);\n```\n\nPut this exact content in `workspace/db/query/tasks.sql`:\n\n```sql\n-- name: ListTasks :many\nSELECT id, text\nFROM tasks\nORDER BY text ASC, id ASC;\n\n-- name: CreateTask :one\nINSERT INTO tasks (text)\nVALUES ($1)\nRETURNING id, text;\n\n-- name: GetTask :one\nSELECT id, text\nFROM tasks\nWHERE id = $1\nLIMIT 1;\n\n-- name: DeleteTask :execrows\nDELETE FROM tasks\nWHERE id = $1;\n```\n\nThen run:\n\n```bash\njust format\ngit add --all\ngit commit --message \"Add sqlc configuration and queries\"\n```\n\nThis gives you:\n\n- a root-level `.gitignore` for operating-system noise and editor leftovers\n- a `workspace/.gitignore` for standard Go build output, local tooling files, and local runtime data\n- a Postgres-backed REST adapter that reads its connection string from `{database_env_var}`\n- a generated root `justfile` that defaults `database_url` to `postgres://postgres@localhost:5432/{database_name}?sslmode=disable`\n- a repo-local `workspace/bin/sqlc` installation for generating Go query code from `workspace/sqlc.yaml`, `workspace/db/schema.sql`, and `workspace/db/query/tasks.sql`\n\nBefore you run the server, create the default tutorial database with:\n\n```bash\ncreatedb --host localhost --username postgres {database_name}\n```\n\nIf that does not match your local Postgres setup, create an equivalent database your user can access and override the generated `database_url` value in the root `justfile`.\n\nWhen the full workspace is finished, it should contain these files:\n\n```text\nworkspace/\n  .gitignore\n  bin/\n    sqlc\n  go.mod\n  go.sum\n  sqlc.yaml\n  db/\n    schema.sql\n    query/\n      tasks.sql\n  cmd/\n    server/\n      main.go\n  internal/\n    contracts/\n      task_api.go\n    code/\n      task_service.go\n      task_service_test.go\n    adapter/\n      http/\n        task_handler.go\n        task_handler_test.go\n      storage/\n        postgres_task_store.go\n        postgres_task_store_test.go\n        db/\n          ...generated Go files from sqlc...\n```",
                 render_setup_commands_with_commits(&setup_commands, 0)
             ),
         );
@@ -2661,11 +2694,14 @@ fn render_output_repo_finish_content(spec: &OutputRepoSpec) -> String {
         );
     }
 
-    if is_go_todo_list_rest_json_postgres_output_repo(spec) {
+    if is_go_todo_list_rest_json_postgres_output_repo(spec)
+        || is_go_team_task_board_rest_json_postgres_output_repo(spec)
+    {
+        let database_name = project_database_name(&spec.project_slug);
         return tutorial_file_markdown(
             "Finish",
             &format!(
-                "Make sure you have a local Postgres database named `todo_list`. The default tutorial command for that is:\n\n```bash\ncreatedb --host localhost --username postgres todo_list\n```\n\nStart the API server from the repository root:\n\n```bash\njust run\n```\n\nThe generated `just run` and `just check-tests` commands call `sqlc generate` for you before compiling the app.\n\nIf your local Postgres uses a different connection string, run:\n\n```bash\njust --set database_url \"postgres://<user>:<password>@localhost:5432/<database>?sslmode=disable\" run\n```\n\nThis API is configured to accept browser requests from `http://localhost:{FOR_ALL_FRONTEND_PORT}`.\n\nIn another terminal, try these requests:\n\n```bash\ncurl \"http://localhost:{FOR_ALL_API_PORT}/api/tasks\"\ncurl -X POST \"http://localhost:{FOR_ALL_API_PORT}/api/tasks\" \\\n  -H \"Content-Type: application/json\" \\\n  -d '{{\"text\":\"Buy milk\"}}'\ncurl \"http://localhost:{FOR_ALL_API_PORT}/api/tasks/11111111-1111-1111-1111-111111111111\"\ncurl -i -X DELETE \"http://localhost:{FOR_ALL_API_PORT}/api/tasks/11111111-1111-1111-1111-111111111111\"\n```\n\nWith a fresh database, the first `GET` should return an empty list:\n\n```json\n{{\"tasks\":[]}}\n```\n\nThe `POST` should return a created task resource with a UUID id, for example:\n\n```json\n{{\"id\":\"11111111-1111-1111-1111-111111111111\",\"text\":\"Buy milk\"}}\n```\n\nThe next `GET /api/tasks/<uuid>` should return the same task resource. The `DELETE` should return `204 No Content`.\n\nIf you already have rows in the database, Postgres will assign a different UUID than the example above."
+                "Make sure you have a local Postgres database named `{database_name}`. The default tutorial command for that is:\n\n```bash\ncreatedb --host localhost --username postgres {database_name}\n```\n\nStart the API server from the repository root:\n\n```bash\njust run\n```\n\nThe generated `just run` and `just check-tests` commands call `sqlc generate` for you before compiling the app.\n\nIf your local Postgres uses a different connection string, run:\n\n```bash\njust --set database_url \"postgres://<user>:<password>@localhost:5432/<database>?sslmode=disable\" run\n```\n\nThis API is configured to accept browser requests from `http://localhost:{FOR_ALL_FRONTEND_PORT}`.\n\nIn another terminal, try these requests:\n\n```bash\ncurl \"http://localhost:{FOR_ALL_API_PORT}/api/tasks\"\ncurl -X POST \"http://localhost:{FOR_ALL_API_PORT}/api/tasks\" \\\n  -H \"Content-Type: application/json\" \\\n  -d '{{\"text\":\"Buy milk\"}}'\ncurl \"http://localhost:{FOR_ALL_API_PORT}/api/tasks/11111111-1111-1111-1111-111111111111\"\ncurl -i -X DELETE \"http://localhost:{FOR_ALL_API_PORT}/api/tasks/11111111-1111-1111-1111-111111111111\"\n```\n\nWith a fresh database, the first `GET` should return an empty list:\n\n```json\n{{\"tasks\":[]}}\n```\n\nThe `POST` should return a created task resource with a UUID id, for example:\n\n```json\n{{\"id\":\"11111111-1111-1111-1111-111111111111\",\"text\":\"Buy milk\"}}\n```\n\nThe next `GET /api/tasks/<uuid>` should return the same task resource. The `DELETE` should return `204 No Content`.\n\nIf you already have rows in the database, Postgres will assign a different UUID than the example above."
             ),
         );
     }
@@ -10436,6 +10472,14 @@ fn pascal_case_slug(slug: &str) -> String {
         .join("")
 }
 
+fn project_database_name(project_slug: &str) -> String {
+    project_slug.replace('-', "_")
+}
+
+fn project_database_env_var(project_slug: &str) -> String {
+    project_database_name(project_slug).to_uppercase() + "_DATABASE_URL"
+}
+
 fn format_selection_value(value: &str) -> String {
     match value {
         "dotnet" => ".NET".to_string(),
@@ -11164,6 +11208,7 @@ mod tests {
         let finish = render_output_repo_finish_content(&spec);
 
         assert!(justfile.contains("database_url := \"postgres://postgres@localhost:5432/todo_list?sslmode=disable\""));
+        assert!(justfile.contains("restore:\n\t(cd {{workspace}} && go mod download)\n\t(cd {{workspace}} && GOBIN=$(pwd)/bin go install github.com/sqlc-dev/sqlc/cmd/sqlc@v1.30.0)"));
         assert!(justfile.contains("generate:\n\t(cd {{workspace}} && ./bin/sqlc generate)"));
         assert!(justfile.contains("just generate\n\t(cd {{workspace}} && go test ./...)"));
         assert!(justfile.contains("TODO_LIST_DATABASE_URL={{database_url}} go run ./cmd/server"));
