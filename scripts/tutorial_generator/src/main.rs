@@ -8558,6 +8558,12 @@ import (
 
 type TeamTaskHandler struct{ service contracts.TeamTaskService }
 
+type TeamTaskCreateRequest struct {
+	OwnerUserID string `json:"owner_user_id"`
+	Text        string `json:"text"`
+	Visibility  string `json:"visibility"`
+}
+
 func NewTaskHandler(service contracts.TeamTaskService) *TeamTaskHandler {
 	return &TeamTaskHandler{service: service}
 }
