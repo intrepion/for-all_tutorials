@@ -2357,6 +2357,16 @@ Put this exact content in `workspace/macos/Runner/Release.entitlements`:
 </plist>
 ```
 
+Add this block inside the top-level `<dict>` in `workspace/macos/Runner/Info.plist`:
+
+```xml
+<key>NSAppTransportSecurity</key>
+<dict>
+	<key>NSAllowsLocalNetworking</key>
+	<true/>
+</dict>
+```
+
 Then run:
 
 ```bash
@@ -2534,6 +2544,16 @@ Put this exact content in `workspace/macos/Runner/Release.entitlements`:
 	<true/>
 </dict>
 </plist>
+```
+
+Add this block inside the top-level `<dict>` in `workspace/macos/Runner/Info.plist`:
+
+```xml
+<key>NSAppTransportSecurity</key>
+<dict>
+	<key>NSAllowsLocalNetworking</key>
+	<true/>
+</dict>
 ```
 
 Then run:
@@ -14019,6 +14039,9 @@ mod tests {
         assert!(setup.contains("workspace/macos/Runner/DebugProfile.entitlements"));
         assert!(setup.contains("workspace/macos/Runner/Release.entitlements"));
         assert!(setup.contains("com.apple.security.network.client"));
+        assert!(setup.contains("workspace/macos/Runner/Info.plist"));
+        assert!(setup.contains("NSAppTransportSecurity"));
+        assert!(setup.contains("NSAllowsLocalNetworking"));
         assert!(setup.contains("git commit --message \"Enable macOS network client entitlement\""));
         assert!(setup.contains("just run-windows"));
         assert!(setup.contains("just run-linux"));
@@ -14057,6 +14080,7 @@ mod tests {
         assert!(setup.contains("just --set api_base_url http://10.0.2.2:25664 run-android device=\"<android-device-id-or-name>\""));
         assert!(setup.contains("just --set api_base_url http://localhost:25664 run-macos"));
         assert!(setup.contains("com.apple.security.network.client"));
+        assert!(setup.contains("NSAllowsLocalNetworking"));
         assert!(setup.contains("git commit --message \"Enable macOS network client entitlement\""));
         assert!(setup.contains("git commit --message \"Add iOS CocoaPods workspace files\""));
         assert!(setup.contains("git commit --message \"Add macOS CocoaPods workspace files\""));
@@ -14077,6 +14101,7 @@ mod tests {
         assert!(setup.contains("http_team_task_api.dart"));
         assert!(setup.contains("team_task_board_page.dart"));
         assert!(setup.contains("just --set api_base_url http://10.0.2.2:25664 run-android device=\"<android-device-id-or-name>\""));
+        assert!(setup.contains("NSAllowsLocalNetworking"));
         assert!(setup.contains("git commit --message \"Enable macOS network client entitlement\""));
     }
 
