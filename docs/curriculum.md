@@ -883,15 +883,65 @@ Project slugs stay stable even if their place in this map changes.
 
 ## Stage 59
 
+### prism-face-selector
+
+- `Project`: `prism-face-selector`
+- `Prerequisites`: [`saying-hello`](#saying-hello)
+- `Unlocks`: [`prism-face-cropper`](#prism-face-cropper)
+- `Recommended Instructions`: [partials/projects/prism-face-selector/instructions/README.md](../partials/projects/prism-face-selector/instructions/README.md)
+- `Notes`: start with small face-slot and rectangle-normalization contracts such as `default_face_selection_map()`, `normalize_selection_rect(image_width, image_height, left, top, width, height)`, and `assign_face_selection(face_selection_map, face_name, normalized_rect)`, build the core repo first, then add an adapter repo that consumes that core; this project starts the rectangular-prism imaging track by turning one PNG sheet into six named, normalized face selections without taking on cropping or rendering yet
+
+## Stage 60
+
+### prism-face-cropper
+
+- `Project`: `prism-face-cropper`
+- `Prerequisites`: [`prism-face-selector`](#prism-face-selector)
+- `Unlocks`: [`prism-net-layout`](#prism-net-layout)
+- `Recommended Instructions`: [partials/projects/prism-face-cropper/instructions/README.md](../partials/projects/prism-face-cropper/instructions/README.md)
+- `Notes`: start with small validation, crop-planning, and summary contracts such as `validate_face_selection_map(face_selection_map)`, `build_face_crop_plan(image_width, image_height, face_selection_map)`, and `format_face_crop_summary(face_crop_plan)`, build the core repo first, then add an adapter repo that consumes that core; this project builds on the earlier face-selection work by turning normalized rectangles into deterministic per-face crop plans and preview slots
+
+## Stage 61
+
+### prism-net-layout
+
+- `Project`: `prism-net-layout`
+- `Prerequisites`: [`prism-face-cropper`](#prism-face-cropper)
+- `Unlocks`: [`prism-widget-renderer`](#prism-widget-renderer)
+- `Recommended Instructions`: [partials/projects/prism-net-layout/instructions/README.md](../partials/projects/prism-net-layout/instructions/README.md)
+- `Notes`: start with small dimension and layout contracts such as `build_prism_dimensions(width, height, depth)`, `face_display_size(face_name, prism_dimensions)`, and `build_prism_net_layout(face_crop_plan, prism_dimensions)`, build the core repo first, then add an adapter repo that consumes that core; this project builds on the earlier crop-plan work by giving each face a width, height, or depth-driven display size and arranging the results into a deterministic 2D prism net
+
+## Stage 62
+
+### prism-widget-renderer
+
+- `Project`: `prism-widget-renderer`
+- `Prerequisites`: [`prism-net-layout`](#prism-net-layout)
+- `Unlocks`: [`prism-scene-editor`](#prism-scene-editor)
+- `Recommended Instructions`: [partials/projects/prism-widget-renderer/instructions/README.md](../partials/projects/prism-widget-renderer/instructions/README.md)
+- `Notes`: start with small camera, visibility, and render-order contracts such as `clamp_prism_zoom(zoom)`, `build_prism_camera(yaw_degrees, pitch_degrees, zoom)`, `is_face_visible(face_name, prism_camera)`, and `build_rendered_prism_faces(prism_net_layout_item, prism_camera)`, build the core repo first, then add an adapter repo that consumes that core; this project builds on the earlier flat-net work by turning face widgets into a pseudo-3D rectangular prism with transforms, hiding, and zoom
+
+## Stage 63
+
+### prism-scene-editor
+
+- `Project`: `prism-scene-editor`
+- `Prerequisites`: [`prism-widget-renderer`](#prism-widget-renderer)
+- `Unlocks`: [`model-showroom`](#model-showroom)
+- `Recommended Instructions`: [partials/projects/prism-scene-editor/instructions/README.md](../partials/projects/prism-scene-editor/instructions/README.md)
+- `Notes`: start with small scene-building, update, and serialization contracts such as `build_default_prism_scene()`, `update_prism_scene_dimensions(prism_scene, width, height, depth)`, `update_prism_scene_camera(prism_scene, yaw_degrees, pitch_degrees, zoom)`, and `serialize_prism_scene(prism_scene)`, build the core repo first, then add an adapter repo that consumes that core; this project builds on the earlier widget-renderer work by introducing one editable scene document that drives both the controls and the live preview
+
+## Stage 64
+
 ### model-showroom
 
 - `Project`: `model-showroom`
-- `Prerequisites`: [`saying-hello`](#saying-hello)
+- `Prerequisites`: [`prism-scene-editor`](#prism-scene-editor)
 - `Unlocks`: [`lighting-studio`](#lighting-studio)
 - `Recommended Instructions`: [partials/projects/model-showroom/instructions/README.md](../partials/projects/model-showroom/instructions/README.md)
-- `Notes`: start with a tiny viewer-scene contract such as `build_showroom_scene() -> viewer_scene_config`, build the core repo first, then add an adapter repo that consumes that core; this project starts the 3D-viewer track by focusing on one local model, one deterministic camera orbit, and a clean separation between core-owned scene defaults and adapter-managed rendering
+- `Notes`: start with a tiny viewer-scene contract such as `build_showroom_scene() -> viewer_scene_config`, build the core repo first, then add an adapter repo that consumes that core; this project starts the real 3D-viewer track after the earlier widget-prism exercises have already introduced face composition, transforms, and scene editing fundamentals
 
-## Stage 60
+## Stage 65
 
 ### lighting-studio
 
@@ -901,7 +951,7 @@ Project slugs stay stable even if their place in this map changes.
 - `Recommended Instructions`: [partials/projects/lighting-studio/instructions/README.md](../partials/projects/lighting-studio/instructions/README.md)
 - `Notes`: start with small lighting and scene-building contracts such as `clamp_lighting_controls(exposure, shadow_intensity, environment_id)` and `build_lighting_scene(lighting_controls)`, build the core repo first, then add an adapter repo that consumes that core; this project builds on the earlier static 3D scene by introducing lighting ranges, environment mapping, and visual tuning without changing the model geometry
 
-## Stage 61
+## Stage 66
 
 ### remote-model-loader
 
@@ -911,7 +961,7 @@ Project slugs stay stable even if their place in this map changes.
 - `Recommended Instructions`: [partials/projects/remote-model-loader/instructions/README.md](../partials/projects/remote-model-loader/instructions/README.md)
 - `Notes`: start with small progress, message, and interaction-gating contracts such as `calculate_load_percentage(loaded_bytes, total_bytes)`, `format_loading_message(load_percentage)`, `format_model_load_error(model_label)`, and `can_interact_with_model(has_loaded, has_error)`, build the core repo first, then add an adapter repo that consumes that core; this project builds on the earlier static and lighting-driven 3D scenes by introducing remote asset loading, asynchronous state, and graceful error handling
 
-## Stage 62
+## Stage 67
 
 ### product-configurator
 
@@ -921,7 +971,7 @@ Project slugs stay stable even if their place in this map changes.
 - `Recommended Instructions`: [partials/projects/product-configurator/instructions/README.md](../partials/projects/product-configurator/instructions/README.md)
 - `Notes`: start with small catalog, selection, and scene contracts such as `build_variant_catalog()`, `find_variant_by_exact_id(variant_catalog, variant_id)`, and `build_variant_scene(variant)`, build the core repo first, then add an adapter repo that consumes that core; this project builds on the earlier 3D loading work by introducing multiple model variants and per-variant camera and lighting defaults
 
-## Stage 63
+## Stage 68
 
 ### ar-preview
 
