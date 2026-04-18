@@ -9962,6 +9962,8 @@ void main() {
       'user-alice',
     );
     await tester.pump();
+    await tester.tap(find.text('Load board'));
+    await tester.pumpAndSettle();
     await tester.enterText(
       find.byKey(const Key('owner-user-id-input')),
       'user-alice',
