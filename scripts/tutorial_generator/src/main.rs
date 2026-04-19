@@ -570,6 +570,19 @@ fn is_flutter_local_prism_net_layout_output_repo(spec: &OutputRepoSpec) -> bool 
         && spec.selections.protocol.is_none()
 }
 
+fn is_flutter_local_prism_widget_renderer_output_repo(spec: &OutputRepoSpec) -> bool {
+    spec.project_slug == "prism-widget-renderer"
+        && spec.selections.ecosystem == "dart"
+        && spec.selections.language == "dart"
+        && spec.selections.testing == "test"
+        && spec.selections.mocking == "mocktail"
+        && spec.selections.storage == "no-storage"
+        && spec.selections.surface == "client"
+        && spec.selections.target == "all"
+        && spec.selections.framework == "flutter"
+        && spec.selections.protocol.is_none()
+}
+
 fn is_flutter_todo_list_output_repo(spec: &OutputRepoSpec) -> bool {
     is_flutter_todo_list_rest_json_output_repo(spec)
 }
@@ -585,6 +598,7 @@ fn is_flutter_output_repo(spec: &OutputRepoSpec) -> bool {
         || is_flutter_local_prism_face_selector_output_repo(spec)
         || is_flutter_local_prism_face_cropper_output_repo(spec)
         || is_flutter_local_prism_net_layout_output_repo(spec)
+        || is_flutter_local_prism_widget_renderer_output_repo(spec)
 }
 
 fn is_flutter_http_output_repo(spec: &OutputRepoSpec) -> bool {
@@ -825,6 +839,17 @@ fn supported_output_repo_selections(
             framework: "flutter".to_string(),
             protocol: None,
         }),
+        ("prism-widget-renderer", "dart") => Some(OutputRepoSelections {
+            ecosystem: "dart".to_string(),
+            language: "dart".to_string(),
+            testing: "test".to_string(),
+            mocking: "mocktail".to_string(),
+            storage: "no-storage".to_string(),
+            surface: "client".to_string(),
+            target: "all".to_string(),
+            framework: "flutter".to_string(),
+            protocol: None,
+        }),
         (_, "dotnet") => Some(OutputRepoSelections {
             ecosystem: "dotnet".to_string(),
             language: "csharp".to_string(),
@@ -1006,6 +1031,10 @@ fn validate_output_repo_selections(
     }
 
     if project_slug == "prism-net-layout" && selections == &supported_flutter_local {
+        return Ok(());
+    }
+
+    if project_slug == "prism-widget-renderer" && selections == &supported_flutter_local {
         return Ok(());
     }
 
@@ -1795,6 +1824,10 @@ fn build_output_repo_tutorial_files(app_root: &Path, spec: &OutputRepoSpec) -> V
         return build_flutter_prism_net_layout_output_repo_tutorial_files(app_root, spec);
     }
 
+    if is_flutter_local_prism_widget_renderer_output_repo(spec) {
+        return build_flutter_prism_widget_renderer_output_repo_tutorial_files(app_root, spec);
+    }
+
     if is_astro_saying_hello_output_repo(spec) {
         return build_astro_saying_hello_output_repo_tutorial_files(app_root, spec);
     }
@@ -2269,6 +2302,50 @@ fn build_flutter_prism_net_layout_output_repo_tutorial_files(
         ManagedRepoFile {
             relative_path: "tutorial/adapter.md".to_string(),
             contents: render_flutter_prism_net_layout_adapter_content(spec).into_bytes(),
+        },
+        ManagedRepoFile {
+            relative_path: "tutorial/finish.md".to_string(),
+            contents: render_output_repo_finish_content(spec).into_bytes(),
+        },
+    ]
+}
+
+fn build_flutter_prism_widget_renderer_output_repo_tutorial_files(
+    app_root: &Path,
+    spec: &OutputRepoSpec,
+) -> Vec<ManagedRepoFile> {
+    let project_root = app_root.join("partials/projects").join(&spec.project_slug);
+    let spec_partial =
+        Partial::load(&project_root.join("spec/README.md")).expect("spec partial should exist");
+
+    vec![
+        ManagedRepoFile {
+            relative_path: "tutorial/README.md".to_string(),
+            contents: render_output_repo_tutorial_readme_content(spec).into_bytes(),
+        },
+        ManagedRepoFile {
+            relative_path: "tutorial/setup.md".to_string(),
+            contents: render_output_repo_setup_content(spec).into_bytes(),
+        },
+        ManagedRepoFile {
+            relative_path: "tutorial/spec.md".to_string(),
+            contents: tutorial_file_markdown(
+                "Spec",
+                &rewrite_for_single_repo_tutorial(&spec_partial.body),
+            )
+            .into_bytes(),
+        },
+        ManagedRepoFile {
+            relative_path: "tutorial/contracts.md".to_string(),
+            contents: render_flutter_prism_widget_renderer_contracts_content(spec).into_bytes(),
+        },
+        ManagedRepoFile {
+            relative_path: "tutorial/code.md".to_string(),
+            contents: render_flutter_prism_widget_renderer_code_content(spec).into_bytes(),
+        },
+        ManagedRepoFile {
+            relative_path: "tutorial/adapter.md".to_string(),
+            contents: render_flutter_prism_widget_renderer_adapter_content(spec).into_bytes(),
         },
         ManagedRepoFile {
             relative_path: "tutorial/finish.md".to_string(),
@@ -2940,6 +3017,48 @@ git commit --message "Enable macOS network client entitlement"
         );
     }
 
+    if is_flutter_local_prism_widget_renderer_output_repo(spec) {
+        let package_name = flutter_package_name(&spec.project_slug);
+        let setup_commands = vec![
+            format!(
+                "flutter create --platforms=web,android,ios,macos,windows,linux --org com.intrepion --project-name {package_name} workspace"
+            ),
+            "rm workspace/test/widget_test.dart".to_string(),
+            "(cd workspace && flutter pub add --dev test)".to_string(),
+            "(cd workspace && flutter pub add --dev mocktail)".to_string(),
+            "(cd workspace && flutter pub add --dev integration_test --sdk flutter)"
+                .to_string(),
+        ];
+        let workspace_tree = r#"workspace/
+  pubspec.yaml
+  lib/
+    contracts/
+      prism_net_layout_item.dart
+      prism_camera.dart
+      rendered_prism_face.dart
+    code/
+      prism_widget_renderer_service.dart
+    adapter/
+      prism_widget_renderer_page.dart
+  test/
+    code/
+      prism_widget_renderer_service_test.dart
+    adapter/
+      prism_widget_renderer_page_test.dart
+  integration_test/
+    app_test.dart
+  lib/main.dart"#;
+
+        return tutorial_file_markdown(
+            "Setup",
+            &format!(
+                "Keep the repository root for shared files like `README.md`, `LICENSE`, `.gitignore`, `.github/`, `justfile`, and `tutorial/`.\n\nPut all Flutter code inside a single `workspace/` folder.\n\nThis tutorial builds a local Flutter prism widget renderer with a deterministic pseudo-3D camera, visibility rules, and one transformed widget per visible prism face.\n\nFrom the repository root, run each setup command and checkpoint it before moving to the next one:\n\n```bash\n{}\n```\n\nWhen the full workspace is finished, it should contain these files:\n\n```text\n{workspace_tree}\n```\n\nBefore you try any run command, make sure Flutter can see a supported target:\n\n```bash\njust devices\n```\n\nFor web, use the default web command:\n\n```bash\njust run\n```\n\nor, explicitly:\n\n```bash\njust run-web\n```\n\nOn macOS for iOS, install CocoaPods first if you have not already:\n\n```bash\nsudo gem install cocoapods\n```\n\nThen open the simulator, list devices, and run the iOS app with an actual simulator id or name:\n\n```bash\nopen -a Simulator\njust devices\njust run-ios device=\"<ios-device-id-or-name>\"\n```\n\nFlutter does not accept bare `ios` as a generic simulator target, so if `just devices` does not show your simulator yet, wait a moment and run it again.\n\nFor Android, list available emulators, launch one, list devices again, and then run the Android app:\n\n```bash\njust emulators\nflutter emulators --launch <emulator-id>\njust devices\njust run-android device=\"<android-device-id-or-name>\"\n```\n\nFor macOS desktop, use:\n\n```bash\njust run-macos\n```\n\nFor Windows or Linux, run the matching command on that host platform:\n\n```bash\njust run-windows\njust run-linux\n```\n\nAfter your first successful iOS run, if CocoaPods added shared iOS project files like these:\n\n- `workspace/ios/Runner.xcodeproj/project.pbxproj`\n- `workspace/ios/Runner.xcworkspace/contents.xcworkspacedata`\n- `workspace/ios/Podfile.lock`\n\nthen run:\n\n```bash\ngit add --all\ngit commit --message \"Add iOS CocoaPods workspace files\"\n```\n\nAfter your first successful macOS run, if CocoaPods added shared macOS project files like these:\n\n- `workspace/macos/Runner.xcodeproj/project.pbxproj`\n- `workspace/macos/Runner.xcworkspace/contents.xcworkspacedata`\n- `workspace/macos/Podfile.lock`\n\nthen run:\n\n```bash\ngit add --all\ngit commit --message \"Add macOS CocoaPods workspace files\"\n```\n\nDo not commit local machine output like these:\n\n- `workspace/ios/Pods/`\n- `workspace/macos/Pods/`\n- `workspace/build/`\n- `workspace/.dart_tool/`\n\nFor Android, a normal first run usually should not add shared tracked files. If it does change shared files under `workspace/android/`, review them carefully and commit only the project-level changes. Do not commit machine-specific files like:\n\n- `workspace/android/local.properties`\n- `workspace/.gradle/`\n- `workspace/build/`",
+                render_setup_commands_with_commits(&setup_commands, 2),
+                workspace_tree = workspace_tree,
+            ),
+        );
+    }
+
     if is_astro_saying_hello_output_repo(spec) {
         let setup_commands = vec![
             "curl -L -s https://raw.githubusercontent.com/github/gitignore/refs/heads/main/Node.gitignore > workspace/.gitignore".to_string(),
@@ -3361,6 +3480,15 @@ fn render_output_repo_finish_content(spec: &OutputRepoSpec) -> String {
             "Finish",
             &format!(
                 "For web, start the Flutter app from the repository root with:\n\n```bash\njust run\n```\n\nor:\n\n```bash\njust run-web\n```\n\nThen open `http://localhost:{FOR_ALL_FRONTEND_PORT}` in your browser.\n\nFor iOS, open the simulator, list devices, and run with an actual simulator id or name:\n\n```bash\nopen -a Simulator\njust devices\njust run-ios device=\"<ios-device-id-or-name>\"\n```\n\nFor Android, use:\n\n```bash\njust run-android device=\"<android-device-id-or-name>\"\n```\n\nFor macOS desktop, use:\n\n```bash\njust run-macos\n```\n\nFor Windows or Linux, run the matching command on that host platform:\n\n```bash\njust run-windows\njust run-linux\n```\n\nAfter the first successful iOS run, if CocoaPods added shared iOS project files like these:\n\n- `workspace/ios/Runner.xcodeproj/project.pbxproj`\n- `workspace/ios/Runner.xcworkspace/contents.xcworkspacedata`\n- `workspace/ios/Podfile.lock`\n\nthen run:\n\n```bash\ngit add --all\ngit commit --message \"Add iOS CocoaPods workspace files\"\n```\n\nAfter the first successful macOS run, if CocoaPods added shared macOS project files like these:\n\n- `workspace/macos/Runner.xcodeproj/project.pbxproj`\n- `workspace/macos/Runner.xcworkspace/contents.xcworkspacedata`\n- `workspace/macos/Podfile.lock`\n\nthen run:\n\n```bash\ngit add --all\ngit commit --message \"Add macOS CocoaPods workspace files\"\n```\n\nTry this flow:\n\n- confirm the dimensions summary shows `240 x 360 x 90`\n- confirm `front` is the central visible panel in the flat net\n- confirm `left` and `right` use the narrower `depth x height` layout size\n- confirm a missing face like `bottom` stays hidden instead of rendering a guessed panel"
+            ),
+        );
+    }
+
+    if is_flutter_local_prism_widget_renderer_output_repo(spec) {
+        return tutorial_file_markdown(
+            "Finish",
+            &format!(
+                "For web, start the Flutter app from the repository root with:\n\n```bash\njust run\n```\n\nor:\n\n```bash\njust run-web\n```\n\nThen open `http://localhost:{FOR_ALL_FRONTEND_PORT}` in your browser.\n\nFor iOS, open the simulator, list devices, and run with an actual simulator id or name:\n\n```bash\nopen -a Simulator\njust devices\njust run-ios device=\"<ios-device-id-or-name>\"\n```\n\nFor Android, use:\n\n```bash\njust run-android device=\"<android-device-id-or-name>\"\n```\n\nFor macOS desktop, use:\n\n```bash\njust run-macos\n```\n\nFor Windows or Linux, run the matching command on that host platform:\n\n```bash\njust run-windows\njust run-linux\n```\n\nAfter the first successful iOS run, if CocoaPods added shared iOS project files like these:\n\n- `workspace/ios/Runner.xcodeproj/project.pbxproj`\n- `workspace/ios/Runner.xcworkspace/contents.xcworkspacedata`\n- `workspace/ios/Podfile.lock`\n\nthen run:\n\n```bash\ngit add --all\ngit commit --message \"Add iOS CocoaPods workspace files\"\n```\n\nAfter the first successful macOS run, if CocoaPods added shared macOS project files like these:\n\n- `workspace/macos/Runner.xcodeproj/project.pbxproj`\n- `workspace/macos/Runner.xcworkspace/contents.xcworkspacedata`\n- `workspace/macos/Podfile.lock`\n\nthen run:\n\n```bash\ngit add --all\ngit commit --message \"Add macOS CocoaPods workspace files\"\n```\n\nTry this flow:\n\n- confirm the canonical camera starts at `35 / -20 / 1.0`\n- confirm only `front`, `right`, and `top` are visible at first\n- tap the zoom controls and confirm the zoom label stays within the allowed range\n- tap the rotate control and confirm the rendered widget stack changes while hidden faces stay hidden"
             ),
         );
     }
@@ -13967,6 +14095,804 @@ git commit --message "4. Green: Wire The Real Application"
     )
 }
 
+fn render_flutter_prism_widget_renderer_contracts_content(_spec: &OutputRepoSpec) -> String {
+    tutorial_file_markdown(
+        "Contracts",
+        &rewrite_stage_commit_checkpoints(&rewrite_touch_creation_stage_only(
+            r#"Create the shared contract files:
+
+```bash
+touch workspace/lib/contracts/prism_net_layout_item.dart
+touch workspace/lib/contracts/prism_camera.dart
+touch workspace/lib/contracts/rendered_prism_face.dart
+```
+
+Put this exact content in `workspace/lib/contracts/prism_net_layout_item.dart`:
+
+```dart
+class PrismNetLayoutItem {
+  final String faceName;
+  final int x;
+  final int y;
+  final int displayWidth;
+  final int displayHeight;
+  final bool isHidden;
+
+  const PrismNetLayoutItem({
+    required this.faceName,
+    required this.x,
+    required this.y,
+    required this.displayWidth,
+    required this.displayHeight,
+    required this.isHidden,
+  });
+}
+```
+
+Put this exact content in `workspace/lib/contracts/prism_camera.dart`:
+
+```dart
+class PrismCamera {
+  final double yawDegrees;
+  final double pitchDegrees;
+  final double zoom;
+
+  const PrismCamera({
+    required this.yawDegrees,
+    required this.pitchDegrees,
+    required this.zoom,
+  });
+}
+```
+
+Put this exact content in `workspace/lib/contracts/rendered_prism_face.dart`:
+
+```dart
+class RenderedPrismFace {
+  final String faceName;
+  final String transformHint;
+  final int zIndex;
+  final bool isHidden;
+
+  const RenderedPrismFace({
+    required this.faceName,
+    required this.transformHint,
+    required this.zIndex,
+    required this.isHidden,
+  });
+}
+```
+
+Do not add tests here. Keep this layer limited to interfaces and small shared types.
+
+Then run:
+
+```bash
+git add --all
+git commit --message "Define prism-widget-renderer Flutter contracts"
+```"#,
+        )),
+    )
+}
+
+fn render_flutter_prism_widget_renderer_code_content(spec: &OutputRepoSpec) -> String {
+    let package_name = flutter_package_name(&spec.project_slug);
+    tutorial_file_markdown(
+        "Code",
+        &rewrite_touch_creation_stage_only(&format!(
+            r#"### 1. Red: Clamp The Prism Zoom
+
+Create the first code test file:
+
+```bash
+touch workspace/test/code/prism_widget_renderer_service_test.dart
+```
+
+Put this exact content in `workspace/test/code/prism_widget_renderer_service_test.dart`:
+
+```dart
+import 'package:{package_name}/code/prism_widget_renderer_service.dart';
+import 'package:test/test.dart';
+
+void main() {{
+  test('clampPrismZoom keeps zoom within the canonical bounds', () {{
+    expect(clampPrismZoom(0.2), 0.5);
+    expect(clampPrismZoom(1.0), 1.0);
+    expect(clampPrismZoom(3.5), 2.0);
+  }});
+}}
+```
+
+Run:
+
+```bash
+just check-tests
+git add --all
+git commit --message "1. Red: Clamp The Prism Zoom"
+```
+
+### 2. Green: Clamp The Prism Zoom
+
+Create the first production file:
+
+```bash
+touch workspace/lib/code/prism_widget_renderer_service.dart
+```
+
+Put this exact content in `workspace/lib/code/prism_widget_renderer_service.dart`:
+
+```dart
+import '../contracts/prism_camera.dart';
+import '../contracts/prism_net_layout_item.dart';
+import '../contracts/rendered_prism_face.dart';
+
+double clampPrismZoom(double zoom) {{
+  if (zoom < 0.5) {{
+    return 0.5;
+  }}
+  if (zoom > 2.0) {{
+    return 2.0;
+  }}
+  return zoom;
+}}
+
+PrismCamera buildPrismCamera({{
+  required double yawDegrees,
+  required double pitchDegrees,
+  required double zoom,
+}}) {{
+  throw UnimplementedError();
+}}
+
+bool isFaceVisible(String faceName, PrismCamera camera) {{
+  throw UnimplementedError();
+}}
+
+List<RenderedPrismFace> buildRenderedPrismFaces(
+  List<PrismNetLayoutItem> layoutItems,
+  PrismCamera camera,
+) {{
+  throw UnimplementedError();
+}}
+```
+
+Run:
+
+```bash
+just check-tests
+git add --all
+git commit --message "2. Green: Clamp The Prism Zoom"
+```
+
+### 3. Red: Build The Canonical Camera And Visibility
+
+Replace `workspace/test/code/prism_widget_renderer_service_test.dart` with:
+
+```dart
+import 'package:{package_name}/code/prism_widget_renderer_service.dart';
+import 'package:test/test.dart';
+
+void main() {{
+  test('clampPrismZoom keeps zoom within the canonical bounds', () {{
+    expect(clampPrismZoom(0.2), 0.5);
+    expect(clampPrismZoom(1.0), 1.0);
+    expect(clampPrismZoom(3.5), 2.0);
+  }});
+
+  test('the canonical camera keeps front right and top visible', () {{
+    final camera = buildPrismCamera(
+      yawDegrees: 35,
+      pitchDegrees: -20,
+      zoom: 1.0,
+    );
+
+    expect(camera.yawDegrees, 35);
+    expect(camera.pitchDegrees, -20);
+    expect(camera.zoom, 1.0);
+
+    expect(isFaceVisible('front', camera), isTrue);
+    expect(isFaceVisible('right', camera), isTrue);
+    expect(isFaceVisible('top', camera), isTrue);
+    expect(isFaceVisible('back', camera), isFalse);
+    expect(isFaceVisible('left', camera), isFalse);
+    expect(isFaceVisible('bottom', camera), isFalse);
+  }});
+}}
+```
+
+Run:
+
+```bash
+just check-tests
+git add --all
+git commit --message "3. Red: Build The Canonical Camera And Visibility"
+```
+
+### 4. Green: Build The Canonical Camera And Visibility
+
+Replace `workspace/lib/code/prism_widget_renderer_service.dart` with:
+
+```dart
+import '../contracts/prism_camera.dart';
+import '../contracts/prism_net_layout_item.dart';
+import '../contracts/rendered_prism_face.dart';
+
+double clampPrismZoom(double zoom) {{
+  if (zoom < 0.5) {{
+    return 0.5;
+  }}
+  if (zoom > 2.0) {{
+    return 2.0;
+  }}
+  return zoom;
+}}
+
+PrismCamera buildPrismCamera({{
+  required double yawDegrees,
+  required double pitchDegrees,
+  required double zoom,
+}}) {{
+  return PrismCamera(
+    yawDegrees: yawDegrees,
+    pitchDegrees: pitchDegrees,
+    zoom: clampPrismZoom(zoom),
+  );
+}}
+
+bool isFaceVisible(String faceName, PrismCamera camera) {{
+  final normalizedYaw = camera.yawDegrees % 360;
+  final seesRight = normalizedYaw >= 0 && normalizedYaw < 180;
+  final seesTop = camera.pitchDegrees < 0;
+
+  switch (faceName) {{
+    case 'front':
+      return normalizedYaw > -90 && normalizedYaw < 90;
+    case 'back':
+      return ! (normalizedYaw > -90 && normalizedYaw < 90);
+    case 'right':
+      return seesRight;
+    case 'left':
+      return !seesRight;
+    case 'top':
+      return seesTop;
+    case 'bottom':
+      return !seesTop;
+  }}
+
+  throw ArgumentError.value(faceName, 'faceName', 'Unknown face');
+}}
+
+List<RenderedPrismFace> buildRenderedPrismFaces(
+  List<PrismNetLayoutItem> layoutItems,
+  PrismCamera camera,
+) {{
+  throw UnimplementedError();
+}}
+```
+
+Run:
+
+```bash
+just check-tests
+git add --all
+git commit --message "4. Green: Build The Canonical Camera And Visibility"
+```
+
+### 5. Red: Build Deterministic Rendered Faces
+
+Replace `workspace/test/code/prism_widget_renderer_service_test.dart` with:
+
+```dart
+import 'package:{package_name}/code/prism_widget_renderer_service.dart';
+import 'package:{package_name}/contracts/prism_net_layout_item.dart';
+import 'package:test/test.dart';
+
+void main() {{
+  test('clampPrismZoom keeps zoom within the canonical bounds', () {{
+    expect(clampPrismZoom(0.2), 0.5);
+    expect(clampPrismZoom(1.0), 1.0);
+    expect(clampPrismZoom(3.5), 2.0);
+  }});
+
+  test('the canonical camera keeps front right and top visible', () {{
+    final camera = buildPrismCamera(
+      yawDegrees: 35,
+      pitchDegrees: -20,
+      zoom: 1.0,
+    );
+
+    expect(camera.yawDegrees, 35);
+    expect(camera.pitchDegrees, -20);
+    expect(camera.zoom, 1.0);
+
+    expect(isFaceVisible('front', camera), isTrue);
+    expect(isFaceVisible('right', camera), isTrue);
+    expect(isFaceVisible('top', camera), isTrue);
+    expect(isFaceVisible('back', camera), isFalse);
+    expect(isFaceVisible('left', camera), isFalse);
+    expect(isFaceVisible('bottom', camera), isFalse);
+  }});
+
+  test('buildRenderedPrismFaces hides invisible faces and sorts visible faces', () {{
+    final camera = buildPrismCamera(
+      yawDegrees: 35,
+      pitchDegrees: -20,
+      zoom: 1.0,
+    );
+
+    final rendered = buildRenderedPrismFaces([
+      const PrismNetLayoutItem(
+        faceName: 'front',
+        x: 90,
+        y: 90,
+        displayWidth: 240,
+        displayHeight: 360,
+        isHidden: false,
+      ),
+      const PrismNetLayoutItem(
+        faceName: 'back',
+        x: 420,
+        y: 90,
+        displayWidth: 240,
+        displayHeight: 360,
+        isHidden: false,
+      ),
+      const PrismNetLayoutItem(
+        faceName: 'right',
+        x: 330,
+        y: 90,
+        displayWidth: 90,
+        displayHeight: 360,
+        isHidden: false,
+      ),
+      const PrismNetLayoutItem(
+        faceName: 'top',
+        x: 90,
+        y: 0,
+        displayWidth: 240,
+        displayHeight: 90,
+        isHidden: false,
+      ),
+    ], camera);
+
+    expect(rendered.firstWhere((face) => face.faceName == 'front').isHidden, isFalse);
+    expect(rendered.firstWhere((face) => face.faceName == 'right').isHidden, isFalse);
+    expect(rendered.firstWhere((face) => face.faceName == 'top').isHidden, isFalse);
+    expect(rendered.firstWhere((face) => face.faceName == 'back').isHidden, isTrue);
+
+    final visibleFaces = rendered.where((face) => !face.isHidden).toList()
+      ..sort((left, right) => left.zIndex.compareTo(right.zIndex));
+
+    expect(
+      visibleFaces.map((face) => face.faceName).toList(),
+      ['top', 'right', 'front'],
+    );
+  }});
+}}
+```
+
+Run:
+
+```bash
+just check-tests
+git add --all
+git commit --message "5. Red: Build Deterministic Rendered Faces"
+```
+
+### 6. Green: Build Deterministic Rendered Faces
+
+Replace `workspace/lib/code/prism_widget_renderer_service.dart` with:
+
+```dart
+import '../contracts/prism_camera.dart';
+import '../contracts/prism_net_layout_item.dart';
+import '../contracts/rendered_prism_face.dart';
+
+double clampPrismZoom(double zoom) {{
+  if (zoom < 0.5) {{
+    return 0.5;
+  }}
+  if (zoom > 2.0) {{
+    return 2.0;
+  }}
+  return zoom;
+}}
+
+PrismCamera buildPrismCamera({{
+  required double yawDegrees,
+  required double pitchDegrees,
+  required double zoom,
+}}) {{
+  return PrismCamera(
+    yawDegrees: yawDegrees,
+    pitchDegrees: pitchDegrees,
+    zoom: clampPrismZoom(zoom),
+  );
+}}
+
+bool isFaceVisible(String faceName, PrismCamera camera) {{
+  final normalizedYaw = camera.yawDegrees % 360;
+  final seesRight = normalizedYaw >= 0 && normalizedYaw < 180;
+  final seesTop = camera.pitchDegrees < 0;
+  final seesFront = normalizedYaw > -90 && normalizedYaw < 90;
+
+  switch (faceName) {{
+    case 'front':
+      return seesFront;
+    case 'back':
+      return !seesFront;
+    case 'right':
+      return seesRight;
+    case 'left':
+      return !seesRight;
+    case 'top':
+      return seesTop;
+    case 'bottom':
+      return !seesTop;
+  }}
+
+  throw ArgumentError.value(faceName, 'faceName', 'Unknown face');
+}}
+
+List<RenderedPrismFace> buildRenderedPrismFaces(
+  List<PrismNetLayoutItem> layoutItems,
+  PrismCamera camera,
+) {{
+  final zIndexByFace = {{
+    'top': 0,
+    'right': 1,
+    'front': 2,
+    'left': 3,
+    'back': 4,
+    'bottom': 5,
+  }};
+
+  return layoutItems.map((item) {{
+    final hidden = item.isHidden || !isFaceVisible(item.faceName, camera);
+    return RenderedPrismFace(
+      faceName: item.faceName,
+      transformHint: 'yaw=${{camera.yawDegrees}}, pitch=${{camera.pitchDegrees}}, zoom=${{camera.zoom}}',
+      zIndex: zIndexByFace[item.faceName] ?? 99,
+      isHidden: hidden,
+    );
+  }}).toList();
+}}
+```
+
+Run:
+
+```bash
+just check-tests
+git add --all
+git commit --message "6. Green: Build Deterministic Rendered Faces"
+```"#,
+        )),
+    )
+}
+
+fn render_flutter_prism_widget_renderer_adapter_content(spec: &OutputRepoSpec) -> String {
+    let package_name = flutter_package_name(&spec.project_slug);
+    tutorial_file_markdown(
+        "Adapter",
+        &rewrite_touch_creation_stage_only(&format!(
+            r#"### 1. Red: Add The Prism Widget Renderer Page Test
+
+Create the widget test file:
+
+```bash
+touch workspace/test/adapter/prism_widget_renderer_page_test.dart
+```
+
+Put this exact content in `workspace/test/adapter/prism_widget_renderer_page_test.dart`:
+
+```dart
+import 'package:flutter/material.dart';
+import 'package:flutter_test/flutter_test.dart';
+import 'package:{package_name}/adapter/prism_widget_renderer_page.dart';
+
+void main() {{
+  testWidgets('renders visible prism face widgets and updates zoom label', (
+    tester,
+  ) async {{
+    await tester.pumpWidget(
+      const MaterialApp(home: PrismWidgetRendererPage()),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.text('35 / -20 / 1.0'), findsOneWidget);
+    expect(find.byKey(const Key('rendered-front')), findsOneWidget);
+    expect(find.byKey(const Key('rendered-right')), findsOneWidget);
+    expect(find.byKey(const Key('rendered-top')), findsOneWidget);
+    expect(find.byKey(const Key('rendered-back')), findsNothing);
+
+    await tester.tap(find.byKey(const Key('zoom-in')));
+    await tester.pumpAndSettle();
+
+    expect(find.text('35 / -20 / 1.2'), findsOneWidget);
+  }});
+}}
+```
+
+Run:
+
+```bash
+just check-tests
+git add --all
+git commit --message "1. Red: Add The Prism Widget Renderer Page Test"
+```
+
+### 2. Green: Build The Prism Widget Renderer Page
+
+Create the page production file:
+
+```bash
+touch workspace/lib/adapter/prism_widget_renderer_page.dart
+```
+
+Put this exact content in `workspace/lib/adapter/prism_widget_renderer_page.dart`:
+
+```dart
+import 'package:flutter/material.dart';
+
+import '../code/prism_widget_renderer_service.dart';
+import '../contracts/prism_net_layout_item.dart';
+
+class PrismWidgetRendererPage extends StatefulWidget {{
+  const PrismWidgetRendererPage({{super.key}});
+
+  @override
+  State<PrismWidgetRendererPage> createState() => _PrismWidgetRendererPageState();
+}}
+
+class _PrismWidgetRendererPageState extends State<PrismWidgetRendererPage> {{
+  double _yaw = 35;
+  double _pitch = -20;
+  double _zoom = 1.0;
+
+  static const _layoutItems = [
+    PrismNetLayoutItem(
+      faceName: 'front',
+      x: 120,
+      y: 120,
+      displayWidth: 180,
+      displayHeight: 240,
+      isHidden: false,
+    ),
+    PrismNetLayoutItem(
+      faceName: 'right',
+      x: 300,
+      y: 120,
+      displayWidth: 70,
+      displayHeight: 240,
+      isHidden: false,
+    ),
+    PrismNetLayoutItem(
+      faceName: 'top',
+      x: 120,
+      y: 50,
+      displayWidth: 180,
+      displayHeight: 70,
+      isHidden: false,
+    ),
+    PrismNetLayoutItem(
+      faceName: 'back',
+      x: 390,
+      y: 120,
+      displayWidth: 180,
+      displayHeight: 240,
+      isHidden: false,
+    ),
+  ];
+
+  @override
+  Widget build(BuildContext context) {{
+    final camera = buildPrismCamera(
+      yawDegrees: _yaw,
+      pitchDegrees: _pitch,
+      zoom: _zoom,
+    );
+    final renderedFaces = buildRenderedPrismFaces(_layoutItems, camera)
+      ..sort((left, right) => left.zIndex.compareTo(right.zIndex));
+
+    return Scaffold(
+      appBar: AppBar(title: const Text('Prism Widget Renderer')),
+      body: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              '${{camera.yawDegrees.toStringAsFixed(0)}} / '
+              '${{camera.pitchDegrees.toStringAsFixed(0)}} / '
+              '${{camera.zoom.toStringAsFixed(1)}}',
+            ),
+            const SizedBox(height: 12),
+            Wrap(
+              spacing: 8,
+              children: [
+                ElevatedButton(
+                  key: const Key('rotate-right'),
+                  onPressed: () {{
+                    setState(() {{
+                      _yaw += 25;
+                    }});
+                  }},
+                  child: const Text('Rotate'),
+                ),
+                ElevatedButton(
+                  key: const Key('zoom-in'),
+                  onPressed: () {{
+                    setState(() {{
+                      _zoom = clampPrismZoom(_zoom + 0.2);
+                    }});
+                  }},
+                  child: const Text('Zoom in'),
+                ),
+                ElevatedButton(
+                  key: const Key('zoom-out'),
+                  onPressed: () {{
+                    setState(() {{
+                      _zoom = clampPrismZoom(_zoom - 0.2);
+                    }});
+                  }},
+                  child: const Text('Zoom out'),
+                ),
+              ],
+            ),
+            const SizedBox(height: 16),
+            Expanded(
+              child: Container(
+                color: const Color(0xFFF3F0E5),
+                child: Stack(
+                  children: [
+                    for (final face in renderedFaces)
+                      if (!face.isHidden)
+                        _RenderedFaceWidget(
+                          key: Key('rendered-${{face.faceName}}'),
+                          faceName: face.faceName,
+                          zIndex: face.zIndex,
+                          zoom: camera.zoom,
+                        ),
+                  ],
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }}
+}}
+
+class _RenderedFaceWidget extends StatelessWidget {{
+  final String faceName;
+  final int zIndex;
+  final double zoom;
+
+  const _RenderedFaceWidget({{
+    super.key,
+    required this.faceName,
+    required this.zIndex,
+    required this.zoom,
+  }});
+
+  @override
+  Widget build(BuildContext context) {{
+    final geometry = switch (faceName) {{
+      'front' => (left: 140.0, top: 140.0, width: 170.0, height: 220.0, color: const Color(0xFFE58F65)),
+      'right' => (left: 300.0, top: 160.0, width: 80.0, height: 200.0, color: const Color(0xFF83B2D8)),
+      'top' => (left: 170.0, top: 90.0, width: 170.0, height: 70.0, color: const Color(0xFFF2CF77)),
+      _ => (left: 40.0, top: 40.0, width: 100.0, height: 100.0, color: Colors.grey),
+    }};
+
+    return Positioned(
+      left: geometry.left,
+      top: geometry.top,
+      child: Transform.scale(
+        scale: zoom,
+        alignment: Alignment.topLeft,
+        child: DecoratedBox(
+          decoration: BoxDecoration(
+            color: geometry.color,
+            border: Border.all(color: Colors.brown, width: 2),
+          ),
+          child: SizedBox(
+            width: geometry.width,
+            height: geometry.height,
+            child: Center(
+              child: Text('${{faceName}} #${{zIndex}}'),
+            ),
+          ),
+        ),
+      ),
+    );
+  }}
+}}
+```
+
+Run:
+
+```bash
+just check-tests
+git add --all
+git commit --message "2. Green: Build The Prism Widget Renderer Page"
+```
+
+### 3. Red: Add The Integration Test
+
+Create the integration test file:
+
+```bash
+touch workspace/integration_test/app_test.dart
+```
+
+Put this exact content in `workspace/integration_test/app_test.dart`:
+
+```dart
+import 'package:flutter/material.dart';
+import 'package:flutter_test/flutter_test.dart';
+import 'package:integration_test/integration_test.dart';
+import 'package:{package_name}/adapter/prism_widget_renderer_page.dart';
+
+void main() {{
+  IntegrationTestWidgetsFlutterBinding.ensureInitialized();
+
+  testWidgets('renders the prism widget renderer title', (tester) async {{
+    await tester.pumpWidget(
+      const MaterialApp(home: PrismWidgetRendererPage()),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.text('Prism Widget Renderer'), findsOneWidget);
+  }});
+}}
+```
+
+Run:
+
+```bash
+just check-tests
+git add --all
+git commit --message "3. Red: Add The Integration Test"
+```
+
+### 4. Green: Wire The Real Application
+
+Replace `workspace/lib/main.dart` with:
+
+```dart
+import 'package:flutter/material.dart';
+
+import 'adapter/prism_widget_renderer_page.dart';
+
+void main() {{
+  runApp(const PrismWidgetRendererApp());
+}}
+
+class PrismWidgetRendererApp extends StatelessWidget {{
+  const PrismWidgetRendererApp({{super.key}});
+
+  @override
+  Widget build(BuildContext context) {{
+    return const MaterialApp(
+      title: 'Prism Widget Renderer',
+      home: PrismWidgetRendererPage(),
+    );
+  }}
+}}
+```
+
+Run:
+
+```bash
+just check-tests
+git add --all
+git commit --message "4. Green: Wire The Real Application"
+```"#,
+        )),
+    )
+}
+
 fn render_flutter_saying_hello_contracts_content(_spec: &OutputRepoSpec) -> String {
     if is_flutter_local_saying_hello_output_repo(_spec) {
         return tutorial_file_markdown(
@@ -15953,6 +16879,27 @@ mod tests {
         }
     }
 
+    fn sample_prism_widget_renderer_flutter_output_repo_spec() -> OutputRepoSpec {
+        OutputRepoSpec {
+            repo_name: "fa_tut_prism-widget-renderer".to_string(),
+            repo_description:
+                "Tutorial workspace for the Prism Widget Renderer project with Dart / Dart / test / mocktail / no-storage / client / all / Flutter choices."
+                    .to_string(),
+            project_slug: "prism-widget-renderer".to_string(),
+            selections: OutputRepoSelections {
+                ecosystem: "dart".to_string(),
+                language: "dart".to_string(),
+                testing: "test".to_string(),
+                mocking: "mocktail".to_string(),
+                storage: "no-storage".to_string(),
+                surface: "client".to_string(),
+                target: "all".to_string(),
+                framework: "flutter".to_string(),
+                protocol: None,
+            },
+        }
+    }
+
     fn sample_dotnet_output_repo_spec() -> OutputRepoSpec {
         OutputRepoSpec {
             repo_name: "fa_tut_saying-hello".to_string(),
@@ -16199,6 +17146,27 @@ mod tests {
 
         let selections = output_repo_selections_for_project("prism-net-layout", &overrides)
             .expect("flutter local prism-net-layout should be supported");
+
+        assert_eq!(selections.ecosystem, "dart");
+        assert_eq!(selections.surface, "client");
+        assert_eq!(selections.target, "all");
+        assert_eq!(selections.framework, "flutter");
+        assert_eq!(selections.protocol, None);
+    }
+
+    #[test]
+    fn output_repo_selection_overrides_allow_switching_prism_widget_renderer_to_flutter_local() {
+        let overrides = BootstrapSelectionOverrides {
+            ecosystem: Some("dart".to_string()),
+            surface: Some("client".to_string()),
+            target: Some("all".to_string()),
+            protocol: Some("none".to_string()),
+            ..BootstrapSelectionOverrides::default()
+        };
+
+        let selections =
+            output_repo_selections_for_project("prism-widget-renderer", &overrides)
+                .expect("flutter local prism-widget-renderer should be supported");
 
         assert_eq!(selections.ecosystem, "dart");
         assert_eq!(selections.surface, "client");
@@ -17109,6 +18077,23 @@ mod tests {
     }
 
     #[test]
+    fn prism_widget_renderer_flutter_output_repo_setup_content_uses_cross_platform_flutter_workspace_layout(
+    ) {
+        let spec = sample_prism_widget_renderer_flutter_output_repo_spec();
+
+        let setup = render_output_repo_setup_content(&spec);
+
+        assert!(setup.contains("flutter create --platforms=web,android,ios,macos,windows,linux --org com.intrepion --project-name prism_widget_renderer workspace"));
+        assert!(!setup.contains("flutter pub add http"));
+        assert!(setup.contains("prism_camera.dart"));
+        assert!(setup.contains("rendered_prism_face.dart"));
+        assert!(setup.contains("prism_widget_renderer_service.dart"));
+        assert!(setup.contains("prism_widget_renderer_page.dart"));
+        assert!(setup.contains("just run-web"));
+        assert!(setup.contains("just run-android device=\"<android-device-id-or-name>\""));
+    }
+
+    #[test]
     fn astro_saying_hello_contracts_code_and_adapter_tutorials_are_concrete() {
         let spec = sample_astro_output_repo_spec();
 
@@ -17246,6 +18231,28 @@ mod tests {
         assert!(adapter.contains("240 x 360 x 90"));
         assert!(finish.contains("confirm `front` is the central visible panel in the flat net"));
         assert!(finish.contains("confirm a missing face like `bottom` stays hidden"));
+    }
+
+    #[test]
+    fn prism_widget_renderer_flutter_contracts_code_adapter_and_finish_are_concrete() {
+        let spec = sample_prism_widget_renderer_flutter_output_repo_spec();
+
+        let contracts = render_flutter_prism_widget_renderer_contracts_content(&spec);
+        let code = render_flutter_prism_widget_renderer_code_content(&spec);
+        let adapter = render_flutter_prism_widget_renderer_adapter_content(&spec);
+        let finish = render_output_repo_finish_content(&spec);
+
+        assert!(contracts.contains("class PrismCamera"));
+        assert!(contracts.contains("class RenderedPrismFace"));
+        assert!(code.contains("clampPrismZoom"));
+        assert!(code.contains("buildPrismCamera"));
+        assert!(code.contains("isFaceVisible"));
+        assert!(code.contains("buildRenderedPrismFaces"));
+        assert!(adapter.contains("PrismWidgetRendererPage"));
+        assert!(adapter.contains("rendered-front"));
+        assert!(adapter.contains("35 / -20 / 1.0"));
+        assert!(finish.contains("confirm only `front`, `right`, and `top` are visible"));
+        assert!(finish.contains("tap the zoom controls"));
     }
 
     #[test]

@@ -1,3 +1,21 @@
 project: prism-widget-renderer
 partial_version: 1
-compiled_outputs: []
+compiled_outputs:
+  - id: dart-dart-test-mocktail-no-storage-client-all-flutter-local
+    kind: adapter
+    tutorial_path: tutorials/prism-widget-renderer/dart/dart/adapters/no-storage/client/all/flutter/test/README.md
+    selections:
+      ecosystem: dart
+      language: dart
+      testing: test
+      mocking: mocktail
+      storage: no-storage
+      surface: client
+      target: all
+      framework: flutter
+    sources:
+      - partials/projects/prism-widget-renderer/README.md
+      - partials/projects/prism-widget-renderer/spec/README.md
+      - partials/projects/prism-widget-renderer/instructions/README.md
+      - partials/projects/prism-widget-renderer/instructions/core.md
+      - partials/projects/prism-widget-renderer/instructions/adapter.md
