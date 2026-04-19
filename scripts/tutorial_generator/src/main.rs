@@ -531,6 +531,19 @@ fn is_flutter_team_task_board_rest_json_output_repo(spec: &OutputRepoSpec) -> bo
         && spec.selections.protocol.as_deref() == Some("rest-json")
 }
 
+fn is_flutter_local_prism_face_selector_output_repo(spec: &OutputRepoSpec) -> bool {
+    spec.project_slug == "prism-face-selector"
+        && spec.selections.ecosystem == "dart"
+        && spec.selections.language == "dart"
+        && spec.selections.testing == "test"
+        && spec.selections.mocking == "mocktail"
+        && spec.selections.storage == "no-storage"
+        && spec.selections.surface == "client"
+        && spec.selections.target == "all"
+        && spec.selections.framework == "flutter"
+        && spec.selections.protocol.is_none()
+}
+
 fn is_flutter_todo_list_output_repo(spec: &OutputRepoSpec) -> bool {
     is_flutter_todo_list_rest_json_output_repo(spec)
 }
@@ -543,6 +556,7 @@ fn is_flutter_output_repo(spec: &OutputRepoSpec) -> bool {
     is_flutter_saying_hello_output_repo(spec)
         || is_flutter_todo_list_output_repo(spec)
         || is_flutter_team_task_board_output_repo(spec)
+        || is_flutter_local_prism_face_selector_output_repo(spec)
 }
 
 fn is_flutter_http_output_repo(spec: &OutputRepoSpec) -> bool {
@@ -750,6 +764,17 @@ fn supported_output_repo_selections(
             framework: "flutter".to_string(),
             protocol: Some("rest-json".to_string()),
         }),
+        ("prism-face-selector", "dart") => Some(OutputRepoSelections {
+            ecosystem: "dart".to_string(),
+            language: "dart".to_string(),
+            testing: "test".to_string(),
+            mocking: "mocktail".to_string(),
+            storage: "no-storage".to_string(),
+            surface: "client".to_string(),
+            target: "all".to_string(),
+            framework: "flutter".to_string(),
+            protocol: None,
+        }),
         (_, "dotnet") => Some(OutputRepoSelections {
             ecosystem: "dotnet".to_string(),
             language: "csharp".to_string(),
@@ -919,6 +944,10 @@ fn validate_output_repo_selections(
     if project_slug == "team-task-board"
         && selections == &supported_flutter_team_task_board_rest_json
     {
+        return Ok(());
+    }
+
+    if project_slug == "prism-face-selector" && selections == &supported_flutter_local {
         return Ok(());
     }
 
@@ -1696,6 +1725,10 @@ fn build_output_repo_tutorial_files(app_root: &Path, spec: &OutputRepoSpec) -> V
         return build_flutter_team_task_board_output_repo_tutorial_files(app_root, spec);
     }
 
+    if is_flutter_local_prism_face_selector_output_repo(spec) {
+        return build_flutter_prism_face_selector_output_repo_tutorial_files(app_root, spec);
+    }
+
     if is_astro_saying_hello_output_repo(spec) {
         return build_astro_saying_hello_output_repo_tutorial_files(app_root, spec);
     }
@@ -2038,6 +2071,50 @@ fn build_flutter_team_task_board_output_repo_tutorial_files(
             relative_path: "tutorial/adapter.md".to_string(),
             contents: render_flutter_team_task_board_rest_json_adapter_content(spec)
                 .into_bytes(),
+        },
+        ManagedRepoFile {
+            relative_path: "tutorial/finish.md".to_string(),
+            contents: render_output_repo_finish_content(spec).into_bytes(),
+        },
+    ]
+}
+
+fn build_flutter_prism_face_selector_output_repo_tutorial_files(
+    app_root: &Path,
+    spec: &OutputRepoSpec,
+) -> Vec<ManagedRepoFile> {
+    let project_root = app_root.join("partials/projects").join(&spec.project_slug);
+    let spec_partial =
+        Partial::load(&project_root.join("spec/README.md")).expect("spec partial should exist");
+
+    vec![
+        ManagedRepoFile {
+            relative_path: "tutorial/README.md".to_string(),
+            contents: render_output_repo_tutorial_readme_content(spec).into_bytes(),
+        },
+        ManagedRepoFile {
+            relative_path: "tutorial/setup.md".to_string(),
+            contents: render_output_repo_setup_content(spec).into_bytes(),
+        },
+        ManagedRepoFile {
+            relative_path: "tutorial/spec.md".to_string(),
+            contents: tutorial_file_markdown(
+                "Spec",
+                &rewrite_for_single_repo_tutorial(&spec_partial.body),
+            )
+            .into_bytes(),
+        },
+        ManagedRepoFile {
+            relative_path: "tutorial/contracts.md".to_string(),
+            contents: render_flutter_prism_face_selector_contracts_content(spec).into_bytes(),
+        },
+        ManagedRepoFile {
+            relative_path: "tutorial/code.md".to_string(),
+            contents: render_flutter_prism_face_selector_code_content(spec).into_bytes(),
+        },
+        ManagedRepoFile {
+            relative_path: "tutorial/adapter.md".to_string(),
+            contents: render_flutter_prism_face_selector_adapter_content(spec).into_bytes(),
         },
         ManagedRepoFile {
             relative_path: "tutorial/finish.md".to_string(),
@@ -2583,6 +2660,47 @@ git commit --message "Enable macOS network client entitlement"
         );
     }
 
+    if is_flutter_local_prism_face_selector_output_repo(spec) {
+        let package_name = flutter_package_name(&spec.project_slug);
+        let setup_commands = vec![
+            format!(
+                "flutter create --platforms=web,android,ios,macos,windows,linux --org com.intrepion --project-name {package_name} workspace"
+            ),
+            "rm workspace/test/widget_test.dart".to_string(),
+            "(cd workspace && flutter pub add --dev test)".to_string(),
+            "(cd workspace && flutter pub add --dev mocktail)".to_string(),
+            "(cd workspace && flutter pub add --dev integration_test --sdk flutter)"
+                .to_string(),
+        ];
+        let workspace_tree = r#"workspace/
+  pubspec.yaml
+  lib/
+    contracts/
+      normalized_rect.dart
+      prism_face_selection.dart
+    code/
+      prism_face_selector_service.dart
+    adapter/
+      prism_face_selector_page.dart
+  test/
+    code/
+      prism_face_selector_service_test.dart
+    adapter/
+      prism_face_selector_page_test.dart
+  integration_test/
+    app_test.dart
+  lib/main.dart"#;
+
+        return tutorial_file_markdown(
+            "Setup",
+            &format!(
+                "Keep the repository root for shared files like `README.md`, `LICENSE`, `.gitignore`, `.github/`, `justfile`, and `tutorial/`.\n\nPut all Flutter code inside a single `workspace/` folder.\n\nThis tutorial builds a local Flutter prism-face selector with a fixed selection canvas, normalized rectangle math, and one stored rectangle per canonical face slot.\n\nFrom the repository root, run each setup command and checkpoint it before moving to the next one:\n\n```bash\n{}\n```\n\nWhen the full workspace is finished, it should contain these files:\n\n```text\n{workspace_tree}\n```\n\nBefore you try any run command, make sure Flutter can see a supported target:\n\n```bash\njust devices\n```\n\nFor web, use the default web command:\n\n```bash\njust run\n```\n\nor, explicitly:\n\n```bash\njust run-web\n```\n\nOn macOS for iOS, install CocoaPods first if you have not already:\n\n```bash\nsudo gem install cocoapods\n```\n\nThen open the simulator, list devices, and run the iOS app with an actual simulator id or name:\n\n```bash\nopen -a Simulator\njust devices\njust run-ios device=\"<ios-device-id-or-name>\"\n```\n\nFlutter does not accept bare `ios` as a generic simulator target, so if `just devices` does not show your simulator yet, wait a moment and run it again.\n\nFor Android, list available emulators, launch one, list devices again, and then run the Android app:\n\n```bash\njust emulators\nflutter emulators --launch <emulator-id>\njust devices\njust run-android device=\"<android-device-id-or-name>\"\n```\n\nFor macOS desktop, use:\n\n```bash\njust run-macos\n```\n\nFor Windows or Linux, run the matching command on that host platform:\n\n```bash\njust run-windows\njust run-linux\n```\n\nAfter your first successful iOS run, if CocoaPods added shared iOS project files like these:\n\n- `workspace/ios/Runner.xcodeproj/project.pbxproj`\n- `workspace/ios/Runner.xcworkspace/contents.xcworkspacedata`\n- `workspace/ios/Podfile.lock`\n\nthen run:\n\n```bash\ngit add --all\ngit commit --message \"Add iOS CocoaPods workspace files\"\n```\n\nAfter your first successful macOS run, if CocoaPods added shared macOS project files like these:\n\n- `workspace/macos/Runner.xcodeproj/project.pbxproj`\n- `workspace/macos/Runner.xcworkspace/contents.xcworkspacedata`\n- `workspace/macos/Podfile.lock`\n\nthen run:\n\n```bash\ngit add --all\ngit commit --message \"Add macOS CocoaPods workspace files\"\n```\n\nDo not commit local machine output like these:\n\n- `workspace/ios/Pods/`\n- `workspace/macos/Pods/`\n- `workspace/build/`\n- `workspace/.dart_tool/`\n\nFor Android, a normal first run usually should not add shared tracked files. If it does change shared files under `workspace/android/`, review them carefully and commit only the project-level changes. Do not commit machine-specific files like:\n\n- `workspace/android/local.properties`\n- `workspace/.gradle/`\n- `workspace/build/`",
+                render_setup_commands_with_commits(&setup_commands, 2),
+                workspace_tree = workspace_tree,
+            ),
+        );
+    }
+
     if is_astro_saying_hello_output_repo(spec) {
         let setup_commands = vec![
             "curl -L -s https://raw.githubusercontent.com/github/gitignore/refs/heads/main/Node.gitignore > workspace/.gitignore".to_string(),
@@ -2979,6 +3097,15 @@ fn render_output_repo_finish_content(spec: &OutputRepoSpec) -> String {
             )
         };
         return tutorial_file_markdown("Finish", &body);
+    }
+
+    if is_flutter_local_prism_face_selector_output_repo(spec) {
+        return tutorial_file_markdown(
+            "Finish",
+            &format!(
+                "For web, start the Flutter app from the repository root with:\n\n```bash\njust run\n```\n\nor:\n\n```bash\njust run-web\n```\n\nThen open `http://localhost:{FOR_ALL_FRONTEND_PORT}` in your browser.\n\nFor iOS, open the simulator, list devices, and run with an actual simulator id or name:\n\n```bash\nopen -a Simulator\njust devices\njust run-ios device=\"<ios-device-id-or-name>\"\n```\n\nFor Android, use:\n\n```bash\njust run-android device=\"<android-device-id-or-name>\"\n```\n\nFor macOS desktop, use:\n\n```bash\njust run-macos\n```\n\nFor Windows or Linux, run the matching command on that host platform:\n\n```bash\njust run-windows\njust run-linux\n```\n\nAfter the first successful iOS run, if CocoaPods added shared iOS project files like these:\n\n- `workspace/ios/Runner.xcodeproj/project.pbxproj`\n- `workspace/ios/Runner.xcworkspace/contents.xcworkspacedata`\n- `workspace/ios/Podfile.lock`\n\nthen run:\n\n```bash\ngit add --all\ngit commit --message \"Add iOS CocoaPods workspace files\"\n```\n\nAfter the first successful macOS run, if CocoaPods added shared macOS project files like these:\n\n- `workspace/macos/Runner.xcodeproj/project.pbxproj`\n- `workspace/macos/Runner.xcworkspace/contents.xcworkspacedata`\n- `workspace/macos/Podfile.lock`\n\nthen run:\n\n```bash\ngit add --all\ngit commit --message \"Add macOS CocoaPods workspace files\"\n```\n\nTry this flow:\n\n- leave `front` selected and drag a rectangle on the selection canvas\n- switch to `right` and drag a second rectangle\n- confirm the summary updates with normalized values between `0.00` and `1.00`\n- restart the app and notice that this first tutorial path keeps state only in memory"
+            ),
+        );
     }
 
     if is_astro_saying_hello_output_repo(spec) {
@@ -11158,6 +11285,688 @@ git commit --message "5. Green: Wire The Real Application"
     )
 }
 
+fn render_flutter_prism_face_selector_contracts_content(_spec: &OutputRepoSpec) -> String {
+    tutorial_file_markdown(
+        "Contracts",
+        &rewrite_stage_commit_checkpoints(&rewrite_touch_creation_stage_only(
+            r#"Create the shared contract files:
+
+```bash
+touch workspace/lib/contracts/normalized_rect.dart
+touch workspace/lib/contracts/prism_face_selection.dart
+```
+
+Put this exact content in `workspace/lib/contracts/normalized_rect.dart`:
+
+```dart
+class NormalizedRect {
+  final double left;
+  final double top;
+  final double width;
+  final double height;
+
+  const NormalizedRect({
+    required this.left,
+    required this.top,
+    required this.width,
+    required this.height,
+  });
+}
+```
+
+Put this exact content in `workspace/lib/contracts/prism_face_selection.dart`:
+
+```dart
+import 'normalized_rect.dart';
+
+class PrismFaceSelection {
+  final String faceName;
+  final NormalizedRect? rect;
+
+  const PrismFaceSelection({
+    required this.faceName,
+    required this.rect,
+  });
+}
+```
+
+Do not add tests here. Keep this layer limited to interfaces and small shared types.
+
+Then run:
+
+```bash
+git add --all
+git commit --message "Define prism-face-selector Flutter contracts"
+```"#,
+        )),
+    )
+}
+
+fn render_flutter_prism_face_selector_code_content(spec: &OutputRepoSpec) -> String {
+    let package_name = flutter_package_name(&spec.project_slug);
+    tutorial_file_markdown(
+        "Code",
+        &rewrite_touch_creation_stage_only(&format!(
+            r#"### 1. Red: Build The Empty Face Selection Map
+
+Create the first code test file:
+
+```bash
+touch workspace/test/code/prism_face_selector_service_test.dart
+```
+
+Put this exact content in `workspace/test/code/prism_face_selector_service_test.dart`:
+
+```dart
+import 'package:{package_name}/code/prism_face_selector_service.dart';
+import 'package:test/test.dart';
+
+void main() {{
+  test('defaultFaceSelectionMap returns all empty canonical face slots', () {{
+    final selections = defaultFaceSelectionMap();
+
+    expect(selections.keys, [
+      'front',
+      'back',
+      'left',
+      'right',
+      'top',
+      'bottom',
+    ]);
+    expect(selections.values.every((rect) => rect == null), isTrue);
+  }});
+}}
+```
+
+Run:
+
+```bash
+just check-tests
+git add --all
+git commit --message "1. Red: Build The Empty Face Selection Map"
+```
+
+### 2. Green: Return The Canonical Empty Face Selection Map
+
+Create the first production file:
+
+```bash
+touch workspace/lib/code/prism_face_selector_service.dart
+```
+
+Put this exact content in `workspace/lib/code/prism_face_selector_service.dart`:
+
+```dart
+import '../contracts/normalized_rect.dart';
+
+const canonicalPrismFaces = [
+  'front',
+  'back',
+  'left',
+  'right',
+  'top',
+  'bottom',
+];
+
+Map<String, NormalizedRect?> defaultFaceSelectionMap() {{
+  return {{
+    for (final face in canonicalPrismFaces) face: null,
+  }};
+}}
+```
+
+Run:
+
+```bash
+just check-tests
+git add --all
+git commit --message "2. Green: Return The Canonical Empty Face Selection Map"
+```
+
+### 3. Red: Normalize A Selection Rectangle
+
+Replace `workspace/test/code/prism_face_selector_service_test.dart` with:
+
+```dart
+import 'package:{package_name}/code/prism_face_selector_service.dart';
+import 'package:test/test.dart';
+
+void main() {{
+  test('defaultFaceSelectionMap returns all empty canonical face slots', () {{
+    final selections = defaultFaceSelectionMap();
+
+    expect(selections.keys, [
+      'front',
+      'back',
+      'left',
+      'right',
+      'top',
+      'bottom',
+    ]);
+    expect(selections.values.every((rect) => rect == null), isTrue);
+  }});
+
+  test('normalizeSelectionRect converts image coordinates into normalized values', () {{
+    final rect = normalizeSelectionRect(
+      imageWidth: 300,
+      imageHeight: 210,
+      left: 30,
+      top: 21,
+      width: 90,
+      height: 84,
+    );
+
+    expect(rect.left, closeTo(0.10, 0.001));
+    expect(rect.top, closeTo(0.10, 0.001));
+    expect(rect.width, closeTo(0.30, 0.001));
+    expect(rect.height, closeTo(0.40, 0.001));
+  }});
+}}
+```
+
+Run:
+
+```bash
+just check-tests
+git add --all
+git commit --message "3. Red: Normalize A Selection Rectangle"
+```
+
+### 4. Green: Normalize A Selection Rectangle
+
+Replace `workspace/lib/code/prism_face_selector_service.dart` with:
+
+```dart
+import '../contracts/normalized_rect.dart';
+
+const canonicalPrismFaces = [
+  'front',
+  'back',
+  'left',
+  'right',
+  'top',
+  'bottom',
+];
+
+Map<String, NormalizedRect?> defaultFaceSelectionMap() {{
+  return {{
+    for (final face in canonicalPrismFaces) face: null,
+  }};
+}}
+
+NormalizedRect normalizeSelectionRect({{
+  required double imageWidth,
+  required double imageHeight,
+  required double left,
+  required double top,
+  required double width,
+  required double height,
+}}) {{
+  return NormalizedRect(
+    left: left / imageWidth,
+    top: top / imageHeight,
+    width: width / imageWidth,
+    height: height / imageHeight,
+  );
+}}
+```
+
+Run:
+
+```bash
+just check-tests
+git add --all
+git commit --message "4. Green: Normalize A Selection Rectangle"
+```
+
+### 5. Red: Assign One Face Without Changing The Others
+
+Replace `workspace/test/code/prism_face_selector_service_test.dart` with:
+
+```dart
+import 'package:{package_name}/code/prism_face_selector_service.dart';
+import 'package:test/test.dart';
+
+void main() {{
+  test('defaultFaceSelectionMap returns all empty canonical face slots', () {{
+    final selections = defaultFaceSelectionMap();
+
+    expect(selections.keys, [
+      'front',
+      'back',
+      'left',
+      'right',
+      'top',
+      'bottom',
+    ]);
+    expect(selections.values.every((rect) => rect == null), isTrue);
+  }});
+
+  test('normalizeSelectionRect converts image coordinates into normalized values', () {{
+    final rect = normalizeSelectionRect(
+      imageWidth: 300,
+      imageHeight: 210,
+      left: 30,
+      top: 21,
+      width: 90,
+      height: 84,
+    );
+
+    expect(rect.left, closeTo(0.10, 0.001));
+    expect(rect.top, closeTo(0.10, 0.001));
+    expect(rect.width, closeTo(0.30, 0.001));
+    expect(rect.height, closeTo(0.40, 0.001));
+  }});
+
+  test('assignFaceSelection updates only the requested face slot', () {{
+    final rect = normalizeSelectionRect(
+      imageWidth: 300,
+      imageHeight: 210,
+      left: 30,
+      top: 21,
+      width: 90,
+      height: 84,
+    );
+
+    final updated = assignFaceSelection(defaultFaceSelectionMap(), 'front', rect);
+
+    expect(updated['front'], isNotNull);
+    expect(updated['back'], isNull);
+    expect(updated['left'], isNull);
+    expect(updated['right'], isNull);
+    expect(updated['top'], isNull);
+    expect(updated['bottom'], isNull);
+  }});
+}}
+```
+
+Run:
+
+```bash
+just check-tests
+git add --all
+git commit --message "5. Red: Assign One Face Without Changing The Others"
+```
+
+### 6. Green: Assign One Face Without Changing The Others
+
+Replace `workspace/lib/code/prism_face_selector_service.dart` with:
+
+```dart
+import '../contracts/normalized_rect.dart';
+
+const canonicalPrismFaces = [
+  'front',
+  'back',
+  'left',
+  'right',
+  'top',
+  'bottom',
+];
+
+Map<String, NormalizedRect?> defaultFaceSelectionMap() {{
+  return {{
+    for (final face in canonicalPrismFaces) face: null,
+  }};
+}}
+
+NormalizedRect normalizeSelectionRect({{
+  required double imageWidth,
+  required double imageHeight,
+  required double left,
+  required double top,
+  required double width,
+  required double height,
+}}) {{
+  return NormalizedRect(
+    left: left / imageWidth,
+    top: top / imageHeight,
+    width: width / imageWidth,
+    height: height / imageHeight,
+  );
+}}
+
+Map<String, NormalizedRect?> assignFaceSelection(
+  Map<String, NormalizedRect?> selections,
+  String faceName,
+  NormalizedRect rect,
+) {{
+  if (!canonicalPrismFaces.contains(faceName)) {{
+    throw ArgumentError.value(faceName, 'faceName', 'Unknown face slot');
+  }}
+
+  return {{
+    for (final entry in selections.entries)
+      entry.key: entry.key == faceName ? rect : entry.value,
+  }};
+}}
+```
+
+Run:
+
+```bash
+just check-tests
+git add --all
+git commit --message "6. Green: Assign One Face Without Changing The Others"
+```"#,
+        )),
+    )
+}
+
+fn render_flutter_prism_face_selector_adapter_content(spec: &OutputRepoSpec) -> String {
+    let package_name = flutter_package_name(&spec.project_slug);
+    tutorial_file_markdown(
+        "Adapter",
+        &rewrite_touch_creation_stage_only(&format!(
+            r#"### 1. Red: Add The Prism Face Selector Page Widget Test
+
+Create the widget test file:
+
+```bash
+touch workspace/test/adapter/prism_face_selector_page_test.dart
+```
+
+Put this exact content in `workspace/test/adapter/prism_face_selector_page_test.dart`:
+
+```dart
+import 'package:flutter/material.dart';
+import 'package:flutter_test/flutter_test.dart';
+import 'package:{package_name}/adapter/prism_face_selector_page.dart';
+
+void main() {{
+  testWidgets('selects a face and stores a normalized rectangle from a drag gesture', (
+    tester,
+  ) async {{
+    await tester.pumpWidget(
+      const MaterialApp(home: PrismFaceSelectorPage()),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.text('front'), findsWidgets);
+
+    final canvas = find.byKey(const Key('selection-canvas'));
+    final topLeft = tester.getTopLeft(canvas);
+    final gesture = await tester.startGesture(topLeft + const Offset(30, 21));
+    await gesture.moveTo(topLeft + const Offset(120, 105));
+    await gesture.up();
+    await tester.pumpAndSettle();
+
+    expect(find.text('front | 0.10, 0.10, 0.30, 0.40'), findsOneWidget);
+  }});
+}}
+```
+
+Run:
+
+```bash
+just check-tests
+git add --all
+git commit --message "1. Red: Add The Prism Face Selector Page Widget Test"
+```
+
+### 2. Green: Build The Prism Face Selector Page
+
+Create the page production file:
+
+```bash
+touch workspace/lib/adapter/prism_face_selector_page.dart
+```
+
+Put this exact content in `workspace/lib/adapter/prism_face_selector_page.dart`:
+
+```dart
+import 'dart:math' as math;
+
+import 'package:flutter/material.dart';
+
+import '../code/prism_face_selector_service.dart';
+import '../contracts/normalized_rect.dart';
+
+class PrismFaceSelectorPage extends StatefulWidget {{
+  const PrismFaceSelectorPage({{super.key}});
+
+  @override
+  State<PrismFaceSelectorPage> createState() => _PrismFaceSelectorPageState();
+}}
+
+class _PrismFaceSelectorPageState extends State<PrismFaceSelectorPage> {{
+  static const _canvasWidth = 300.0;
+  static const _canvasHeight = 210.0;
+
+  String _selectedFace = 'front';
+  Map<String, NormalizedRect?> _selections = defaultFaceSelectionMap();
+  Offset? _dragStart;
+  Rect? _draftRect;
+
+  void _updateDraftRect(Offset currentPosition) {{
+    final start = _dragStart;
+    if (start == null) {{
+      return;
+    }}
+
+    final left = math.min(start.dx, currentPosition.dx).clamp(0.0, _canvasWidth);
+    final top = math.min(start.dy, currentPosition.dy).clamp(0.0, _canvasHeight);
+    final right = math.max(start.dx, currentPosition.dx).clamp(0.0, _canvasWidth);
+    final bottom = math.max(start.dy, currentPosition.dy).clamp(0.0, _canvasHeight);
+
+    setState(() {{
+      _draftRect = Rect.fromLTRB(left, top, right, bottom);
+    }});
+  }}
+
+  String _summaryLine(String faceName, NormalizedRect? rect) {{
+    if (rect == null) {{
+      return '$faceName | unassigned';
+    }}
+
+    return '$faceName | '
+        '${{rect.left.toStringAsFixed(2)}}, '
+        '${{rect.top.toStringAsFixed(2)}}, '
+        '${{rect.width.toStringAsFixed(2)}}, '
+        '${{rect.height.toStringAsFixed(2)}}';
+  }}
+
+  @override
+  Widget build(BuildContext context) {{
+    return Scaffold(
+      appBar: AppBar(title: const Text('Prism Face Selector')),
+      body: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text('Face slot'),
+            const SizedBox(height: 8),
+            Wrap(
+              spacing: 8,
+              children: canonicalPrismFaces
+                  .map(
+                    (face) => ChoiceChip(
+                      key: Key('face-$face'),
+                      label: Text(face),
+                      selected: _selectedFace == face,
+                      onSelected: (_) {{
+                        setState(() {{
+                          _selectedFace = face;
+                        }});
+                      }},
+                    ),
+                  )
+                  .toList(),
+            ),
+            const SizedBox(height: 16),
+            const Text('Selection canvas'),
+            const SizedBox(height: 8),
+            GestureDetector(
+              key: const Key('selection-canvas'),
+              onPanStart: (details) {{
+                _dragStart = details.localPosition;
+                _draftRect = null;
+              }},
+              onPanUpdate: (details) {{
+                _updateDraftRect(details.localPosition);
+              }},
+              onPanEnd: (_) {{
+                final rect = _draftRect;
+                if (rect == null || rect.width <= 0 || rect.height <= 0) {{
+                  return;
+                }}
+
+                final normalized = normalizeSelectionRect(
+                  imageWidth: _canvasWidth,
+                  imageHeight: _canvasHeight,
+                  left: rect.left,
+                  top: rect.top,
+                  width: rect.width,
+                  height: rect.height,
+                );
+
+                setState(() {{
+                  _selections = assignFaceSelection(
+                    _selections,
+                    _selectedFace,
+                    normalized,
+                  );
+                  _draftRect = null;
+                }});
+              }},
+              child: Container(
+                width: _canvasWidth,
+                height: _canvasHeight,
+                decoration: BoxDecoration(
+                  color: const Color(0xFFF6E7C1),
+                  border: Border.all(color: Colors.brown),
+                ),
+                child: Stack(
+                  children: [
+                    const Positioned.fill(
+                      child: Center(
+                        child: Text('Sample cereal box sheet area'),
+                      ),
+                    ),
+                    if (_draftRect != null)
+                      Positioned(
+                        left: _draftRect!.left,
+                        top: _draftRect!.top,
+                        child: Container(
+                          width: _draftRect!.width,
+                          height: _draftRect!.height,
+                          decoration: BoxDecoration(
+                            border: Border.all(color: Colors.blue, width: 2),
+                            color: Colors.blue.withValues(alpha: 0.15),
+                          ),
+                        ),
+                      ),
+                  ],
+                ),
+              ),
+            ),
+            const SizedBox(height: 16),
+            const Text('Selections'),
+            const SizedBox(height: 8),
+            Expanded(
+              child: ListView(
+                children: canonicalPrismFaces
+                    .map(
+                      (face) => Text(
+                        _summaryLine(face, _selections[face]),
+                        key: Key('summary-$face'),
+                      ),
+                    )
+                    .toList(),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }}
+}}
+```
+
+Run:
+
+```bash
+just check-tests
+git add --all
+git commit --message "2. Green: Build The Prism Face Selector Page"
+```
+
+### 3. Red: Add The Integration Test
+
+Create the integration test file:
+
+```bash
+touch workspace/integration_test/app_test.dart
+```
+
+Put this exact content in `workspace/integration_test/app_test.dart`:
+
+```dart
+import 'package:flutter/material.dart';
+import 'package:flutter_test/flutter_test.dart';
+import 'package:integration_test/integration_test.dart';
+import 'package:{package_name}/adapter/prism_face_selector_page.dart';
+
+void main() {{
+  IntegrationTestWidgetsFlutterBinding.ensureInitialized();
+
+  testWidgets('renders the selector page title', (tester) async {{
+    await tester.pumpWidget(
+      const MaterialApp(home: PrismFaceSelectorPage()),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.text('Prism Face Selector'), findsOneWidget);
+  }});
+}}
+```
+
+Run:
+
+```bash
+just check-tests
+git add --all
+git commit --message "3. Red: Add The Integration Test"
+```
+
+### 4. Green: Wire The Real Application
+
+Replace `workspace/lib/main.dart` with:
+
+```dart
+import 'package:flutter/material.dart';
+
+import 'adapter/prism_face_selector_page.dart';
+
+void main() {{
+  runApp(const PrismFaceSelectorApp());
+}}
+
+class PrismFaceSelectorApp extends StatelessWidget {{
+  const PrismFaceSelectorApp({{super.key}});
+
+  @override
+  Widget build(BuildContext context) {{
+    return const MaterialApp(
+      title: 'Prism Face Selector',
+      home: PrismFaceSelectorPage(),
+    );
+  }}
+}}
+```
+
+Run:
+
+```bash
+just check-tests
+git add --all
+git commit --message "4. Green: Wire The Real Application"
+```"#,
+        )),
+    )
+}
+
 fn render_flutter_saying_hello_contracts_content(_spec: &OutputRepoSpec) -> String {
     if is_flutter_local_saying_hello_output_repo(_spec) {
         return tutorial_file_markdown(
@@ -13081,6 +13890,27 @@ mod tests {
         }
     }
 
+    fn sample_prism_face_selector_flutter_output_repo_spec() -> OutputRepoSpec {
+        OutputRepoSpec {
+            repo_name: "fa_tut_prism-face-selector".to_string(),
+            repo_description:
+                "Tutorial workspace for the Prism Face Selector project with Dart / Dart / test / mocktail / no-storage / client / all / Flutter choices."
+                    .to_string(),
+            project_slug: "prism-face-selector".to_string(),
+            selections: OutputRepoSelections {
+                ecosystem: "dart".to_string(),
+                language: "dart".to_string(),
+                testing: "test".to_string(),
+                mocking: "mocktail".to_string(),
+                storage: "no-storage".to_string(),
+                surface: "client".to_string(),
+                target: "all".to_string(),
+                framework: "flutter".to_string(),
+                protocol: None,
+            },
+        }
+    }
+
     fn sample_dotnet_output_repo_spec() -> OutputRepoSpec {
         OutputRepoSpec {
             repo_name: "fa_tut_saying-hello".to_string(),
@@ -14145,6 +14975,23 @@ mod tests {
     }
 
     #[test]
+    fn prism_face_selector_flutter_output_repo_setup_content_uses_cross_platform_flutter_workspace_layout(
+    ) {
+        let spec = sample_prism_face_selector_flutter_output_repo_spec();
+
+        let setup = render_output_repo_setup_content(&spec);
+
+        assert!(setup.contains("flutter create --platforms=web,android,ios,macos,windows,linux --org com.intrepion --project-name prism_face_selector workspace"));
+        assert!(!setup.contains("flutter pub add http"));
+        assert!(setup.contains("normalized_rect.dart"));
+        assert!(setup.contains("prism_face_selection.dart"));
+        assert!(setup.contains("prism_face_selector_service.dart"));
+        assert!(setup.contains("prism_face_selector_page.dart"));
+        assert!(setup.contains("just run-web"));
+        assert!(setup.contains("just run-android device=\"<android-device-id-or-name>\""));
+    }
+
+    #[test]
     fn astro_saying_hello_contracts_code_and_adapter_tutorials_are_concrete() {
         let spec = sample_astro_output_repo_spec();
 
@@ -14217,6 +15064,27 @@ mod tests {
         assert!(finish.contains("workspace/android/local.properties"));
         assert!(finish.contains("workspace/macos/Pods/"));
         assert!(!finish.contains("API is running"));
+    }
+
+    #[test]
+    fn prism_face_selector_flutter_contracts_code_adapter_and_finish_are_concrete() {
+        let spec = sample_prism_face_selector_flutter_output_repo_spec();
+
+        let contracts = render_flutter_prism_face_selector_contracts_content(&spec);
+        let code = render_flutter_prism_face_selector_code_content(&spec);
+        let adapter = render_flutter_prism_face_selector_adapter_content(&spec);
+        let finish = render_output_repo_finish_content(&spec);
+
+        assert!(contracts.contains("class NormalizedRect"));
+        assert!(contracts.contains("class PrismFaceSelection"));
+        assert!(code.contains("defaultFaceSelectionMap"));
+        assert!(code.contains("normalizeSelectionRect"));
+        assert!(code.contains("assignFaceSelection"));
+        assert!(adapter.contains("PrismFaceSelectorPage"));
+        assert!(adapter.contains("selection-canvas"));
+        assert!(adapter.contains("front | 0.10, 0.10, 0.30, 0.40"));
+        assert!(finish.contains("drag a rectangle on the selection canvas"));
+        assert!(finish.contains("keeps state only in memory"));
     }
 
     #[test]

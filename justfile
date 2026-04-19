@@ -254,6 +254,17 @@ bs-dart-flutter-rest-json-all owner="intrepion" project="todo-list":
       --set bootstrap_protocol rest-json \
       _bs "{{owner}}" "{{project}}"
 
+bs-dart-flutter-local-all owner="intrepion" project="prism-face-selector":
+    just --set bootstrap_ecosystem dart \
+      --set bootstrap_language dart \
+      --set bootstrap_testing test \
+      --set bootstrap_mocking mocktail \
+      --set bootstrap_storage no-storage \
+      --set bootstrap_surface client \
+      --set bootstrap_target all \
+      --set bootstrap_framework flutter \
+      _bs "{{owner}}" "{{project}}"
+
 bs-dart-flutter-grpc-native owner="intrepion" project="saying-hello":
     just --set bootstrap_ecosystem dart \
       --set bootstrap_language dart \
