@@ -557,6 +557,19 @@ fn is_flutter_local_prism_face_cropper_output_repo(spec: &OutputRepoSpec) -> boo
         && spec.selections.protocol.is_none()
 }
 
+fn is_flutter_local_prism_net_layout_output_repo(spec: &OutputRepoSpec) -> bool {
+    spec.project_slug == "prism-net-layout"
+        && spec.selections.ecosystem == "dart"
+        && spec.selections.language == "dart"
+        && spec.selections.testing == "test"
+        && spec.selections.mocking == "mocktail"
+        && spec.selections.storage == "no-storage"
+        && spec.selections.surface == "client"
+        && spec.selections.target == "all"
+        && spec.selections.framework == "flutter"
+        && spec.selections.protocol.is_none()
+}
+
 fn is_flutter_todo_list_output_repo(spec: &OutputRepoSpec) -> bool {
     is_flutter_todo_list_rest_json_output_repo(spec)
 }
@@ -571,6 +584,7 @@ fn is_flutter_output_repo(spec: &OutputRepoSpec) -> bool {
         || is_flutter_team_task_board_output_repo(spec)
         || is_flutter_local_prism_face_selector_output_repo(spec)
         || is_flutter_local_prism_face_cropper_output_repo(spec)
+        || is_flutter_local_prism_net_layout_output_repo(spec)
 }
 
 fn is_flutter_http_output_repo(spec: &OutputRepoSpec) -> bool {
@@ -800,6 +814,17 @@ fn supported_output_repo_selections(
             framework: "flutter".to_string(),
             protocol: None,
         }),
+        ("prism-net-layout", "dart") => Some(OutputRepoSelections {
+            ecosystem: "dart".to_string(),
+            language: "dart".to_string(),
+            testing: "test".to_string(),
+            mocking: "mocktail".to_string(),
+            storage: "no-storage".to_string(),
+            surface: "client".to_string(),
+            target: "all".to_string(),
+            framework: "flutter".to_string(),
+            protocol: None,
+        }),
         (_, "dotnet") => Some(OutputRepoSelections {
             ecosystem: "dotnet".to_string(),
             language: "csharp".to_string(),
@@ -977,6 +1002,10 @@ fn validate_output_repo_selections(
     }
 
     if project_slug == "prism-face-cropper" && selections == &supported_flutter_local {
+        return Ok(());
+    }
+
+    if project_slug == "prism-net-layout" && selections == &supported_flutter_local {
         return Ok(());
     }
 
@@ -1762,6 +1791,10 @@ fn build_output_repo_tutorial_files(app_root: &Path, spec: &OutputRepoSpec) -> V
         return build_flutter_prism_face_cropper_output_repo_tutorial_files(app_root, spec);
     }
 
+    if is_flutter_local_prism_net_layout_output_repo(spec) {
+        return build_flutter_prism_net_layout_output_repo_tutorial_files(app_root, spec);
+    }
+
     if is_astro_saying_hello_output_repo(spec) {
         return build_astro_saying_hello_output_repo_tutorial_files(app_root, spec);
     }
@@ -2192,6 +2225,50 @@ fn build_flutter_prism_face_cropper_output_repo_tutorial_files(
         ManagedRepoFile {
             relative_path: "tutorial/adapter.md".to_string(),
             contents: render_flutter_prism_face_cropper_adapter_content(spec).into_bytes(),
+        },
+        ManagedRepoFile {
+            relative_path: "tutorial/finish.md".to_string(),
+            contents: render_output_repo_finish_content(spec).into_bytes(),
+        },
+    ]
+}
+
+fn build_flutter_prism_net_layout_output_repo_tutorial_files(
+    app_root: &Path,
+    spec: &OutputRepoSpec,
+) -> Vec<ManagedRepoFile> {
+    let project_root = app_root.join("partials/projects").join(&spec.project_slug);
+    let spec_partial =
+        Partial::load(&project_root.join("spec/README.md")).expect("spec partial should exist");
+
+    vec![
+        ManagedRepoFile {
+            relative_path: "tutorial/README.md".to_string(),
+            contents: render_output_repo_tutorial_readme_content(spec).into_bytes(),
+        },
+        ManagedRepoFile {
+            relative_path: "tutorial/setup.md".to_string(),
+            contents: render_output_repo_setup_content(spec).into_bytes(),
+        },
+        ManagedRepoFile {
+            relative_path: "tutorial/spec.md".to_string(),
+            contents: tutorial_file_markdown(
+                "Spec",
+                &rewrite_for_single_repo_tutorial(&spec_partial.body),
+            )
+            .into_bytes(),
+        },
+        ManagedRepoFile {
+            relative_path: "tutorial/contracts.md".to_string(),
+            contents: render_flutter_prism_net_layout_contracts_content(spec).into_bytes(),
+        },
+        ManagedRepoFile {
+            relative_path: "tutorial/code.md".to_string(),
+            contents: render_flutter_prism_net_layout_code_content(spec).into_bytes(),
+        },
+        ManagedRepoFile {
+            relative_path: "tutorial/adapter.md".to_string(),
+            contents: render_flutter_prism_net_layout_adapter_content(spec).into_bytes(),
         },
         ManagedRepoFile {
             relative_path: "tutorial/finish.md".to_string(),
@@ -2820,6 +2897,49 @@ git commit --message "Enable macOS network client entitlement"
         );
     }
 
+    if is_flutter_local_prism_net_layout_output_repo(spec) {
+        let package_name = flutter_package_name(&spec.project_slug);
+        let setup_commands = vec![
+            format!(
+                "flutter create --platforms=web,android,ios,macos,windows,linux --org com.intrepion --project-name {package_name} workspace"
+            ),
+            "rm workspace/test/widget_test.dart".to_string(),
+            "(cd workspace && flutter pub add --dev test)".to_string(),
+            "(cd workspace && flutter pub add --dev mocktail)".to_string(),
+            "(cd workspace && flutter pub add --dev integration_test --sdk flutter)"
+                .to_string(),
+        ];
+        let workspace_tree = r#"workspace/
+  pubspec.yaml
+  lib/
+    contracts/
+      face_crop_plan.dart
+      prism_dimensions.dart
+      face_size.dart
+      prism_net_layout_item.dart
+    code/
+      prism_net_layout_service.dart
+    adapter/
+      prism_net_layout_page.dart
+  test/
+    code/
+      prism_net_layout_service_test.dart
+    adapter/
+      prism_net_layout_page_test.dart
+  integration_test/
+    app_test.dart
+  lib/main.dart"#;
+
+        return tutorial_file_markdown(
+            "Setup",
+            &format!(
+                "Keep the repository root for shared files like `README.md`, `LICENSE`, `.gitignore`, `.github/`, `justfile`, and `tutorial/`.\n\nPut all Flutter code inside a single `workspace/` folder.\n\nThis tutorial builds a local Flutter prism net layout with fixed crop-plan input, explicit prism dimensions, and one deterministic flat net for the six canonical faces.\n\nFrom the repository root, run each setup command and checkpoint it before moving to the next one:\n\n```bash\n{}\n```\n\nWhen the full workspace is finished, it should contain these files:\n\n```text\n{workspace_tree}\n```\n\nBefore you try any run command, make sure Flutter can see a supported target:\n\n```bash\njust devices\n```\n\nFor web, use the default web command:\n\n```bash\njust run\n```\n\nor, explicitly:\n\n```bash\njust run-web\n```\n\nOn macOS for iOS, install CocoaPods first if you have not already:\n\n```bash\nsudo gem install cocoapods\n```\n\nThen open the simulator, list devices, and run the iOS app with an actual simulator id or name:\n\n```bash\nopen -a Simulator\njust devices\njust run-ios device=\"<ios-device-id-or-name>\"\n```\n\nFlutter does not accept bare `ios` as a generic simulator target, so if `just devices` does not show your simulator yet, wait a moment and run it again.\n\nFor Android, list available emulators, launch one, list devices again, and then run the Android app:\n\n```bash\njust emulators\nflutter emulators --launch <emulator-id>\njust devices\njust run-android device=\"<android-device-id-or-name>\"\n```\n\nFor macOS desktop, use:\n\n```bash\njust run-macos\n```\n\nFor Windows or Linux, run the matching command on that host platform:\n\n```bash\njust run-windows\njust run-linux\n```\n\nAfter your first successful iOS run, if CocoaPods added shared iOS project files like these:\n\n- `workspace/ios/Runner.xcodeproj/project.pbxproj`\n- `workspace/ios/Runner.xcworkspace/contents.xcworkspacedata`\n- `workspace/ios/Podfile.lock`\n\nthen run:\n\n```bash\ngit add --all\ngit commit --message \"Add iOS CocoaPods workspace files\"\n```\n\nAfter your first successful macOS run, if CocoaPods added shared macOS project files like these:\n\n- `workspace/macos/Runner.xcodeproj/project.pbxproj`\n- `workspace/macos/Runner.xcworkspace/contents.xcworkspacedata`\n- `workspace/macos/Podfile.lock`\n\nthen run:\n\n```bash\ngit add --all\ngit commit --message \"Add macOS CocoaPods workspace files\"\n```\n\nDo not commit local machine output like these:\n\n- `workspace/ios/Pods/`\n- `workspace/macos/Pods/`\n- `workspace/build/`\n- `workspace/.dart_tool/`\n\nFor Android, a normal first run usually should not add shared tracked files. If it does change shared files under `workspace/android/`, review them carefully and commit only the project-level changes. Do not commit machine-specific files like:\n\n- `workspace/android/local.properties`\n- `workspace/.gradle/`\n- `workspace/build/`",
+                render_setup_commands_with_commits(&setup_commands, 2),
+                workspace_tree = workspace_tree,
+            ),
+        );
+    }
+
     if is_astro_saying_hello_output_repo(spec) {
         let setup_commands = vec![
             "curl -L -s https://raw.githubusercontent.com/github/gitignore/refs/heads/main/Node.gitignore > workspace/.gitignore".to_string(),
@@ -3232,6 +3352,15 @@ fn render_output_repo_finish_content(spec: &OutputRepoSpec) -> String {
             "Finish",
             &format!(
                 "For web, start the Flutter app from the repository root with:\n\n```bash\njust run\n```\n\nor:\n\n```bash\njust run-web\n```\n\nThen open `http://localhost:{FOR_ALL_FRONTEND_PORT}` in your browser.\n\nFor iOS, open the simulator, list devices, and run with an actual simulator id or name:\n\n```bash\nopen -a Simulator\njust devices\njust run-ios device=\"<ios-device-id-or-name>\"\n```\n\nFor Android, use:\n\n```bash\njust run-android device=\"<android-device-id-or-name>\"\n```\n\nFor macOS desktop, use:\n\n```bash\njust run-macos\n```\n\nFor Windows or Linux, run the matching command on that host platform:\n\n```bash\njust run-windows\njust run-linux\n```\n\nAfter the first successful iOS run, if CocoaPods added shared iOS project files like these:\n\n- `workspace/ios/Runner.xcodeproj/project.pbxproj`\n- `workspace/ios/Runner.xcworkspace/contents.xcworkspacedata`\n- `workspace/ios/Podfile.lock`\n\nthen run:\n\n```bash\ngit add --all\ngit commit --message \"Add iOS CocoaPods workspace files\"\n```\n\nAfter the first successful macOS run, if CocoaPods added shared macOS project files like these:\n\n- `workspace/macos/Runner.xcodeproj/project.pbxproj`\n- `workspace/macos/Runner.xcworkspace/contents.xcworkspacedata`\n- `workspace/macos/Podfile.lock`\n\nthen run:\n\n```bash\ngit add --all\ngit commit --message \"Add macOS CocoaPods workspace files\"\n```\n\nTry this flow:\n\n- load the fixed crop-plan page and confirm you see six face slots\n- confirm `front` and `top` show pixel crop summaries instead of `missing`\n- confirm at least one slot like `bottom` still renders as `missing`\n- restart the app and notice that this tutorial still keeps its crop-plan state only in memory"
+            ),
+        );
+    }
+
+    if is_flutter_local_prism_net_layout_output_repo(spec) {
+        return tutorial_file_markdown(
+            "Finish",
+            &format!(
+                "For web, start the Flutter app from the repository root with:\n\n```bash\njust run\n```\n\nor:\n\n```bash\njust run-web\n```\n\nThen open `http://localhost:{FOR_ALL_FRONTEND_PORT}` in your browser.\n\nFor iOS, open the simulator, list devices, and run with an actual simulator id or name:\n\n```bash\nopen -a Simulator\njust devices\njust run-ios device=\"<ios-device-id-or-name>\"\n```\n\nFor Android, use:\n\n```bash\njust run-android device=\"<android-device-id-or-name>\"\n```\n\nFor macOS desktop, use:\n\n```bash\njust run-macos\n```\n\nFor Windows or Linux, run the matching command on that host platform:\n\n```bash\njust run-windows\njust run-linux\n```\n\nAfter the first successful iOS run, if CocoaPods added shared iOS project files like these:\n\n- `workspace/ios/Runner.xcodeproj/project.pbxproj`\n- `workspace/ios/Runner.xcworkspace/contents.xcworkspacedata`\n- `workspace/ios/Podfile.lock`\n\nthen run:\n\n```bash\ngit add --all\ngit commit --message \"Add iOS CocoaPods workspace files\"\n```\n\nAfter the first successful macOS run, if CocoaPods added shared macOS project files like these:\n\n- `workspace/macos/Runner.xcodeproj/project.pbxproj`\n- `workspace/macos/Runner.xcworkspace/contents.xcworkspacedata`\n- `workspace/macos/Podfile.lock`\n\nthen run:\n\n```bash\ngit add --all\ngit commit --message \"Add macOS CocoaPods workspace files\"\n```\n\nTry this flow:\n\n- confirm the dimensions summary shows `240 x 360 x 90`\n- confirm `front` is the central visible panel in the flat net\n- confirm `left` and `right` use the narrower `depth x height` layout size\n- confirm a missing face like `bottom` stays hidden instead of rendering a guessed panel"
             ),
         );
     }
@@ -12977,6 +13106,867 @@ git commit --message "4. Green: Wire The Real Application"
     )
 }
 
+fn render_flutter_prism_net_layout_contracts_content(_spec: &OutputRepoSpec) -> String {
+    tutorial_file_markdown(
+        "Contracts",
+        &rewrite_stage_commit_checkpoints(&rewrite_touch_creation_stage_only(
+            r#"Create the shared contract files:
+
+```bash
+touch workspace/lib/contracts/face_crop_plan.dart
+touch workspace/lib/contracts/prism_dimensions.dart
+touch workspace/lib/contracts/face_size.dart
+touch workspace/lib/contracts/prism_net_layout_item.dart
+```
+
+Put this exact content in `workspace/lib/contracts/face_crop_plan.dart`:
+
+```dart
+class FaceCropPlan {
+  final String faceName;
+  final int pixelLeft;
+  final int pixelTop;
+  final int pixelWidth;
+  final int pixelHeight;
+  final bool isMissing;
+
+  const FaceCropPlan({
+    required this.faceName,
+    required this.pixelLeft,
+    required this.pixelTop,
+    required this.pixelWidth,
+    required this.pixelHeight,
+    required this.isMissing,
+  });
+}
+```
+
+Put this exact content in `workspace/lib/contracts/prism_dimensions.dart`:
+
+```dart
+class PrismDimensions {
+  final int width;
+  final int height;
+  final int depth;
+
+  const PrismDimensions({
+    required this.width,
+    required this.height,
+    required this.depth,
+  });
+}
+```
+
+Put this exact content in `workspace/lib/contracts/face_size.dart`:
+
+```dart
+class FaceSize {
+  final int width;
+  final int height;
+
+  const FaceSize({
+    required this.width,
+    required this.height,
+  });
+}
+```
+
+Put this exact content in `workspace/lib/contracts/prism_net_layout_item.dart`:
+
+```dart
+class PrismNetLayoutItem {
+  final String faceName;
+  final int x;
+  final int y;
+  final int displayWidth;
+  final int displayHeight;
+  final bool isHidden;
+
+  const PrismNetLayoutItem({
+    required this.faceName,
+    required this.x,
+    required this.y,
+    required this.displayWidth,
+    required this.displayHeight,
+    required this.isHidden,
+  });
+}
+```
+
+Do not add tests here. Keep this layer limited to interfaces and small shared types.
+
+Then run:
+
+```bash
+git add --all
+git commit --message "Define prism-net-layout Flutter contracts"
+```"#,
+        )),
+    )
+}
+
+fn render_flutter_prism_net_layout_code_content(spec: &OutputRepoSpec) -> String {
+    let package_name = flutter_package_name(&spec.project_slug);
+    tutorial_file_markdown(
+        "Code",
+        &rewrite_touch_creation_stage_only(&format!(
+            r#"### 1. Red: Preserve The Prism Dimensions
+
+Create the first code test file:
+
+```bash
+touch workspace/test/code/prism_net_layout_service_test.dart
+```
+
+Put this exact content in `workspace/test/code/prism_net_layout_service_test.dart`:
+
+```dart
+import 'package:{package_name}/code/prism_net_layout_service.dart';
+import 'package:test/test.dart';
+
+void main() {{
+  test('buildPrismDimensions preserves width height and depth', () {{
+    final dimensions = buildPrismDimensions(
+      width: 240,
+      height: 360,
+      depth: 90,
+    );
+
+    expect(dimensions.width, 240);
+    expect(dimensions.height, 360);
+    expect(dimensions.depth, 90);
+  }});
+}}
+```
+
+Run:
+
+```bash
+just check-tests
+git add --all
+git commit --message "1. Red: Preserve The Prism Dimensions"
+```
+
+### 2. Green: Preserve The Prism Dimensions
+
+Create the first production file:
+
+```bash
+touch workspace/lib/code/prism_net_layout_service.dart
+```
+
+Put this exact content in `workspace/lib/code/prism_net_layout_service.dart`:
+
+```dart
+import '../contracts/face_crop_plan.dart';
+import '../contracts/face_size.dart';
+import '../contracts/prism_dimensions.dart';
+import '../contracts/prism_net_layout_item.dart';
+
+const canonicalPrismFaces = [
+  'front',
+  'back',
+  'left',
+  'right',
+  'top',
+  'bottom',
+];
+
+PrismDimensions buildPrismDimensions({{
+  required int width,
+  required int height,
+  required int depth,
+}}) {{
+  return PrismDimensions(width: width, height: height, depth: depth);
+}}
+
+FaceSize faceDisplaySize(String faceName, PrismDimensions dimensions) {{
+  throw UnimplementedError();
+}}
+
+List<PrismNetLayoutItem> buildPrismNetLayout(
+  List<FaceCropPlan> cropPlan,
+  PrismDimensions dimensions,
+) {{
+  throw UnimplementedError();
+}}
+```
+
+Run:
+
+```bash
+just check-tests
+git add --all
+git commit --message "2. Green: Preserve The Prism Dimensions"
+```
+
+### 3. Red: Size The Canonical Faces
+
+Replace `workspace/test/code/prism_net_layout_service_test.dart` with:
+
+```dart
+import 'package:{package_name}/code/prism_net_layout_service.dart';
+import 'package:test/test.dart';
+
+void main() {{
+  test('buildPrismDimensions preserves width height and depth', () {{
+    final dimensions = buildPrismDimensions(
+      width: 240,
+      height: 360,
+      depth: 90,
+    );
+
+    expect(dimensions.width, 240);
+    expect(dimensions.height, 360);
+    expect(dimensions.depth, 90);
+  }});
+
+  test('faceDisplaySize returns width x height for front', () {{
+    final dimensions = buildPrismDimensions(
+      width: 240,
+      height: 360,
+      depth: 90,
+    );
+
+    final size = faceDisplaySize('front', dimensions);
+
+    expect(size.width, 240);
+    expect(size.height, 360);
+  }});
+
+  test('faceDisplaySize returns depth x height for left', () {{
+    final dimensions = buildPrismDimensions(
+      width: 240,
+      height: 360,
+      depth: 90,
+    );
+
+    final size = faceDisplaySize('left', dimensions);
+
+    expect(size.width, 90);
+    expect(size.height, 360);
+  }});
+
+  test('faceDisplaySize returns width x depth for top', () {{
+    final dimensions = buildPrismDimensions(
+      width: 240,
+      height: 360,
+      depth: 90,
+    );
+
+    final size = faceDisplaySize('top', dimensions);
+
+    expect(size.width, 240);
+    expect(size.height, 90);
+  }});
+}}
+```
+
+Run:
+
+```bash
+just check-tests
+git add --all
+git commit --message "3. Red: Size The Canonical Faces"
+```
+
+### 4. Green: Size The Canonical Faces
+
+Replace `workspace/lib/code/prism_net_layout_service.dart` with:
+
+```dart
+import '../contracts/face_crop_plan.dart';
+import '../contracts/face_size.dart';
+import '../contracts/prism_dimensions.dart';
+import '../contracts/prism_net_layout_item.dart';
+
+const canonicalPrismFaces = [
+  'front',
+  'back',
+  'left',
+  'right',
+  'top',
+  'bottom',
+];
+
+PrismDimensions buildPrismDimensions({{
+  required int width,
+  required int height,
+  required int depth,
+}}) {{
+  return PrismDimensions(width: width, height: height, depth: depth);
+}}
+
+FaceSize faceDisplaySize(String faceName, PrismDimensions dimensions) {{
+  switch (faceName) {{
+    case 'front':
+    case 'back':
+      return FaceSize(width: dimensions.width, height: dimensions.height);
+    case 'left':
+    case 'right':
+      return FaceSize(width: dimensions.depth, height: dimensions.height);
+    case 'top':
+    case 'bottom':
+      return FaceSize(width: dimensions.width, height: dimensions.depth);
+  }}
+
+  throw ArgumentError.value(faceName, 'faceName', 'Unknown face');
+}}
+
+List<PrismNetLayoutItem> buildPrismNetLayout(
+  List<FaceCropPlan> cropPlan,
+  PrismDimensions dimensions,
+) {{
+  throw UnimplementedError();
+}}
+```
+
+Run:
+
+```bash
+just check-tests
+git add --all
+git commit --message "4. Green: Size The Canonical Faces"
+```
+
+### 5. Red: Build The Flat Prism Net
+
+Replace `workspace/test/code/prism_net_layout_service_test.dart` with:
+
+```dart
+import 'package:{package_name}/code/prism_net_layout_service.dart';
+import 'package:{package_name}/contracts/face_crop_plan.dart';
+import 'package:test/test.dart';
+
+void main() {{
+  test('buildPrismDimensions preserves width height and depth', () {{
+    final dimensions = buildPrismDimensions(
+      width: 240,
+      height: 360,
+      depth: 90,
+    );
+
+    expect(dimensions.width, 240);
+    expect(dimensions.height, 360);
+    expect(dimensions.depth, 90);
+  }});
+
+  test('faceDisplaySize returns width x height for front', () {{
+    final dimensions = buildPrismDimensions(
+      width: 240,
+      height: 360,
+      depth: 90,
+    );
+
+    final size = faceDisplaySize('front', dimensions);
+
+    expect(size.width, 240);
+    expect(size.height, 360);
+  }});
+
+  test('faceDisplaySize returns depth x height for left', () {{
+    final dimensions = buildPrismDimensions(
+      width: 240,
+      height: 360,
+      depth: 90,
+    );
+
+    final size = faceDisplaySize('left', dimensions);
+
+    expect(size.width, 90);
+    expect(size.height, 360);
+  }});
+
+  test('faceDisplaySize returns width x depth for top', () {{
+    final dimensions = buildPrismDimensions(
+      width: 240,
+      height: 360,
+      depth: 90,
+    );
+
+    final size = faceDisplaySize('top', dimensions);
+
+    expect(size.width, 240);
+    expect(size.height, 90);
+  }});
+
+  test('buildPrismNetLayout preserves canonical order and hides missing faces', () {{
+    final dimensions = buildPrismDimensions(
+      width: 240,
+      height: 360,
+      depth: 90,
+    );
+
+    final layout = buildPrismNetLayout([
+      const FaceCropPlan(
+        faceName: 'front',
+        pixelLeft: 30,
+        pixelTop: 21,
+        pixelWidth: 90,
+        pixelHeight: 84,
+        isMissing: false,
+      ),
+      const FaceCropPlan(
+        faceName: 'back',
+        pixelLeft: 0,
+        pixelTop: 0,
+        pixelWidth: 0,
+        pixelHeight: 0,
+        isMissing: true,
+      ),
+      const FaceCropPlan(
+        faceName: 'left',
+        pixelLeft: 0,
+        pixelTop: 0,
+        pixelWidth: 0,
+        pixelHeight: 0,
+        isMissing: true,
+      ),
+      const FaceCropPlan(
+        faceName: 'right',
+        pixelLeft: 135,
+        pixelTop: 21,
+        pixelWidth: 60,
+        pixelHeight: 84,
+        isMissing: false,
+      ),
+      const FaceCropPlan(
+        faceName: 'top',
+        pixelLeft: 30,
+        pixelTop: 0,
+        pixelWidth: 90,
+        pixelHeight: 21,
+        isMissing: false,
+      ),
+      const FaceCropPlan(
+        faceName: 'bottom',
+        pixelLeft: 0,
+        pixelTop: 0,
+        pixelWidth: 0,
+        pixelHeight: 0,
+        isMissing: true,
+      ),
+    ], dimensions);
+
+    expect(
+      layout.map((item) => item.faceName).toList(),
+      ['front', 'back', 'left', 'right', 'top', 'bottom'],
+    );
+
+    final front = layout.firstWhere((item) => item.faceName == 'front');
+    final left = layout.firstWhere((item) => item.faceName == 'left');
+    final top = layout.firstWhere((item) => item.faceName == 'top');
+    final bottom = layout.firstWhere((item) => item.faceName == 'bottom');
+
+    expect(front.x, 90);
+    expect(front.y, 90);
+    expect(front.displayWidth, 240);
+    expect(front.displayHeight, 360);
+    expect(front.isHidden, isFalse);
+
+    expect(left.x, 0);
+    expect(left.y, 90);
+    expect(left.displayWidth, 90);
+    expect(left.displayHeight, 360);
+    expect(left.isHidden, isTrue);
+
+    expect(top.x, 90);
+    expect(top.y, 0);
+    expect(top.displayWidth, 240);
+    expect(top.displayHeight, 90);
+    expect(top.isHidden, isFalse);
+
+    expect(bottom.isHidden, isTrue);
+  }});
+}}
+```
+
+Run:
+
+```bash
+just check-tests
+git add --all
+git commit --message "5. Red: Build The Flat Prism Net"
+```
+
+### 6. Green: Build The Flat Prism Net
+
+Replace `workspace/lib/code/prism_net_layout_service.dart` with:
+
+```dart
+import '../contracts/face_crop_plan.dart';
+import '../contracts/face_size.dart';
+import '../contracts/prism_dimensions.dart';
+import '../contracts/prism_net_layout_item.dart';
+
+const canonicalPrismFaces = [
+  'front',
+  'back',
+  'left',
+  'right',
+  'top',
+  'bottom',
+];
+
+PrismDimensions buildPrismDimensions({{
+  required int width,
+  required int height,
+  required int depth,
+}}) {{
+  return PrismDimensions(width: width, height: height, depth: depth);
+}}
+
+FaceSize faceDisplaySize(String faceName, PrismDimensions dimensions) {{
+  switch (faceName) {{
+    case 'front':
+    case 'back':
+      return FaceSize(width: dimensions.width, height: dimensions.height);
+    case 'left':
+    case 'right':
+      return FaceSize(width: dimensions.depth, height: dimensions.height);
+    case 'top':
+    case 'bottom':
+      return FaceSize(width: dimensions.width, height: dimensions.depth);
+  }}
+
+  throw ArgumentError.value(faceName, 'faceName', 'Unknown face');
+}}
+
+List<PrismNetLayoutItem> buildPrismNetLayout(
+  List<FaceCropPlan> cropPlan,
+  PrismDimensions dimensions,
+) {{
+  final cropPlanByFace = {{
+    for (final item in cropPlan) item.faceName: item,
+  }};
+
+  final positions = <String, (int, int)>{{
+    'front': (dimensions.depth, dimensions.depth),
+    'back': (dimensions.depth + dimensions.width + dimensions.depth, dimensions.depth),
+    'left': (0, dimensions.depth),
+    'right': (dimensions.depth + dimensions.width, dimensions.depth),
+    'top': (dimensions.depth, 0),
+    'bottom': (dimensions.depth, dimensions.depth + dimensions.height),
+  }};
+
+  return canonicalPrismFaces.map((faceName) {{
+    final size = faceDisplaySize(faceName, dimensions);
+    final (x, y) = positions[faceName]!;
+    final crop = cropPlanByFace[faceName];
+
+    return PrismNetLayoutItem(
+      faceName: faceName,
+      x: x,
+      y: y,
+      displayWidth: size.width,
+      displayHeight: size.height,
+      isHidden: crop?.isMissing ?? true,
+    );
+  }}).toList();
+}}
+```
+
+Run:
+
+```bash
+just check-tests
+git add --all
+git commit --message "6. Green: Build The Flat Prism Net"
+```"#,
+        )),
+    )
+}
+
+fn render_flutter_prism_net_layout_adapter_content(spec: &OutputRepoSpec) -> String {
+    let package_name = flutter_package_name(&spec.project_slug);
+    tutorial_file_markdown(
+        "Adapter",
+        &rewrite_touch_creation_stage_only(&format!(
+            r#"### 1. Red: Add The Prism Net Layout Page Widget Test
+
+Create the widget test file:
+
+```bash
+touch workspace/test/adapter/prism_net_layout_page_test.dart
+```
+
+Put this exact content in `workspace/test/adapter/prism_net_layout_page_test.dart`:
+
+```dart
+import 'package:flutter/material.dart';
+import 'package:flutter_test/flutter_test.dart';
+import 'package:{package_name}/adapter/prism_net_layout_page.dart';
+
+void main() {{
+  testWidgets('renders a flat prism net from the core-generated layout', (
+    tester,
+  ) async {{
+    await tester.pumpWidget(
+      const MaterialApp(home: PrismNetLayoutPage()),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.text('240 x 360 x 90'), findsOneWidget);
+    expect(find.byKey(const Key('net-front')), findsOneWidget);
+    expect(find.byKey(const Key('net-right')), findsOneWidget);
+    expect(find.byKey(const Key('net-top')), findsOneWidget);
+    expect(find.byKey(const Key('net-left')), findsNothing);
+    expect(find.byKey(const Key('net-bottom')), findsNothing);
+  }});
+}}
+```
+
+Run:
+
+```bash
+just check-tests
+git add --all
+git commit --message "1. Red: Add The Prism Net Layout Page Widget Test"
+```
+
+### 2. Green: Build The Prism Net Layout Page
+
+Create the page production file:
+
+```bash
+touch workspace/lib/adapter/prism_net_layout_page.dart
+```
+
+Put this exact content in `workspace/lib/adapter/prism_net_layout_page.dart`:
+
+```dart
+import 'package:flutter/material.dart';
+
+import '../code/prism_net_layout_service.dart';
+import '../contracts/face_crop_plan.dart';
+
+class PrismNetLayoutPage extends StatelessWidget {{
+  const PrismNetLayoutPage({{super.key}});
+
+  List<FaceCropPlan> _demoCropPlan() {{
+    return const [
+      FaceCropPlan(
+        faceName: 'front',
+        pixelLeft: 30,
+        pixelTop: 21,
+        pixelWidth: 90,
+        pixelHeight: 84,
+        isMissing: false,
+      ),
+      FaceCropPlan(
+        faceName: 'back',
+        pixelLeft: 0,
+        pixelTop: 0,
+        pixelWidth: 0,
+        pixelHeight: 0,
+        isMissing: true,
+      ),
+      FaceCropPlan(
+        faceName: 'left',
+        pixelLeft: 0,
+        pixelTop: 0,
+        pixelWidth: 0,
+        pixelHeight: 0,
+        isMissing: true,
+      ),
+      FaceCropPlan(
+        faceName: 'right',
+        pixelLeft: 135,
+        pixelTop: 21,
+        pixelWidth: 60,
+        pixelHeight: 84,
+        isMissing: false,
+      ),
+      FaceCropPlan(
+        faceName: 'top',
+        pixelLeft: 30,
+        pixelTop: 0,
+        pixelWidth: 90,
+        pixelHeight: 21,
+        isMissing: false,
+      ),
+      FaceCropPlan(
+        faceName: 'bottom',
+        pixelLeft: 0,
+        pixelTop: 0,
+        pixelWidth: 0,
+        pixelHeight: 0,
+        isMissing: true,
+      ),
+    ];
+  }}
+
+  @override
+  Widget build(BuildContext context) {{
+    final dimensions = buildPrismDimensions(
+      width: 240,
+      height: 360,
+      depth: 90,
+    );
+    final layout = buildPrismNetLayout(_demoCropPlan(), dimensions);
+    const netWidth = 660.0;
+    const netHeight = 450.0;
+
+    return Scaffold(
+      appBar: AppBar(title: const Text('Prism Net Layout')),
+      body: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              '${{dimensions.width}} x ${{dimensions.height}} x ${{dimensions.depth}}',
+            ),
+            const SizedBox(height: 16),
+            Expanded(
+              child: Container(
+                width: double.infinity,
+                alignment: Alignment.topLeft,
+                color: const Color(0xFFF7F1E1),
+                child: FittedBox(
+                  alignment: Alignment.topLeft,
+                  fit: BoxFit.contain,
+                  child: SizedBox(
+                    width: netWidth,
+                    height: netHeight,
+                    child: Stack(
+                      children: [
+                        for (final item in layout)
+                          if (!item.isHidden)
+                            Positioned(
+                              left: item.x.toDouble(),
+                              top: item.y.toDouble(),
+                              child: _NetFacePanel(
+                                key: Key('net-${{item.faceName}}'),
+                                faceName: item.faceName,
+                                width: item.displayWidth.toDouble(),
+                                height: item.displayHeight.toDouble(),
+                              ),
+                            ),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }}
+}}
+
+class _NetFacePanel extends StatelessWidget {{
+  final String faceName;
+  final double width;
+  final double height;
+
+  const _NetFacePanel({{
+    super.key,
+    required this.faceName,
+    required this.width,
+    required this.height,
+  }});
+
+  @override
+  Widget build(BuildContext context) {{
+    return Container(
+      width: width,
+      height: height,
+      decoration: BoxDecoration(
+        color: const Color(0xFFDDC48E),
+        border: Border.all(color: Colors.brown, width: 2),
+      ),
+      alignment: Alignment.center,
+      child: Text(faceName),
+    );
+  }}
+}}
+```
+
+Run:
+
+```bash
+just check-tests
+git add --all
+git commit --message "2. Green: Build The Prism Net Layout Page"
+```
+
+### 3. Red: Add The Integration Test
+
+Create the integration test file:
+
+```bash
+touch workspace/integration_test/app_test.dart
+```
+
+Put this exact content in `workspace/integration_test/app_test.dart`:
+
+```dart
+import 'package:flutter/material.dart';
+import 'package:flutter_test/flutter_test.dart';
+import 'package:integration_test/integration_test.dart';
+import 'package:{package_name}/adapter/prism_net_layout_page.dart';
+
+void main() {{
+  IntegrationTestWidgetsFlutterBinding.ensureInitialized();
+
+  testWidgets('renders the prism net layout title', (tester) async {{
+    await tester.pumpWidget(
+      const MaterialApp(home: PrismNetLayoutPage()),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.text('Prism Net Layout'), findsOneWidget);
+  }});
+}}
+```
+
+Run:
+
+```bash
+just check-tests
+git add --all
+git commit --message "3. Red: Add The Integration Test"
+```
+
+### 4. Green: Wire The Real Application
+
+Replace `workspace/lib/main.dart` with:
+
+```dart
+import 'package:flutter/material.dart';
+
+import 'adapter/prism_net_layout_page.dart';
+
+void main() {{
+  runApp(const PrismNetLayoutApp());
+}}
+
+class PrismNetLayoutApp extends StatelessWidget {{
+  const PrismNetLayoutApp({{super.key}});
+
+  @override
+  Widget build(BuildContext context) {{
+    return const MaterialApp(
+      title: 'Prism Net Layout',
+      home: PrismNetLayoutPage(),
+    );
+  }}
+}}
+```
+
+Run:
+
+```bash
+just check-tests
+git add --all
+git commit --message "4. Green: Wire The Real Application"
+```"#,
+        )),
+    )
+}
+
 fn render_flutter_saying_hello_contracts_content(_spec: &OutputRepoSpec) -> String {
     if is_flutter_local_saying_hello_output_repo(_spec) {
         return tutorial_file_markdown(
@@ -14942,6 +15932,27 @@ mod tests {
         }
     }
 
+    fn sample_prism_net_layout_flutter_output_repo_spec() -> OutputRepoSpec {
+        OutputRepoSpec {
+            repo_name: "fa_tut_prism-net-layout".to_string(),
+            repo_description:
+                "Tutorial workspace for the Prism Net Layout project with Dart / Dart / test / mocktail / no-storage / client / all / Flutter choices."
+                    .to_string(),
+            project_slug: "prism-net-layout".to_string(),
+            selections: OutputRepoSelections {
+                ecosystem: "dart".to_string(),
+                language: "dart".to_string(),
+                testing: "test".to_string(),
+                mocking: "mocktail".to_string(),
+                storage: "no-storage".to_string(),
+                surface: "client".to_string(),
+                target: "all".to_string(),
+                framework: "flutter".to_string(),
+                protocol: None,
+            },
+        }
+    }
+
     fn sample_dotnet_output_repo_spec() -> OutputRepoSpec {
         OutputRepoSpec {
             repo_name: "fa_tut_saying-hello".to_string(),
@@ -15168,6 +16179,26 @@ mod tests {
 
         let selections = output_repo_selections_for_project("prism-face-cropper", &overrides)
             .expect("flutter local prism-face-cropper should be supported");
+
+        assert_eq!(selections.ecosystem, "dart");
+        assert_eq!(selections.surface, "client");
+        assert_eq!(selections.target, "all");
+        assert_eq!(selections.framework, "flutter");
+        assert_eq!(selections.protocol, None);
+    }
+
+    #[test]
+    fn output_repo_selection_overrides_allow_switching_prism_net_layout_to_flutter_local() {
+        let overrides = BootstrapSelectionOverrides {
+            ecosystem: Some("dart".to_string()),
+            surface: Some("client".to_string()),
+            target: Some("all".to_string()),
+            protocol: Some("none".to_string()),
+            ..BootstrapSelectionOverrides::default()
+        };
+
+        let selections = output_repo_selections_for_project("prism-net-layout", &overrides)
+            .expect("flutter local prism-net-layout should be supported");
 
         assert_eq!(selections.ecosystem, "dart");
         assert_eq!(selections.surface, "client");
@@ -16060,6 +17091,24 @@ mod tests {
     }
 
     #[test]
+    fn prism_net_layout_flutter_output_repo_setup_content_uses_cross_platform_flutter_workspace_layout(
+    ) {
+        let spec = sample_prism_net_layout_flutter_output_repo_spec();
+
+        let setup = render_output_repo_setup_content(&spec);
+
+        assert!(setup.contains("flutter create --platforms=web,android,ios,macos,windows,linux --org com.intrepion --project-name prism_net_layout workspace"));
+        assert!(!setup.contains("flutter pub add http"));
+        assert!(setup.contains("prism_dimensions.dart"));
+        assert!(setup.contains("face_size.dart"));
+        assert!(setup.contains("prism_net_layout_item.dart"));
+        assert!(setup.contains("prism_net_layout_service.dart"));
+        assert!(setup.contains("prism_net_layout_page.dart"));
+        assert!(setup.contains("just run-web"));
+        assert!(setup.contains("just run-android device=\"<android-device-id-or-name>\""));
+    }
+
+    #[test]
     fn astro_saying_hello_contracts_code_and_adapter_tutorials_are_concrete() {
         let spec = sample_astro_output_repo_spec();
 
@@ -16175,6 +17224,28 @@ mod tests {
         assert!(adapter.contains("scrollUntilVisible"));
         assert!(finish.contains("confirm you see six face slots"));
         assert!(finish.contains("keeps its crop-plan state only in memory"));
+    }
+
+    #[test]
+    fn prism_net_layout_flutter_contracts_code_adapter_and_finish_are_concrete() {
+        let spec = sample_prism_net_layout_flutter_output_repo_spec();
+
+        let contracts = render_flutter_prism_net_layout_contracts_content(&spec);
+        let code = render_flutter_prism_net_layout_code_content(&spec);
+        let adapter = render_flutter_prism_net_layout_adapter_content(&spec);
+        let finish = render_output_repo_finish_content(&spec);
+
+        assert!(contracts.contains("class PrismDimensions"));
+        assert!(contracts.contains("class FaceSize"));
+        assert!(contracts.contains("class PrismNetLayoutItem"));
+        assert!(code.contains("buildPrismDimensions"));
+        assert!(code.contains("faceDisplaySize"));
+        assert!(code.contains("buildPrismNetLayout"));
+        assert!(adapter.contains("PrismNetLayoutPage"));
+        assert!(adapter.contains("net-front"));
+        assert!(adapter.contains("240 x 360 x 90"));
+        assert!(finish.contains("confirm `front` is the central visible panel in the flat net"));
+        assert!(finish.contains("confirm a missing face like `bottom` stays hidden"));
     }
 
     #[test]
