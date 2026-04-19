@@ -583,6 +583,19 @@ fn is_flutter_local_prism_widget_renderer_output_repo(spec: &OutputRepoSpec) -> 
         && spec.selections.protocol.is_none()
 }
 
+fn is_flutter_local_prism_scene_editor_output_repo(spec: &OutputRepoSpec) -> bool {
+    spec.project_slug == "prism-scene-editor"
+        && spec.selections.ecosystem == "dart"
+        && spec.selections.language == "dart"
+        && spec.selections.testing == "test"
+        && spec.selections.mocking == "mocktail"
+        && spec.selections.storage == "no-storage"
+        && spec.selections.surface == "client"
+        && spec.selections.target == "all"
+        && spec.selections.framework == "flutter"
+        && spec.selections.protocol.is_none()
+}
+
 fn is_flutter_todo_list_output_repo(spec: &OutputRepoSpec) -> bool {
     is_flutter_todo_list_rest_json_output_repo(spec)
 }
@@ -599,6 +612,7 @@ fn is_flutter_output_repo(spec: &OutputRepoSpec) -> bool {
         || is_flutter_local_prism_face_cropper_output_repo(spec)
         || is_flutter_local_prism_net_layout_output_repo(spec)
         || is_flutter_local_prism_widget_renderer_output_repo(spec)
+        || is_flutter_local_prism_scene_editor_output_repo(spec)
 }
 
 fn is_flutter_http_output_repo(spec: &OutputRepoSpec) -> bool {
@@ -850,6 +864,17 @@ fn supported_output_repo_selections(
             framework: "flutter".to_string(),
             protocol: None,
         }),
+        ("prism-scene-editor", "dart") => Some(OutputRepoSelections {
+            ecosystem: "dart".to_string(),
+            language: "dart".to_string(),
+            testing: "test".to_string(),
+            mocking: "mocktail".to_string(),
+            storage: "no-storage".to_string(),
+            surface: "client".to_string(),
+            target: "all".to_string(),
+            framework: "flutter".to_string(),
+            protocol: None,
+        }),
         (_, "dotnet") => Some(OutputRepoSelections {
             ecosystem: "dotnet".to_string(),
             language: "csharp".to_string(),
@@ -1035,6 +1060,10 @@ fn validate_output_repo_selections(
     }
 
     if project_slug == "prism-widget-renderer" && selections == &supported_flutter_local {
+        return Ok(());
+    }
+
+    if project_slug == "prism-scene-editor" && selections == &supported_flutter_local {
         return Ok(());
     }
 
@@ -1828,6 +1857,10 @@ fn build_output_repo_tutorial_files(app_root: &Path, spec: &OutputRepoSpec) -> V
         return build_flutter_prism_widget_renderer_output_repo_tutorial_files(app_root, spec);
     }
 
+    if is_flutter_local_prism_scene_editor_output_repo(spec) {
+        return build_flutter_prism_scene_editor_output_repo_tutorial_files(app_root, spec);
+    }
+
     if is_astro_saying_hello_output_repo(spec) {
         return build_astro_saying_hello_output_repo_tutorial_files(app_root, spec);
     }
@@ -2346,6 +2379,50 @@ fn build_flutter_prism_widget_renderer_output_repo_tutorial_files(
         ManagedRepoFile {
             relative_path: "tutorial/adapter.md".to_string(),
             contents: render_flutter_prism_widget_renderer_adapter_content(spec).into_bytes(),
+        },
+        ManagedRepoFile {
+            relative_path: "tutorial/finish.md".to_string(),
+            contents: render_output_repo_finish_content(spec).into_bytes(),
+        },
+    ]
+}
+
+fn build_flutter_prism_scene_editor_output_repo_tutorial_files(
+    app_root: &Path,
+    spec: &OutputRepoSpec,
+) -> Vec<ManagedRepoFile> {
+    let project_root = app_root.join("partials/projects").join(&spec.project_slug);
+    let spec_partial =
+        Partial::load(&project_root.join("spec/README.md")).expect("spec partial should exist");
+
+    vec![
+        ManagedRepoFile {
+            relative_path: "tutorial/README.md".to_string(),
+            contents: render_output_repo_tutorial_readme_content(spec).into_bytes(),
+        },
+        ManagedRepoFile {
+            relative_path: "tutorial/setup.md".to_string(),
+            contents: render_output_repo_setup_content(spec).into_bytes(),
+        },
+        ManagedRepoFile {
+            relative_path: "tutorial/spec.md".to_string(),
+            contents: tutorial_file_markdown(
+                "Spec",
+                &rewrite_for_single_repo_tutorial(&spec_partial.body),
+            )
+            .into_bytes(),
+        },
+        ManagedRepoFile {
+            relative_path: "tutorial/contracts.md".to_string(),
+            contents: render_flutter_prism_scene_editor_contracts_content(spec).into_bytes(),
+        },
+        ManagedRepoFile {
+            relative_path: "tutorial/code.md".to_string(),
+            contents: render_flutter_prism_scene_editor_code_content(spec).into_bytes(),
+        },
+        ManagedRepoFile {
+            relative_path: "tutorial/adapter.md".to_string(),
+            contents: render_flutter_prism_scene_editor_adapter_content(spec).into_bytes(),
         },
         ManagedRepoFile {
             relative_path: "tutorial/finish.md".to_string(),
@@ -3059,6 +3136,48 @@ git commit --message "Enable macOS network client entitlement"
         );
     }
 
+    if is_flutter_local_prism_scene_editor_output_repo(spec) {
+        let package_name = flutter_package_name(&spec.project_slug);
+        let setup_commands = vec![
+            format!(
+                "flutter create --platforms=web,android,ios,macos,windows,linux --org com.intrepion --project-name {package_name} workspace"
+            ),
+            "rm workspace/test/widget_test.dart".to_string(),
+            "(cd workspace && flutter pub add --dev test)".to_string(),
+            "(cd workspace && flutter pub add --dev mocktail)".to_string(),
+            "(cd workspace && flutter pub add --dev integration_test --sdk flutter)"
+                .to_string(),
+        ];
+        let workspace_tree = r#"workspace/
+  pubspec.yaml
+  lib/
+    contracts/
+      prism_scene.dart
+      prism_dimensions.dart
+      prism_camera.dart
+    code/
+      prism_scene_editor_service.dart
+    adapter/
+      prism_scene_editor_page.dart
+  test/
+    code/
+      prism_scene_editor_service_test.dart
+    adapter/
+      prism_scene_editor_page_test.dart
+  integration_test/
+    app_test.dart
+  lib/main.dart"#;
+
+        return tutorial_file_markdown(
+            "Setup",
+            &format!(
+                "Keep the repository root for shared files like `README.md`, `LICENSE`, `.gitignore`, `.github/`, `justfile`, and `tutorial/`.\n\nPut all Flutter code inside a single `workspace/` folder.\n\nThis tutorial builds a local Flutter prism scene editor with one deterministic scene document, live dimension and camera editing, and a pseudo-3D widget preview that stays in sync.\n\nFrom the repository root, run each setup command and checkpoint it before moving to the next one:\n\n```bash\n{}\n```\n\nWhen the full workspace is finished, it should contain these files:\n\n```text\n{workspace_tree}\n```\n\nBefore you try any run command, make sure Flutter can see a supported target:\n\n```bash\njust devices\n```\n\nFor web, use the default web command:\n\n```bash\njust run\n```\n\nor, explicitly:\n\n```bash\njust run-web\n```\n\nOn macOS for iOS, install CocoaPods first if you have not already:\n\n```bash\nsudo gem install cocoapods\n```\n\nThen open the simulator, list devices, and run the iOS app with an actual simulator id or name:\n\n```bash\nopen -a Simulator\njust devices\njust run-ios device=\"<ios-device-id-or-name>\"\n```\n\nFlutter does not accept bare `ios` as a generic simulator target, so if `just devices` does not show your simulator yet, wait a moment and run it again.\n\nFor Android, list available emulators, launch one, list devices again, and then run the Android app:\n\n```bash\njust emulators\nflutter emulators --launch <emulator-id>\njust devices\njust run-android device=\"<android-device-id-or-name>\"\n```\n\nFor macOS desktop, use:\n\n```bash\njust run-macos\n```\n\nFor Windows or Linux, run the matching command on that host platform:\n\n```bash\njust run-windows\njust run-linux\n```\n\nAfter your first successful iOS run, if CocoaPods added shared iOS project files like these:\n\n- `workspace/ios/Runner.xcodeproj/project.pbxproj`\n- `workspace/ios/Runner.xcworkspace/contents.xcworkspacedata`\n- `workspace/ios/Podfile.lock`\n\nthen run:\n\n```bash\ngit add --all\ngit commit --message \"Add iOS CocoaPods workspace files\"\n```\n\nAfter your first successful macOS run, if CocoaPods added shared macOS project files like these:\n\n- `workspace/macos/Runner.xcodeproj/project.pbxproj`\n- `workspace/macos/Runner.xcworkspace/contents.xcworkspacedata`\n- `workspace/macos/Podfile.lock`\n\nthen run:\n\n```bash\ngit add --all\ngit commit --message \"Add macOS CocoaPods workspace files\"\n```\n\nDo not commit local machine output like these:\n\n- `workspace/ios/Pods/`\n- `workspace/macos/Pods/`\n- `workspace/build/`\n- `workspace/.dart_tool/`\n\nFor Android, a normal first run usually should not add shared tracked files. If it does change shared files under `workspace/android/`, review them carefully and commit only the project-level changes. Do not commit machine-specific files like:\n\n- `workspace/android/local.properties`\n- `workspace/.gradle/`\n- `workspace/build/`",
+                render_setup_commands_with_commits(&setup_commands, 2),
+                workspace_tree = workspace_tree,
+            ),
+        );
+    }
+
     if is_astro_saying_hello_output_repo(spec) {
         let setup_commands = vec![
             "curl -L -s https://raw.githubusercontent.com/github/gitignore/refs/heads/main/Node.gitignore > workspace/.gitignore".to_string(),
@@ -3489,6 +3608,15 @@ fn render_output_repo_finish_content(spec: &OutputRepoSpec) -> String {
             "Finish",
             &format!(
                 "For web, start the Flutter app from the repository root with:\n\n```bash\njust run\n```\n\nor:\n\n```bash\njust run-web\n```\n\nThen open `http://localhost:{FOR_ALL_FRONTEND_PORT}` in your browser.\n\nFor iOS, open the simulator, list devices, and run with an actual simulator id or name:\n\n```bash\nopen -a Simulator\njust devices\njust run-ios device=\"<ios-device-id-or-name>\"\n```\n\nFor Android, use:\n\n```bash\njust run-android device=\"<android-device-id-or-name>\"\n```\n\nFor macOS desktop, use:\n\n```bash\njust run-macos\n```\n\nFor Windows or Linux, run the matching command on that host platform:\n\n```bash\njust run-windows\njust run-linux\n```\n\nAfter the first successful iOS run, if CocoaPods added shared iOS project files like these:\n\n- `workspace/ios/Runner.xcodeproj/project.pbxproj`\n- `workspace/ios/Runner.xcworkspace/contents.xcworkspacedata`\n- `workspace/ios/Podfile.lock`\n\nthen run:\n\n```bash\ngit add --all\ngit commit --message \"Add iOS CocoaPods workspace files\"\n```\n\nAfter the first successful macOS run, if CocoaPods added shared macOS project files like these:\n\n- `workspace/macos/Runner.xcodeproj/project.pbxproj`\n- `workspace/macos/Runner.xcworkspace/contents.xcworkspacedata`\n- `workspace/macos/Podfile.lock`\n\nthen run:\n\n```bash\ngit add --all\ngit commit --message \"Add macOS CocoaPods workspace files\"\n```\n\nTry this flow:\n\n- confirm the canonical camera starts at `35 / -20 / 1.0`\n- confirm only `front`, `right`, and `top` are visible at first\n- tap the zoom controls and confirm the zoom label stays within the allowed range\n- tap the rotate control and confirm the rendered widget stack changes while hidden faces stay hidden"
+            ),
+        );
+    }
+
+    if is_flutter_local_prism_scene_editor_output_repo(spec) {
+        return tutorial_file_markdown(
+            "Finish",
+            &format!(
+                "For web, start the Flutter app from the repository root with:\n\n```bash\njust run\n```\n\nor:\n\n```bash\njust run-web\n```\n\nThen open `http://localhost:{FOR_ALL_FRONTEND_PORT}` in your browser.\n\nFor iOS, open the simulator, list devices, and run with an actual simulator id or name:\n\n```bash\nopen -a Simulator\njust devices\njust run-ios device=\"<ios-device-id-or-name>\"\n```\n\nFor Android, use:\n\n```bash\njust run-android device=\"<android-device-id-or-name>\"\n```\n\nFor macOS desktop, use:\n\n```bash\njust run-macos\n```\n\nFor Windows or Linux, run the matching command on that host platform:\n\n```bash\njust run-windows\njust run-linux\n```\n\nAfter the first successful iOS run, if CocoaPods added shared iOS project files like these:\n\n- `workspace/ios/Runner.xcodeproj/project.pbxproj`\n- `workspace/ios/Runner.xcworkspace/contents.xcworkspacedata`\n- `workspace/ios/Podfile.lock`\n\nthen run:\n\n```bash\ngit add --all\ngit commit --message \"Add iOS CocoaPods workspace files\"\n```\n\nAfter the first successful macOS run, if CocoaPods added shared macOS project files like these:\n\n- `workspace/macos/Runner.xcodeproj/project.pbxproj`\n- `workspace/macos/Runner.xcworkspace/contents.xcworkspacedata`\n- `workspace/macos/Podfile.lock`\n\nthen run:\n\n```bash\ngit add --all\ngit commit --message \"Add macOS CocoaPods workspace files\"\n```\n\nTry this flow:\n\n- confirm the default scene starts as `cereal-box-sheet / 240 x 360 x 90 / 35 / -20 / 1.0`\n- change the width field and confirm the serialized scene and preview update together\n- tap the camera controls and confirm zoom stays clamped within the allowed range\n- confirm the scene document remains deterministic while the live preview keeps rendering even with missing faces"
             ),
         );
     }
@@ -14893,6 +15021,926 @@ git commit --message "4. Green: Wire The Real Application"
     )
 }
 
+fn render_flutter_prism_scene_editor_contracts_content(_spec: &OutputRepoSpec) -> String {
+    tutorial_file_markdown(
+        "Contracts",
+        &rewrite_stage_commit_checkpoints(&rewrite_touch_creation_stage_only(
+            r#"Create the shared contract files:
+
+```bash
+touch workspace/lib/contracts/prism_dimensions.dart
+touch workspace/lib/contracts/prism_camera.dart
+touch workspace/lib/contracts/prism_scene.dart
+```
+
+Put this exact content in `workspace/lib/contracts/prism_dimensions.dart`:
+
+```dart
+class PrismDimensions {
+  final int width;
+  final int height;
+  final int depth;
+
+  const PrismDimensions({
+    required this.width,
+    required this.height,
+    required this.depth,
+  });
+}
+```
+
+Put this exact content in `workspace/lib/contracts/prism_camera.dart`:
+
+```dart
+class PrismCamera {
+  final double yawDegrees;
+  final double pitchDegrees;
+  final double zoom;
+
+  const PrismCamera({
+    required this.yawDegrees,
+    required this.pitchDegrees,
+    required this.zoom,
+  });
+}
+```
+
+Put this exact content in `workspace/lib/contracts/prism_scene.dart`:
+
+```dart
+import 'prism_camera.dart';
+import 'prism_dimensions.dart';
+
+class PrismScene {
+  final String imageId;
+  final Map<String, String?> faceSelectionMap;
+  final PrismDimensions prismDimensions;
+  final PrismCamera camera;
+
+  const PrismScene({
+    required this.imageId,
+    required this.faceSelectionMap,
+    required this.prismDimensions,
+    required this.camera,
+  });
+}
+```
+
+Do not add tests here. Keep this layer limited to interfaces and small shared types.
+
+Then run:
+
+```bash
+git add --all
+git commit --message "Define prism-scene-editor Flutter contracts"
+```"#,
+        )),
+    )
+}
+
+fn render_flutter_prism_scene_editor_code_content(spec: &OutputRepoSpec) -> String {
+    let package_name = flutter_package_name(&spec.project_slug);
+    tutorial_file_markdown(
+        "Code",
+        &rewrite_touch_creation_stage_only(&format!(
+            r#"### 1. Red: Build The Default Prism Scene
+
+Create the first code test file:
+
+```bash
+touch workspace/test/code/prism_scene_editor_service_test.dart
+```
+
+Put this exact content in `workspace/test/code/prism_scene_editor_service_test.dart`:
+
+```dart
+import 'package:{package_name}/code/prism_scene_editor_service.dart';
+import 'package:test/test.dart';
+
+void main() {{
+  test('buildDefaultPrismScene returns the canonical image dimensions and camera', () {{
+    final scene = buildDefaultPrismScene();
+
+    expect(scene.imageId, 'cereal-box-sheet');
+    expect(scene.prismDimensions.width, 240);
+    expect(scene.prismDimensions.height, 360);
+    expect(scene.prismDimensions.depth, 90);
+    expect(scene.camera.yawDegrees, 35);
+    expect(scene.camera.pitchDegrees, -20);
+    expect(scene.camera.zoom, 1.0);
+  }});
+}}
+```
+
+Run:
+
+```bash
+just check-tests
+git add --all
+git commit --message "1. Red: Build The Default Prism Scene"
+```
+
+### 2. Green: Build The Default Prism Scene
+
+Create the first production file:
+
+```bash
+touch workspace/lib/code/prism_scene_editor_service.dart
+```
+
+Put this exact content in `workspace/lib/code/prism_scene_editor_service.dart`:
+
+```dart
+import 'dart:convert';
+
+import '../contracts/prism_camera.dart';
+import '../contracts/prism_dimensions.dart';
+import '../contracts/prism_scene.dart';
+
+PrismScene buildDefaultPrismScene() {{
+  return const PrismScene(
+    imageId: 'cereal-box-sheet',
+    faceSelectionMap: {{
+      'front': 'front',
+      'back': null,
+      'left': null,
+      'right': 'right',
+      'top': 'top',
+      'bottom': null,
+    }},
+    prismDimensions: PrismDimensions(
+      width: 240,
+      height: 360,
+      depth: 90,
+    ),
+    camera: PrismCamera(
+      yawDegrees: 35,
+      pitchDegrees: -20,
+      zoom: 1.0,
+    ),
+  );
+}}
+
+PrismScene updatePrismSceneDimensions(
+  PrismScene scene, {{
+  required int width,
+  required int height,
+  required int depth,
+}}) {{
+  throw UnimplementedError();
+}}
+
+PrismScene updatePrismSceneCamera(
+  PrismScene scene, {{
+  required double yawDegrees,
+  required double pitchDegrees,
+  required double zoom,
+}}) {{
+  throw UnimplementedError();
+}}
+
+String serializePrismScene(PrismScene scene) {{
+  throw UnimplementedError();
+}}
+```
+
+Run:
+
+```bash
+just check-tests
+git add --all
+git commit --message "2. Green: Build The Default Prism Scene"
+```
+
+### 3. Red: Update Dimensions And Camera
+
+Replace `workspace/test/code/prism_scene_editor_service_test.dart` with:
+
+```dart
+import 'package:{package_name}/code/prism_scene_editor_service.dart';
+import 'package:test/test.dart';
+
+void main() {{
+  test('buildDefaultPrismScene returns the canonical image dimensions and camera', () {{
+    final scene = buildDefaultPrismScene();
+
+    expect(scene.imageId, 'cereal-box-sheet');
+    expect(scene.prismDimensions.width, 240);
+    expect(scene.prismDimensions.height, 360);
+    expect(scene.prismDimensions.depth, 90);
+    expect(scene.camera.yawDegrees, 35);
+    expect(scene.camera.pitchDegrees, -20);
+    expect(scene.camera.zoom, 1.0);
+  }});
+
+  test('updatePrismSceneDimensions changes only the dimension fields', () {{
+    final scene = buildDefaultPrismScene();
+    final updated = updatePrismSceneDimensions(
+      scene,
+      width: 300,
+      height: 420,
+      depth: 120,
+    );
+
+    expect(updated.imageId, 'cereal-box-sheet');
+    expect(updated.prismDimensions.width, 300);
+    expect(updated.prismDimensions.height, 420);
+    expect(updated.prismDimensions.depth, 120);
+    expect(updated.camera.yawDegrees, 35);
+    expect(updated.camera.pitchDegrees, -20);
+    expect(updated.camera.zoom, 1.0);
+  }});
+
+  test('updatePrismSceneCamera clamps zoom and preserves yaw and pitch', () {{
+    final scene = buildDefaultPrismScene();
+    final updated = updatePrismSceneCamera(
+      scene,
+      yawDegrees: 40,
+      pitchDegrees: -10,
+      zoom: 4.0,
+    );
+
+    expect(updated.prismDimensions.width, 240);
+    expect(updated.camera.yawDegrees, 40);
+    expect(updated.camera.pitchDegrees, -10);
+    expect(updated.camera.zoom, 2.0);
+  }});
+}}
+```
+
+Run:
+
+```bash
+just check-tests
+git add --all
+git commit --message "3. Red: Update Dimensions And Camera"
+```
+
+### 4. Green: Update Dimensions And Camera
+
+Replace `workspace/lib/code/prism_scene_editor_service.dart` with:
+
+```dart
+import 'dart:convert';
+
+import '../contracts/prism_camera.dart';
+import '../contracts/prism_dimensions.dart';
+import '../contracts/prism_scene.dart';
+
+PrismScene buildDefaultPrismScene() {{
+  return const PrismScene(
+    imageId: 'cereal-box-sheet',
+    faceSelectionMap: {{
+      'front': 'front',
+      'back': null,
+      'left': null,
+      'right': 'right',
+      'top': 'top',
+      'bottom': null,
+    }},
+    prismDimensions: PrismDimensions(
+      width: 240,
+      height: 360,
+      depth: 90,
+    ),
+    camera: PrismCamera(
+      yawDegrees: 35,
+      pitchDegrees: -20,
+      zoom: 1.0,
+    ),
+  );
+}}
+
+double _clampZoom(double zoom) {{
+  if (zoom < 0.5) {{
+    return 0.5;
+  }}
+  if (zoom > 2.0) {{
+    return 2.0;
+  }}
+  return zoom;
+}}
+
+PrismScene updatePrismSceneDimensions(
+  PrismScene scene, {{
+  required int width,
+  required int height,
+  required int depth,
+}}) {{
+  return PrismScene(
+    imageId: scene.imageId,
+    faceSelectionMap: Map<String, String?>.from(scene.faceSelectionMap),
+    prismDimensions: PrismDimensions(
+      width: width,
+      height: height,
+      depth: depth,
+    ),
+    camera: scene.camera,
+  );
+}}
+
+PrismScene updatePrismSceneCamera(
+  PrismScene scene, {{
+  required double yawDegrees,
+  required double pitchDegrees,
+  required double zoom,
+}}) {{
+  return PrismScene(
+    imageId: scene.imageId,
+    faceSelectionMap: Map<String, String?>.from(scene.faceSelectionMap),
+    prismDimensions: scene.prismDimensions,
+    camera: PrismCamera(
+      yawDegrees: yawDegrees,
+      pitchDegrees: pitchDegrees,
+      zoom: _clampZoom(zoom),
+    ),
+  );
+}}
+
+String serializePrismScene(PrismScene scene) {{
+  throw UnimplementedError();
+}}
+```
+
+Run:
+
+```bash
+just check-tests
+git add --all
+git commit --message "4. Green: Update Dimensions And Camera"
+```
+
+### 5. Red: Serialize The Scene Deterministically
+
+Replace `workspace/test/code/prism_scene_editor_service_test.dart` with:
+
+```dart
+import 'package:{package_name}/code/prism_scene_editor_service.dart';
+import 'package:test/test.dart';
+
+void main() {{
+  test('buildDefaultPrismScene returns the canonical image dimensions and camera', () {{
+    final scene = buildDefaultPrismScene();
+
+    expect(scene.imageId, 'cereal-box-sheet');
+    expect(scene.prismDimensions.width, 240);
+    expect(scene.prismDimensions.height, 360);
+    expect(scene.prismDimensions.depth, 90);
+    expect(scene.camera.yawDegrees, 35);
+    expect(scene.camera.pitchDegrees, -20);
+    expect(scene.camera.zoom, 1.0);
+  }});
+
+  test('updatePrismSceneDimensions changes only the dimension fields', () {{
+    final scene = buildDefaultPrismScene();
+    final updated = updatePrismSceneDimensions(
+      scene,
+      width: 300,
+      height: 420,
+      depth: 120,
+    );
+
+    expect(updated.imageId, 'cereal-box-sheet');
+    expect(updated.prismDimensions.width, 300);
+    expect(updated.prismDimensions.height, 420);
+    expect(updated.prismDimensions.depth, 120);
+    expect(updated.camera.yawDegrees, 35);
+    expect(updated.camera.pitchDegrees, -20);
+    expect(updated.camera.zoom, 1.0);
+  }});
+
+  test('updatePrismSceneCamera clamps zoom and preserves yaw and pitch', () {{
+    final scene = buildDefaultPrismScene();
+    final updated = updatePrismSceneCamera(
+      scene,
+      yawDegrees: 40,
+      pitchDegrees: -10,
+      zoom: 4.0,
+    );
+
+    expect(updated.prismDimensions.width, 240);
+    expect(updated.camera.yawDegrees, 40);
+    expect(updated.camera.pitchDegrees, -10);
+    expect(updated.camera.zoom, 2.0);
+  }});
+
+  test('serializePrismScene preserves the exact scene data in deterministic JSON', () {{
+    final scene = buildDefaultPrismScene();
+
+    expect(
+      serializePrismScene(scene),
+      '{{"image_id":"cereal-box-sheet","face_selection_map":{{"front":"front","back":null,"left":null,"right":"right","top":"top","bottom":null}},"prism_dimensions":{{"width":240,"height":360,"depth":90}},"camera":{{"yaw_degrees":35.0,"pitch_degrees":-20.0,"zoom":1.0}}}}',
+    );
+  }});
+}}
+```
+
+Run:
+
+```bash
+just check-tests
+git add --all
+git commit --message "5. Red: Serialize The Scene Deterministically"
+```
+
+### 6. Green: Serialize The Scene Deterministically
+
+Replace `workspace/lib/code/prism_scene_editor_service.dart` with:
+
+```dart
+import 'dart:convert';
+
+import '../contracts/prism_camera.dart';
+import '../contracts/prism_dimensions.dart';
+import '../contracts/prism_scene.dart';
+
+PrismScene buildDefaultPrismScene() {{
+  return const PrismScene(
+    imageId: 'cereal-box-sheet',
+    faceSelectionMap: {{
+      'front': 'front',
+      'back': null,
+      'left': null,
+      'right': 'right',
+      'top': 'top',
+      'bottom': null,
+    }},
+    prismDimensions: PrismDimensions(
+      width: 240,
+      height: 360,
+      depth: 90,
+    ),
+    camera: PrismCamera(
+      yawDegrees: 35,
+      pitchDegrees: -20,
+      zoom: 1.0,
+    ),
+  );
+}}
+
+double _clampZoom(double zoom) {{
+  if (zoom < 0.5) {{
+    return 0.5;
+  }}
+  if (zoom > 2.0) {{
+    return 2.0;
+  }}
+  return zoom;
+}}
+
+PrismScene updatePrismSceneDimensions(
+  PrismScene scene, {{
+  required int width,
+  required int height,
+  required int depth,
+}}) {{
+  return PrismScene(
+    imageId: scene.imageId,
+    faceSelectionMap: Map<String, String?>.from(scene.faceSelectionMap),
+    prismDimensions: PrismDimensions(
+      width: width,
+      height: height,
+      depth: depth,
+    ),
+    camera: scene.camera,
+  );
+}}
+
+PrismScene updatePrismSceneCamera(
+  PrismScene scene, {{
+  required double yawDegrees,
+  required double pitchDegrees,
+  required double zoom,
+}}) {{
+  return PrismScene(
+    imageId: scene.imageId,
+    faceSelectionMap: Map<String, String?>.from(scene.faceSelectionMap),
+    prismDimensions: scene.prismDimensions,
+    camera: PrismCamera(
+      yawDegrees: yawDegrees,
+      pitchDegrees: pitchDegrees,
+      zoom: _clampZoom(zoom),
+    ),
+  );
+}}
+
+String serializePrismScene(PrismScene scene) {{
+  return jsonEncode({{
+    'image_id': scene.imageId,
+    'face_selection_map': {{
+      'front': scene.faceSelectionMap['front'],
+      'back': scene.faceSelectionMap['back'],
+      'left': scene.faceSelectionMap['left'],
+      'right': scene.faceSelectionMap['right'],
+      'top': scene.faceSelectionMap['top'],
+      'bottom': scene.faceSelectionMap['bottom'],
+    }},
+    'prism_dimensions': {{
+      'width': scene.prismDimensions.width,
+      'height': scene.prismDimensions.height,
+      'depth': scene.prismDimensions.depth,
+    }},
+    'camera': {{
+      'yaw_degrees': scene.camera.yawDegrees,
+      'pitch_degrees': scene.camera.pitchDegrees,
+      'zoom': scene.camera.zoom,
+    }},
+  }});
+}}
+```
+
+Run:
+
+```bash
+just check-tests
+git add --all
+git commit --message "6. Green: Serialize The Scene Deterministically"
+```"#,
+        )),
+    )
+}
+
+fn render_flutter_prism_scene_editor_adapter_content(spec: &OutputRepoSpec) -> String {
+    let package_name = flutter_package_name(&spec.project_slug);
+    tutorial_file_markdown(
+        "Adapter",
+        &rewrite_touch_creation_stage_only(&format!(
+            r#"### 1. Red: Add The Prism Scene Editor Page Test
+
+Create the widget test file:
+
+```bash
+touch workspace/test/adapter/prism_scene_editor_page_test.dart
+```
+
+Put this exact content in `workspace/test/adapter/prism_scene_editor_page_test.dart`:
+
+```dart
+import 'package:flutter/material.dart';
+import 'package:flutter_test/flutter_test.dart';
+import 'package:{package_name}/adapter/prism_scene_editor_page.dart';
+
+void main() {{
+  testWidgets('edits the live scene and keeps the preview in sync', (tester) async {{
+    await tester.pumpWidget(
+      const MaterialApp(home: PrismSceneEditorPage()),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.text('cereal-box-sheet / 240 x 360 x 90 / 35 / -20 / 1.0'), findsOneWidget);
+    expect(find.byKey(const Key('preview-front')), findsOneWidget);
+
+    await tester.enterText(find.byKey(const Key('width-input')), '300');
+    await tester.pump();
+
+    expect(find.textContaining('"width":300'), findsOneWidget);
+
+    await tester.tap(find.byKey(const Key('zoom-in')));
+    await tester.pumpAndSettle();
+
+    expect(find.text('cereal-box-sheet / 300 x 360 x 90 / 35 / -20 / 1.2'), findsOneWidget);
+  }});
+}}
+```
+
+Run:
+
+```bash
+just check-tests
+git add --all
+git commit --message "1. Red: Add The Prism Scene Editor Page Test"
+```
+
+### 2. Green: Build The Prism Scene Editor Page
+
+Create the page production file:
+
+```bash
+touch workspace/lib/adapter/prism_scene_editor_page.dart
+```
+
+Put this exact content in `workspace/lib/adapter/prism_scene_editor_page.dart`:
+
+```dart
+import 'package:flutter/material.dart';
+
+import '../code/prism_scene_editor_service.dart';
+import '../contracts/prism_scene.dart';
+
+class PrismSceneEditorPage extends StatefulWidget {{
+  const PrismSceneEditorPage({{super.key}});
+
+  @override
+  State<PrismSceneEditorPage> createState() => _PrismSceneEditorPageState();
+}}
+
+class _PrismSceneEditorPageState extends State<PrismSceneEditorPage> {{
+  late PrismScene _scene;
+  late final TextEditingController _widthController;
+  late final TextEditingController _heightController;
+  late final TextEditingController _depthController;
+
+  @override
+  void initState() {{
+    super.initState();
+    _scene = buildDefaultPrismScene();
+    _widthController = TextEditingController(
+      text: _scene.prismDimensions.width.toString(),
+    );
+    _heightController = TextEditingController(
+      text: _scene.prismDimensions.height.toString(),
+    );
+    _depthController = TextEditingController(
+      text: _scene.prismDimensions.depth.toString(),
+    );
+  }}
+
+  @override
+  void dispose() {{
+    _widthController.dispose();
+    _heightController.dispose();
+    _depthController.dispose();
+    super.dispose();
+  }}
+
+  void _updateDimensions() {{
+    setState(() {{
+      _scene = updatePrismSceneDimensions(
+        _scene,
+        width: int.tryParse(_widthController.text) ?? _scene.prismDimensions.width,
+        height: int.tryParse(_heightController.text) ?? _scene.prismDimensions.height,
+        depth: int.tryParse(_depthController.text) ?? _scene.prismDimensions.depth,
+      );
+    }});
+  }}
+
+  void _updateCamera({{
+    double? yawDegrees,
+    double? pitchDegrees,
+    double? zoom,
+  }}) {{
+    setState(() {{
+      _scene = updatePrismSceneCamera(
+        _scene,
+        yawDegrees: yawDegrees ?? _scene.camera.yawDegrees,
+        pitchDegrees: pitchDegrees ?? _scene.camera.pitchDegrees,
+        zoom: zoom ?? _scene.camera.zoom,
+      );
+    }});
+  }}
+
+  @override
+  Widget build(BuildContext context) {{
+    final sceneSummary =
+        '${{_scene.imageId}} / '
+        '${{_scene.prismDimensions.width}} x '
+        '${{_scene.prismDimensions.height}} x '
+        '${{_scene.prismDimensions.depth}} / '
+        '${{_scene.camera.yawDegrees.toStringAsFixed(0)}} / '
+        '${{_scene.camera.pitchDegrees.toStringAsFixed(0)}} / '
+        '${{_scene.camera.zoom.toStringAsFixed(1)}}';
+
+    return Scaffold(
+      appBar: AppBar(title: const Text('Prism Scene Editor')),
+      body: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(sceneSummary),
+            const SizedBox(height: 12),
+            Row(
+              children: [
+                Expanded(
+                  child: TextField(
+                    key: const Key('width-input'),
+                    controller: _widthController,
+                    decoration: const InputDecoration(labelText: 'Width'),
+                    keyboardType: TextInputType.number,
+                    onChanged: (_) => _updateDimensions(),
+                  ),
+                ),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: TextField(
+                    key: const Key('height-input'),
+                    controller: _heightController,
+                    decoration: const InputDecoration(labelText: 'Height'),
+                    keyboardType: TextInputType.number,
+                    onChanged: (_) => _updateDimensions(),
+                  ),
+                ),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: TextField(
+                    key: const Key('depth-input'),
+                    controller: _depthController,
+                    decoration: const InputDecoration(labelText: 'Depth'),
+                    keyboardType: TextInputType.number,
+                    onChanged: (_) => _updateDimensions(),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 12),
+            Wrap(
+              spacing: 8,
+              children: [
+                ElevatedButton(
+                  key: const Key('rotate-right'),
+                  onPressed: () => _updateCamera(
+                    yawDegrees: _scene.camera.yawDegrees + 10,
+                  ),
+                  child: const Text('Rotate'),
+                ),
+                ElevatedButton(
+                  key: const Key('zoom-in'),
+                  onPressed: () => _updateCamera(
+                    zoom: _scene.camera.zoom + 0.2,
+                  ),
+                  child: const Text('Zoom in'),
+                ),
+              ],
+            ),
+            const SizedBox(height: 16),
+            Expanded(
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Expanded(
+                    child: Stack(
+                      children: [
+                        if (_scene.faceSelectionMap['front'] != null)
+                          Positioned(
+                            left: 120,
+                            top: 120,
+                            child: _PreviewFace(
+                              key: const Key('preview-front'),
+                              label: 'front',
+                              width: _scene.prismDimensions.width / 2,
+                              height: _scene.prismDimensions.height / 2,
+                              color: const Color(0xFFE58F65),
+                            ),
+                          ),
+                        if (_scene.faceSelectionMap['right'] != null)
+                          Positioned(
+                            left: 240,
+                            top: 140,
+                            child: _PreviewFace(
+                              key: const Key('preview-right'),
+                              label: 'right',
+                              width: _scene.prismDimensions.depth / 2,
+                              height: _scene.prismDimensions.height / 2,
+                              color: const Color(0xFF83B2D8),
+                            ),
+                          ),
+                        if (_scene.faceSelectionMap['top'] != null)
+                          Positioned(
+                            left: 140,
+                            top: 70,
+                            child: _PreviewFace(
+                              key: const Key('preview-top'),
+                              label: 'top',
+                              width: _scene.prismDimensions.width / 2,
+                              height: _scene.prismDimensions.depth / 2,
+                              color: const Color(0xFFF2CF77),
+                            ),
+                          ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(width: 16),
+                  Expanded(
+                    child: SingleChildScrollView(
+                      child: SelectableText(
+                        serializePrismScene(_scene),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }}
+}}
+
+class _PreviewFace extends StatelessWidget {{
+  final String label;
+  final double width;
+  final double height;
+  final Color color;
+
+  const _PreviewFace({{
+    super.key,
+    required this.label,
+    required this.width,
+    required this.height,
+    required this.color,
+  }});
+
+  @override
+  Widget build(BuildContext context) {{
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        color: color,
+        border: Border.all(color: Colors.brown, width: 2),
+      ),
+      child: SizedBox(
+        width: width,
+        height: height,
+        child: Center(child: Text(label)),
+      ),
+    );
+  }}
+}}
+```
+
+Run:
+
+```bash
+just check-tests
+git add --all
+git commit --message "2. Green: Build The Prism Scene Editor Page"
+```
+
+### 3. Red: Add The Integration Test
+
+Create the integration test file:
+
+```bash
+touch workspace/integration_test/app_test.dart
+```
+
+Put this exact content in `workspace/integration_test/app_test.dart`:
+
+```dart
+import 'package:flutter/material.dart';
+import 'package:flutter_test/flutter_test.dart';
+import 'package:integration_test/integration_test.dart';
+import 'package:{package_name}/adapter/prism_scene_editor_page.dart';
+
+void main() {{
+  IntegrationTestWidgetsFlutterBinding.ensureInitialized();
+
+  testWidgets('renders the prism scene editor title', (tester) async {{
+    await tester.pumpWidget(
+      const MaterialApp(home: PrismSceneEditorPage()),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.text('Prism Scene Editor'), findsOneWidget);
+  }});
+}}
+```
+
+Run:
+
+```bash
+just check-tests
+git add --all
+git commit --message "3. Red: Add The Integration Test"
+```
+
+### 4. Green: Wire The Real Application
+
+Replace `workspace/lib/main.dart` with:
+
+```dart
+import 'package:flutter/material.dart';
+
+import 'adapter/prism_scene_editor_page.dart';
+
+void main() {{
+  runApp(const PrismSceneEditorApp());
+}}
+
+class PrismSceneEditorApp extends StatelessWidget {{
+  const PrismSceneEditorApp({{super.key}});
+
+  @override
+  Widget build(BuildContext context) {{
+    return const MaterialApp(
+      title: 'Prism Scene Editor',
+      home: PrismSceneEditorPage(),
+    );
+  }}
+}}
+```
+
+Run:
+
+```bash
+just check-tests
+git add --all
+git commit --message "4. Green: Wire The Real Application"
+```"#,
+        )),
+    )
+}
+
 fn render_flutter_saying_hello_contracts_content(_spec: &OutputRepoSpec) -> String {
     if is_flutter_local_saying_hello_output_repo(_spec) {
         return tutorial_file_markdown(
@@ -16900,6 +17948,27 @@ mod tests {
         }
     }
 
+    fn sample_prism_scene_editor_flutter_output_repo_spec() -> OutputRepoSpec {
+        OutputRepoSpec {
+            repo_name: "fa_tut_prism-scene-editor".to_string(),
+            repo_description:
+                "Tutorial workspace for the Prism Scene Editor project with Dart / Dart / test / mocktail / no-storage / client / all / Flutter choices."
+                    .to_string(),
+            project_slug: "prism-scene-editor".to_string(),
+            selections: OutputRepoSelections {
+                ecosystem: "dart".to_string(),
+                language: "dart".to_string(),
+                testing: "test".to_string(),
+                mocking: "mocktail".to_string(),
+                storage: "no-storage".to_string(),
+                surface: "client".to_string(),
+                target: "all".to_string(),
+                framework: "flutter".to_string(),
+                protocol: None,
+            },
+        }
+    }
+
     fn sample_dotnet_output_repo_spec() -> OutputRepoSpec {
         OutputRepoSpec {
             repo_name: "fa_tut_saying-hello".to_string(),
@@ -17167,6 +18236,27 @@ mod tests {
         let selections =
             output_repo_selections_for_project("prism-widget-renderer", &overrides)
                 .expect("flutter local prism-widget-renderer should be supported");
+
+        assert_eq!(selections.ecosystem, "dart");
+        assert_eq!(selections.surface, "client");
+        assert_eq!(selections.target, "all");
+        assert_eq!(selections.framework, "flutter");
+        assert_eq!(selections.protocol, None);
+    }
+
+    #[test]
+    fn output_repo_selection_overrides_allow_switching_prism_scene_editor_to_flutter_local() {
+        let overrides = BootstrapSelectionOverrides {
+            ecosystem: Some("dart".to_string()),
+            surface: Some("client".to_string()),
+            target: Some("all".to_string()),
+            protocol: Some("none".to_string()),
+            ..BootstrapSelectionOverrides::default()
+        };
+
+        let selections =
+            output_repo_selections_for_project("prism-scene-editor", &overrides)
+                .expect("flutter local prism-scene-editor should be supported");
 
         assert_eq!(selections.ecosystem, "dart");
         assert_eq!(selections.surface, "client");
@@ -18094,6 +19184,24 @@ mod tests {
     }
 
     #[test]
+    fn prism_scene_editor_flutter_output_repo_setup_content_uses_cross_platform_flutter_workspace_layout(
+    ) {
+        let spec = sample_prism_scene_editor_flutter_output_repo_spec();
+
+        let setup = render_output_repo_setup_content(&spec);
+
+        assert!(setup.contains("flutter create --platforms=web,android,ios,macos,windows,linux --org com.intrepion --project-name prism_scene_editor workspace"));
+        assert!(!setup.contains("flutter pub add http"));
+        assert!(setup.contains("prism_scene.dart"));
+        assert!(setup.contains("prism_dimensions.dart"));
+        assert!(setup.contains("prism_camera.dart"));
+        assert!(setup.contains("prism_scene_editor_service.dart"));
+        assert!(setup.contains("prism_scene_editor_page.dart"));
+        assert!(setup.contains("just run-web"));
+        assert!(setup.contains("just run-android device=\"<android-device-id-or-name>\""));
+    }
+
+    #[test]
     fn astro_saying_hello_contracts_code_and_adapter_tutorials_are_concrete() {
         let spec = sample_astro_output_repo_spec();
 
@@ -18253,6 +19361,29 @@ mod tests {
         assert!(adapter.contains("35 / -20 / 1.0"));
         assert!(finish.contains("confirm only `front`, `right`, and `top` are visible"));
         assert!(finish.contains("tap the zoom controls"));
+    }
+
+    #[test]
+    fn prism_scene_editor_flutter_contracts_code_adapter_and_finish_are_concrete() {
+        let spec = sample_prism_scene_editor_flutter_output_repo_spec();
+
+        let contracts = render_flutter_prism_scene_editor_contracts_content(&spec);
+        let code = render_flutter_prism_scene_editor_code_content(&spec);
+        let adapter = render_flutter_prism_scene_editor_adapter_content(&spec);
+        let finish = render_output_repo_finish_content(&spec);
+
+        assert!(contracts.contains("class PrismScene"));
+        assert!(contracts.contains("class PrismDimensions"));
+        assert!(contracts.contains("class PrismCamera"));
+        assert!(code.contains("buildDefaultPrismScene"));
+        assert!(code.contains("updatePrismSceneDimensions"));
+        assert!(code.contains("updatePrismSceneCamera"));
+        assert!(code.contains("serializePrismScene"));
+        assert!(adapter.contains("PrismSceneEditorPage"));
+        assert!(adapter.contains("preview-front"));
+        assert!(adapter.contains("\"width\":300"));
+        assert!(finish.contains("confirm the default scene starts as `cereal-box-sheet / 240 x 360 x 90 / 35 / -20 / 1.0`"));
+        assert!(finish.contains("confirm the scene document remains deterministic"));
     }
 
     #[test]
