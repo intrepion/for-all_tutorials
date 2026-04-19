@@ -1448,7 +1448,7 @@ emulators:\n\
 run:\n\
 \tjust run-web\n\n\
 run-web:\n\
-\t(cd {{{{workspace}}}} && flutter run -d chrome --web-port {FOR_ALL_FRONTEND_PORT}{web_define})\n\n\
+\t(cd {{{{workspace}}}} && flutter run -d chrome --web-port {FOR_ALL_FRONTEND_PORT}{web_define} < /dev/null)\n\n\
 run-ios device=\"\":\n\
 \t#!/usr/bin/env bash\n\
 \tset -euo pipefail\n\
@@ -14665,7 +14665,7 @@ mod tests {
         assert!(justfile.contains("(cd {{workspace}} && flutter test)"));
         assert!(justfile.contains("\nrun:\n"));
         assert!(justfile.contains("\nrun-web:\n"));
-        assert!(justfile.contains("(cd {{workspace}} && flutter run -d chrome --web-port 25616 --dart-define=API_BASE_URL={{api_base_url}})"));
+        assert!(justfile.contains("(cd {{workspace}} && flutter run -d chrome --web-port 25616 --dart-define=API_BASE_URL={{api_base_url}} < /dev/null)"));
         assert!(justfile.contains("\nrun-ios device=\"\":\n"));
         assert!(justfile.contains("Use `just devices` and rerun with device=\"<ios-device-id-or-name>\"."));
         assert!(!justfile.contains("(cd {{workspace}} && flutter run -d ios --dart-define=API_BASE_URL={{api_base_url}})"));
@@ -14688,7 +14688,7 @@ mod tests {
         assert!(justfile.contains("\nemulators:\n"));
         assert!(justfile.contains("(cd {{workspace}} && flutter emulators)"));
         assert!(justfile.contains("\nrun-web:\n"));
-        assert!(justfile.contains("(cd {{workspace}} && flutter run -d chrome --web-port 25616)"));
+        assert!(justfile.contains("(cd {{workspace}} && flutter run -d chrome --web-port 25616 < /dev/null)"));
         assert!(justfile.contains("\nrun-ios device=\"\":\n"));
         assert!(justfile.contains("normalized_device='{{device}}'"));
         assert!(justfile.contains("normalized_device=\"${normalized_device#device=}\""));
