@@ -12652,10 +12652,16 @@ void main() {{
     expect(find.byKey(const Key('preview-back')), findsOneWidget);
     expect(find.byKey(const Key('preview-left')), findsOneWidget);
     expect(find.byKey(const Key('preview-right')), findsOneWidget);
+    expect(find.text('front | 30, 21, 90, 84'), findsOneWidget);
+
+    await tester.scrollUntilVisible(
+      find.byKey(const Key('preview-top')),
+      300,
+    );
+    await tester.pumpAndSettle();
+
     expect(find.byKey(const Key('preview-top')), findsOneWidget);
     expect(find.byKey(const Key('preview-bottom')), findsOneWidget);
-
-    expect(find.text('front | 30, 21, 90, 84'), findsOneWidget);
     expect(find.text('bottom | missing'), findsOneWidget);
   }});
 }}
@@ -16166,6 +16172,7 @@ mod tests {
         assert!(adapter.contains("PrismFaceCropperPage"));
         assert!(adapter.contains("preview-front"));
         assert!(adapter.contains("front | 30, 21, 90, 84"));
+        assert!(adapter.contains("scrollUntilVisible"));
         assert!(finish.contains("confirm you see six face slots"));
         assert!(finish.contains("keeps its crop-plan state only in memory"));
     }
